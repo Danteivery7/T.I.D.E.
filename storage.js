@@ -94,7 +94,15 @@ async function jsonFetch(url,options={}){
 }
 
 export async function cloudStatus(){try{return await jsonFetch('/api/auth/status',{method:'GET',headers:{}})}catch{return {configured:false,authenticated:false,offline:true}}}
-export async function cloudLogin(password){return jsonFetch('/api/auth/login',{method:'POST',body:JSON.stringify({password})})}
+export async function cloudLogin(password){
+  const result=await jsonFetch('/api/auth/login',{method:'POST',body:JSON.stringify({password})});
+  // Connection itself performs the migration: merge this device with shared state, then upload the merged database.
+  const pulled=await jsonFetch('/api/tide/state',{method:'GET',headers:{}});
+  const merged=mergeStates(loadLocal(),pulled.state);
+  rawWriteLocal(merged);
+  await sharedPush(merged);
+  return result;
+}
 export async function cloudLogout(){return jsonFetch('/api/auth/logout',{method:'POST',body:'{}'})}
 export async function cloudPull(){return jsonFetch('/api/tide/state',{method:'GET',headers:{}})}
 export async function cloudPush(state,etag=null){return jsonFetch('/api/tide/state',{method:'POST',body:JSON.stringify({state,etag})})}
