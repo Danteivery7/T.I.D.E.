@@ -1,0 +1,1 @@
+export default {"version":2,"compression":"gzip","kdf":"PBKDF2-SHA256","iterations":310000,"salt":"GLkMvco6TuKt3IcaSN1QDw==","iv":"MifgYSuP9qeT94KK","tag":"ipM1UwNy0akTkvAD+PtECA==","aad":"TIDE-CF-SEED-V1","plaintextSha256":"0f4d929cf4f281472fcb8814860fca45f6363362e584c3f90f8ae195dde0cc19","compressedSha256":"20e117298a09a30c2b5f232e6df85024a83edc6c3201d204a693979e0082146b"};
