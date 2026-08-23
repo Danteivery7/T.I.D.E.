@@ -2,12 +2,16 @@ import * as v2 from './engine-v2.js';
 export * from './engine-v2.js';
 
 const nowIso=()=>new Date().toISOString();
-const asNumber=v=>Number.isFinite(Number(v))?Number(v):null;
-const validResult=v=>['win','loss','tie'].includes(v)?v:'none';
+const asNumber=v=>{
+  if(v===null||v===undefined||String(v).trim()==='') return null;
+  const number=Number(v);
+  return Number.isFinite(number)?number:null;
+};
+const validResult=v=>['win','loss'].includes(v)?v:'none';
 
 function uniqueMontyRows(rows){
   const byDate=new Map();
-  for(const row of rows.filter(x=>['win','loss','tie'].includes(x.result))){
+  for(const row of rows.filter(x=>['win','loss'].includes(x.result))){
     const prev=byDate.get(row.date);
     if(!prev || row.logType==='dc-quick' || prev.logType!=='dc-quick') byDate.set(row.date,row);
   }
@@ -19,7 +23,7 @@ function countResults(rows){
   return {
     wins:unique.filter(x=>x.result==='win').length,
     losses:unique.filter(x=>x.result==='loss').length,
-    ties:unique.filter(x=>x.result==='tie').length,
+    ties:0,
   };
 }
 
@@ -29,7 +33,7 @@ function monthBaseline(state,month){
   return {
     wins:Number(saved.wins)||0,
     losses:Number(saved.losses)||0,
-    ties:Number(saved.ties)||0,
+    ties:0,
     baselineUpdatedAt:saved.baselineUpdatedAt||null,
   };
 }
@@ -49,7 +53,7 @@ export function montyMonthRecord(state,month){
     return {
       wins:baseline.wins+extra.wins,
       losses:baseline.losses+extra.losses,
-      ties:baseline.ties+extra.ties,
+      ties:0,
       source:'monthly-baseline',
     };
   }
@@ -74,17 +78,17 @@ export function montyRecord(state,scope={}){
   return rows.reduce((out,row)=>({
     wins:out.wins+row.wins,
     losses:out.losses+row.losses,
-    ties:out.ties+row.ties,
+    ties:0,
   }),{wins:0,losses:0,ties:0});
 }
 
-export function setMonthlyMontyBaseline(state,month,{wins=0,losses=0,ties=0}={}){
+export function setMonthlyMontyBaseline(state,month,{wins=0,losses=0}={}){
   const stamp=nowIso();
   v2.saveMonthlyReview(state,month,{
     versusTotals:{'monty-dc':{
       wins:Math.max(0,Number(wins)||0),
       losses:Math.max(0,Number(losses)||0),
-      ties:Math.max(0,Number(ties)||0),
+      ties:0,
       baselineUpdatedAt:stamp,
     }},
   });
@@ -107,7 +111,7 @@ export function setDailyChallengeLog(state,{date,status='complete',versus='none'
     metadata:{logType:'dc-quick',createdAt:stamp},
   });
   let finalVersus=validResult(versus);
-  if(mine!=null && opp!=null) finalVersus=mine>opp?'win':mine<opp?'loss':'tie';
+  if(mine!=null && opp!=null && mine!==opp) finalVersus=mine>opp?'win':'loss';
   if(status==='complete' && finalVersus!=='none'){
     v2.addManualOccurrence(state,{
       trackerId:'monty-dc',date,count:1,result:finalVersus,myScore:mine,opponentScore:opp,
@@ -125,7 +129,7 @@ export function dailyChallengeLogForDate(state,date){
   const d=choose(dc),m=choose(monty);
   return {
     status:d?.result||null,
-    versus:m?.result||'none',
+    versus:['win','loss'].includes(m?.result)?m.result:'none',
     myScore:d?.myScore??m?.myScore??null,
     opponentScore:m?.opponentScore??null,
   };
@@ -171,9 +175,9 @@ export function askTide(state,question){
     if(/how many losses|losses have i|number of losses/.test(lower)){
       return {type:'count',primary:String(record.losses),detail:`Losses versus Monty ${where}.`};
     }
-    const answer={type:'record',primary:`${record.wins}-${record.losses}`,detail:`Daily Challenge record versus Monty ${where}.${record.ties?` ${record.ties} tie${record.ties===1?'':'s'}.`:''}`};
+    const answer={type:'record',primary:`${record.wins}-${record.losses}`,detail:`Daily Challenge record versus Monty ${where}.`};
     if(/by month|monthly|each month|breakdown/.test(lower)){
-      answer.items=montyBreakdown(state,scope.year?{year:scope.year}:scope.month?{month:scope.month}:{}).map(row=>({label:v2.monthLabel(row.month),meta:`${row.wins}-${row.losses}${row.ties?`-${row.ties} ties`:''}`}));
+      answer.items=montyBreakdown(state,scope.year?{year:scope.year}:scope.month?{month:scope.month}:{}).map(row=>({label:v2.monthLabel(row.month),meta:`${row.wins}-${row.losses}`}));
     }
     return answer;
   }
