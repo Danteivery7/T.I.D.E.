@@ -1,0 +1,17 @@
+import { freshState } from './engine.js';
+const LOCAL_KEY='tide_state_v1';const DRAFT_PREFIX='tide_draft:';
+export function loadLocal(){try{const raw=localStorage.getItem(LOCAL_KEY);if(!raw)return freshState();return migrate(JSON.parse(raw))}catch{return freshState()}}
+export function saveLocal(state){state.updatedAt=new Date().toISOString();localStorage.setItem(LOCAL_KEY,JSON.stringify(state));return state}
+export function saveDraft(date,text){localStorage.setItem(`${DRAFT_PREFIX}${date}`,String(text||''))}
+export function loadDraft(date){return localStorage.getItem(`${DRAFT_PREFIX}${date}`)}
+export function clearDraft(date){localStorage.removeItem(`${DRAFT_PREFIX}${date}`)}
+export function exportState(state){return new Blob([JSON.stringify(state,null,2)],{type:'application/json'})}
+export function importStateObject(obj){return migrate(obj)}
+function migrate(input){const base=freshState();const s=input&&typeof input==='object'?input:{};return {...base,...s,entries:s.entries||{},monthlyReviews:s.monthlyReviews||{},yearlyReviews:s.yearlyReviews||{},occurrences:Array.isArray(s.occurrences)?s.occurrences:[],trackerOverrides:s.trackerOverrides||{},musicCache:s.musicCache||{},rawImports:Array.isArray(s.rawImports)?s.rawImports:[],settings:{...base.settings,...(s.settings||{})}}}
+async function jsonFetch(url,options={}){const response=await fetch(url,{credentials:'same-origin',headers:{'content-type':'application/json',...(options.headers||{})},...options});let body={};try{body=await response.json()}catch{}if(!response.ok)throw new Error(body.error||`Request failed (${response.status})`);return body}
+export async function cloudStatus(){try{return await jsonFetch('/api/auth/status',{method:'GET',headers:{}})}catch{return {configured:false,authenticated:false,offline:true}}}
+export async function cloudLogin(password){return jsonFetch('/api/auth/login',{method:'POST',body:JSON.stringify({password})})}
+export async function cloudLogout(){return jsonFetch('/api/auth/logout',{method:'POST',body:'{}'})}
+export async function cloudPull(){return jsonFetch('/api/tide/state',{method:'GET',headers:{}})}
+export async function cloudPush(state,etag=null){return jsonFetch('/api/tide/state',{method:'POST',body:JSON.stringify({state,etag})})}
+export function mergeStates(local,remote){if(!remote)return local;if(!local)return migrate(remote);const l=migrate(local),r=migrate(remote),out=migrate({...l});for(const [date,re] of Object.entries(r.entries||{})){const le=out.entries[date];if(!le||String(re.updatedAt||'')>String(le.updatedAt||''))out.entries[date]=re}for(const [key,rr] of Object.entries(r.monthlyReviews||{})){const lr=out.monthlyReviews[key];if(!lr||String(rr.updatedAt||'')>String(lr.updatedAt||''))out.monthlyReviews[key]=rr}for(const [key,rr] of Object.entries(r.yearlyReviews||{})){const lr=out.yearlyReviews[key];if(!lr||String(rr.updatedAt||'')>String(lr.updatedAt||''))out.yearlyReviews[key]=rr}const occ=new Map();for(const x of [...(l.occurrences||[]),...(r.occurrences||[])])occ.set(x.id||`${x.trackerId}:${x.date}:${x.snippet}`,x);out.occurrences=[...occ.values()];out.trackerOverrides={...(r.trackerOverrides||{}),...(l.trackerOverrides||{})};out.musicCache={...(r.musicCache||{}),...(l.musicCache||{})};out.rawImports=[...(r.rawImports||[]),...(l.rawImports||[])].filter((x,i,a)=>a.findIndex(y=>y.id===x.id)===i);out.settings={...(r.settings||{}),...(l.settings||{})};out.updatedAt=new Date().toISOString();return out}
