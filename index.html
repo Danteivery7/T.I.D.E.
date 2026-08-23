@@ -21,6 +21,7 @@
           <div class="brand-sub">THINGS I DID EVERYDAY</div>
         </div>
       </div>
+
       <nav class="nav-stack" id="primary-nav">
         <button class="nav-item active" data-view="today"><span>◉</span><b>Today</b></button>
         <button class="nav-item" data-view="calendar"><span>▦</span><b>Calendar</b></button>
@@ -33,12 +34,15 @@
         <button class="nav-item ask-nav" data-view="ask"><span>⌕</span><b>Ask T.I.D.E.</b></button>
         <button class="nav-item" data-view="history"><span>≡</span><b>History</b></button>
       </nav>
+
       <div class="sidebar-bottom">
         <button class="nav-item" data-view="settings"><span>⚙</span><b>Settings</b></button>
         <div class="sync-pill" id="sync-pill"><span class="sync-dot"></span><span>Local-first</span></div>
       </div>
     </aside>
+
     <div id="sidebar-scrim" class="sidebar-scrim"></div>
+
     <main class="main-area">
       <header class="topbar">
         <div class="topbar-left">
@@ -50,17 +54,26 @@
           <button id="jump-today" class="top-action">Today</button>
         </div>
       </header>
+
       <div id="view-root" class="view-root" aria-live="polite"></div>
     </main>
   </div>
+
   <div id="toast-region" class="toast-region" aria-live="polite"></div>
+
   <dialog id="modal" class="modal">
     <div class="modal-head">
-      <div><div class="eyebrow" id="modal-eyebrow"></div><h2 id="modal-title"></h2></div>
+      <div>
+        <div class="eyebrow" id="modal-eyebrow"></div>
+        <h2 id="modal-title"></h2>
+      </div>
       <button id="modal-close" class="icon-button" aria-label="Close">×</button>
     </div>
     <div id="modal-body" class="modal-body"></div>
   </dialog>
+
+  <script type="importmap">{"imports":{"./engine.js":"./engine-v2.js"}}</script>
   <script type="module" src="app.js"></script>
+  <script type="module" src="enhancements.js"></script>
 </body>
 </html>
