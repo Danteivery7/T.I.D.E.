@@ -5,7 +5,7 @@
   "type":"module",
   "scripts":{
     "test":"node --test tests/*.test.js",
-    "check":"node --check app.js && node --check engine.js && node --check storage.js && node --check spotify.js && node --check sw.js && node --check netlify/functions/auth.mjs && node --check netlify/functions/tide.mjs && node --check netlify/lib/auth.mjs"
+    "check":"node --check app.js && node --check engine.js && node --check engine-v2.js && node --check enhancements.js && node --check storage.js && node --check spotify.js && node --check sw.js && node --check netlify/functions/auth.mjs && node --check netlify/functions/tide.mjs && node --check netlify/lib/auth.mjs"
   },
   "dependencies":{"@netlify/blobs":"10.7.13"}
 }
