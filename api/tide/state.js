@@ -48,6 +48,25 @@ async function readCloud(){
   }
 }
 
+function isPrecondition(error){return /precondition|etag|condition/i.test(String(error?.name||error?.message||''))}
+async function mergeAndWrite(incoming){
+  for(let attempt=0;attempt<4;attempt++){
+    const current=await readCloud();
+    const merged=mergeStates(current.state,incoming);
+    try{
+      const blob=await put(PATH,JSON.stringify(merged),{
+        access:'private',allowOverwrite:true,addRandomSuffix:false,contentType:'application/json',cacheControlMaxAge:60,
+        ...(current.etag?{ifMatch:current.etag}:{}),
+      });
+      return{state:merged,etag:blob.etag};
+    }catch(error){
+      if(current.etag&&isPrecondition(error)&&attempt<3)continue;
+      throw error;
+    }
+  }
+  throw new Error('Cloud changed too many times. Try saving again.');
+}
+
 export default async function handler(request){
   if(!isAuthenticated(request))return json({error:'Unauthorized.'},401);
   try{
@@ -58,12 +77,8 @@ export default async function handler(request){
     if(request.method==='POST'){
       let body;try{body=await request.json()}catch{return json({error:'Invalid JSON.'},400)}
       if(!validState(body?.state))return json({error:'Invalid T.I.D.E. state.'},400);
-      const current=await readCloud();
-      const merged=mergeStates(current.state,body.state);
-      const blob=await put(PATH,JSON.stringify(merged),{
-        access:'private',allowOverwrite:true,addRandomSuffix:false,contentType:'application/json',cacheControlMaxAge:60,
-      });
-      return json({ok:true,state:merged,etag:blob.etag});
+      const saved=await mergeAndWrite(body.state);
+      return json({ok:true,state:saved.state,etag:saved.etag});
     }
     return json({error:'Method not allowed.'},405);
   }catch(error){return json({error:error?.message||'Shared storage request failed.'},500)}
