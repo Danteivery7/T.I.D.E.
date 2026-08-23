@@ -1,5 +1,5 @@
 const KEY='tide_state_v1';
-const REPAIR='geo-final-one-deploy-v1';
+const REPAIR='geo-vercel-baseline-v1';
 const BASE_DATE='2026-08-23';
 const START_DATE='2026-04-28';
 const INITIAL_STREAK=118;
@@ -9,21 +9,22 @@ const root=document.querySelector('#view-root');
 const now=()=>new Date().toISOString();
 const today=()=>{const p=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const o=Object.fromEntries(p.filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));return `${o.year}-${o.month}-${o.day}`};
 const shift=(date,n)=>{const [y,m,d]=date.split('-').map(Number),x=new Date(Date.UTC(y,m-1,d+n));return x.toISOString().slice(0,10)};
-const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>'\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[c]));
 const short=d=>d?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(new Date(`${d}T12:00:00`)):'—';
 const cleanRecord=r=>({wins:Math.max(0,Number(r?.wins)||0),losses:Math.max(0,Number(r?.losses)||0)});
 const card=(l,v,d='')=>`<div class="record-card"><div class="stat-label">${esc(l)}</div><div class="record-value">${esc(v)}</div>${d?`<div class="record-detail">${esc(d)}</div>`:''}</div>`;
 
 function read(){try{return JSON.parse(localStorage.getItem(KEY)||'null')||{version:1,entries:{},monthlyReviews:{},yearlyReviews:{},occurrences:[],settings:{}}}catch{return{version:1,entries:{},monthlyReviews:{},yearlyReviews:{},occurrences:[],settings:{}}}}
 function write(s){s.updatedAt=now();localStorage.setItem(KEY,JSON.stringify(s))}
-function ensureShape(s){s.settings||={};s.settings.migrations||={};s.monthlyReviews||={};s.yearlyReviews||={};s.occurrences||=[];s.tideCounters||={};s.tideCounters.montyYears||={};return s}
+function ensureShape(s){s.settings||={};s.settings.migrations||={};s.monthlyReviews||={};s.yearlyReviews||={};s.occurrences||=[];s.entries||={};s.rawImports||=[];s.tideCounters||={};s.tideCounters.montyYears||={};return s}
+function hasSavedHistory(s){return Object.values(s.entries||{}).some(e=>String(e?.text||'').trim())||Object.keys(s.monthlyReviews||{}).length>0||(s.rawImports||[]).length>0}
 function monthRecord(s,month=today().slice(0,7)){ensureShape(s);return cleanRecord(s.monthlyReviews?.[month]?.versusTotals?.['monty-dc'])}
 function overallRecord(s){ensureShape(s);return cleanRecord(s.tideCounters.montyOverall||INITIAL_OVERALL)}
 function streak(s){ensureShape(s);const d=s.tideCounters.dailyChallenge||{};return{current:Math.max(0,Number(d.current)||0),longest:Math.max(0,Number(d.longest)||0),start:d.currentStart||null,last:d.lastCounted||null,longestStart:d.longestStart||null,longestEnd:d.longestEnd||null}}
 
 function repair(s){
   ensureShape(s);
-  if(s.settings.migrations[REPAIR])return false;
+  if(s.settings.migrations[REPAIR]||!hasSavedHistory(s))return false;
   s.tideCounters.dailyChallenge={current:INITIAL_STREAK,longest:INITIAL_STREAK,currentStart:START_DATE,lastCounted:BASE_DATE,longestStart:START_DATE,longestEnd:BASE_DATE,updatedAt:now()};
   s.tideCounters.montyOverall={...INITIAL_OVERALL,updatedAt:now()};
   s.tideCounters.montyYears[2026]={...INITIAL_OVERALL,updatedAt:now()};
@@ -53,6 +54,7 @@ function injectMonthly(s){if(!root?.querySelector('#month-select')||document.que
 function answerAsk(){const input=root?.querySelector('#ask-input'),out=root?.querySelector('#ask-results');if(!input||!out)return;const q=input.value.toLowerCase(),s=ensureShape(read()),d=streak(s),m=monthRecord(s),a=overallRecord(s),y=cleanRecord(s.tideCounters.montyYears?.[Number(today().slice(0,4))]);let primary=null,detail='';if(/daily challenge/.test(q)&&/streak/.test(q)&&!/monty/.test(q)){primary=String(d.current);detail=`Current GeoGuessr Daily Challenge streak${d.start?` · started ${short(d.start)}`:''}.`}else if(/monty/.test(q)&&/(record|wins?|loss|versus|\bvs\b)/.test(q)){const r=/this month/.test(q)?m:/this year/.test(q)?y:a;primary=`${r.wins}-${r.losses}`;detail=`Daily Challenge record versus Monty ${/this month/.test(q)?'this month':/this year/.test(q)?'this year':'all time'}.`}if(primary!==null)out.innerHTML=`<div class="answer-card"><div class="eyebrow">ANSWER</div><div class="answer-primary">${esc(primary)}</div><div class="answer-explain">${esc(detail)}</div></div>`}
 document.addEventListener('click',e=>{if(e.target?.closest?.('#ask-go'))setTimeout(answerAsk,0)});document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target?.id==='ask-input')setTimeout(answerAsk,0)});
 
-const initial=ensureShape(read());const didRepair=repair(initial);
-if(didRepair&&!sessionStorage.getItem('tide_geo_final_reloaded')){sessionStorage.setItem('tide_geo_final_reloaded','1');location.reload()}
-else{let pending=false;const run=()=>{pending=false;const s=ensureShape(read());overwriteBaseDisplays(s);injectToday(s);injectTrackers(s);injectRecords(s);injectMonthly(s)};new MutationObserver(()=>{if(pending)return;pending=true;queueMicrotask(run)}).observe(root,{childList:true,subtree:true});run();}
+function run(){const s=ensureShape(read());if(repair(s)){location.reload();return}overwriteBaseDisplays(s);injectToday(s);injectTrackers(s);injectRecords(s);injectMonthly(s)}
+let pending=false;const schedule=()=>{if(pending)return;pending=true;queueMicrotask(()=>{pending=false;run()})};
+new MutationObserver(schedule).observe(root,{childList:true,subtree:true});
+run();
