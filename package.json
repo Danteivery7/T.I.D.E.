@@ -1,0 +1,8 @@
+{
+  "name":"tide-life-tracker",
+  "version":"1.0.0",
+  "private":true,
+  "type":"module",
+  "scripts":{"test":"node --test tests/*.test.js"},
+  "dependencies":{"@netlify/blobs":"10.7.13"}
+}
