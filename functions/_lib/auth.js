@@ -7,7 +7,9 @@ function bytes(value){return new TextEncoder().encode(String(value??''))}
 async function digest(value){return new Uint8Array(await crypto.subtle.digest('SHA-256',bytes(value)))}
 async function safeEqual(a,b){
   const da=await digest(a),db=await digest(b);
-  return crypto.subtle.timingSafeEqual(da,db);
+  if(da.length!==db.length)return false;
+  let diff=0;for(let i=0;i<da.length;i++)diff|=da[i]^db[i];
+  return diff===0;
 }
 async function hmacHex(secret,message){
   const key=await crypto.subtle.importKey('raw',bytes(secret),{name:'HMAC',hash:'SHA-256'},false,['sign']);
