@@ -1,7 +1,8 @@
-import {displayTitle,gaming,hours,keyTitle,maxDate,now,saveGaming,today,toast} from './gaming-data.js';
+import {displayTitle,gaming,hours,keyTitle,maxDate,now,saveGaming,toast} from './gaming-data.js';
 
 const PC_SOURCE_VERSION='pc-monthly-v4';
 const RECOVERY_VERSION='baseline-month-recovery-v2';
+function localToday(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 
 function isUbisoft(x){return x.environment==='uplay'||x.environment==='ubisoft';}
 function chooseUbisoftIdentity(g,games){
@@ -82,7 +83,7 @@ function process(data){
   for(const x of exoSteam){const k=keyTitle(x.title);if(!steamAdded.has(k)&&(Number(x.minutes)||0)>0){next.push(steamFallbackSource(x));steamAdded.add(k);}}
   if(!data.steam?.ok&&!exoSteam.length)next.push(...(g.latestSources||[]).filter(x=>x.sourceFamily==='steam'));
 
-  const first=!g.baselineDate,date=today(),deltaGames={};
+  const first=!g.baselineDate,date=localToday(),deltaGames={};
   if(!first){
     for(const cur of next){
       const old=previous.get(cur.sourceKey);if(!old)continue;
@@ -104,7 +105,7 @@ function process(data){
   }
 
   recoverBaselineMonth(g,next,date,data);
-  g.latestSources=next;g.lastRefreshAt=data.capturedAt||now();g.liveSourceVersion=PC_SOURCE_VERSION;g.liveStatus={exophase:data.exophase||{},steam:data.steam||{}};
+  g.latestSources=next;g.lastRefreshAt=data.capturedAt||now();g.lastRefreshLocalDate=date;g.liveSourceVersion=PC_SOURCE_VERSION;g.liveStatus={exophase:data.exophase||{},steam:data.steam||{}};
   saveGaming(g);
   return{first,added:Object.values(deltaGames).reduce((n,x)=>n+Object.values(x.platformMinutes).reduce((a,b)=>a+b,0),0)};
 }
@@ -118,4 +119,4 @@ export async function refreshGaming({manual=false,onDone=null}={}){
     onDone?.(data,result);return data;
   }catch(e){if(manual)toast(e.message,'bad');return null;}
 }
-export function autoRefreshGaming(){const g=gaming();if(g.liveSourceVersion!==PC_SOURCE_VERSION||g.monthRecoveryVersion!==RECOVERY_VERSION||g.lastRefreshAt?.slice(0,10)!==today())refreshGaming({manual:false});}
+export function autoRefreshGaming(){const g=gaming();if(g.liveSourceVersion!==PC_SOURCE_VERSION||g.monthRecoveryVersion!==RECOVERY_VERSION||g.lastRefreshLocalDate!==localToday())refreshGaming({manual:false});}
