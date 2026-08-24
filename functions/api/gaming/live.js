@@ -3,6 +3,10 @@ import { isAuthenticated, json } from '../../_lib/auth.js';
 const EXOPHASE_USER='danteivery';
 const STEAM_ID='76561199195640502';
 const UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151 Safari/537.36';
+const UBISOFT_PROFILE_ID='8faa07b7-9af4-48ea-8425-a03af1cace58';
+const MOTORFEST_SPACE_ID='214f082f-df82-47ed-8308-2dd21eaf5eb4';
+const DEFAULT_UBISOFT_APP_ID='314d4fef-e568-454a-ae06-43e3bece12a6';
+const UBISOFT_TOKEN_KEY='ubisoft_remember_me';
 
 function dateFromUnix(value){const n=Number(value)||0;return n>0?new Date(n*1000).toISOString().slice(0,10):'';}
 function playMinutes(game){
@@ -34,9 +38,6 @@ function platformFor(game,environment=environmentFor(game)){
   const env=String(environment||'').toLowerCase(),tokens=platformTokens(game),joined=tokens.join(' '),has=x=>tokens.some(t=>t.includes(x));
   const ps5=/\bps\s*5\b|playstation\s*5|playstation5/.test(joined),ps4=/\bps\s*4\b|playstation\s*4|playstation4/.test(joined),playstation=ps5||ps4||has('playstation')||has('psn');
   const xbox=/xbox\s*(one|series|360)|\bxbox\b/.test(joined),nintendo=/nintendo|switch/.test(joined),steam=has('steam'),windows=/\bwindows\b|\bpc\b/.test(joined);
-  // Exophase can expose Ubisoft/Uplay as the service while its platform metadata
-  // identifies the actual device. Device metadata wins so console copies never
-  // get flattened into Ubisoft PC.
   if(ps5&&!ps4)return'ps5';
   if(ps4&&!ps5)return'ps4';
   if(playstation)return'playstation';
@@ -85,6 +86,55 @@ async function exophase(env){
   }catch(error){return{ok:false,error:String(error?.message||error),games:[]};}
 }
 
+async function ensureServiceTokenTable(env){
+  if(!env?.TIDE_DB)return;
+  await env.TIDE_DB.prepare(`CREATE TABLE IF NOT EXISTS tide_service_tokens (key TEXT PRIMARY KEY, value TEXT NOT NULL, updated_at TEXT NOT NULL)`).run();
+}
+async function readServiceToken(env,key){
+  if(!env?.TIDE_DB)return'';
+  await ensureServiceTokenTable(env);
+  const row=await env.TIDE_DB.prepare('SELECT value FROM tide_service_tokens WHERE key=?1').bind(key).first();
+  return String(row?.value||'').trim();
+}
+async function writeServiceToken(env,key,value){
+  if(!env?.TIDE_DB||!value)return;
+  await ensureServiceTokenTable(env);
+  await env.TIDE_DB.prepare(`INSERT INTO tide_service_tokens (key,value,updated_at) VALUES (?1,?2,?3) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at`).bind(key,String(value),new Date().toISOString()).run();
+}
+async function createUbisoftSession(appId,rememberMe){
+  const r=await fetch('https://public-ubiservices.ubi.com/v3/profiles/sessions',{
+    method:'POST',
+    headers:{'accept':'application/json','content-type':'application/json','authorization':`rm_v1 t=${rememberMe}`,'ubi-appid':appId,'origin':'https://connect.ubisoft.com','referer':'https://connect.ubisoft.com/','user-agent':UA},
+    body:JSON.stringify({rememberMe:true})
+  });
+  let body={};try{body=await r.json();}catch{}
+  if(!r.ok||!body?.ticket)throw new Error(`Ubisoft session returned ${r.status}${body?.message?`: ${body.message}`:''}`);
+  return body;
+}
+async function ubisoftSession(env){
+  const appId=String(env?.UBISOFT_APP_ID||DEFAULT_UBISOFT_APP_ID).trim(),seed=String(env?.UBISOFT_REMEMBER_ME_TICKET||'').trim(),stored=await readServiceToken(env,UBISOFT_TOKEN_KEY),candidates=[stored,seed].filter((x,i,a)=>x&&a.indexOf(x)===i);
+  if(!candidates.length)throw new Error('UBISOFT_REMEMBER_ME_TICKET is not configured');
+  let body=null,lastError=null;
+  for(const rememberMe of candidates){try{body=await createUbisoftSession(appId,rememberMe);break;}catch(error){lastError=error;}}
+  if(!body)throw lastError||new Error('Ubisoft session could not be created');
+  if(body.rememberMeTicket){try{await writeServiceToken(env,UBISOFT_TOKEN_KEY,body.rememberMeTicket);}catch{}}
+  return{ticket:String(body.ticket),sessionId:String(body.sessionId||''),appId};
+}
+async function ubisoftMotorfest(env){
+  try{
+    const session=await ubisoftSession(env),u=new URL(`https://public-ubiservices.ubi.com/v1/profiles/${UBISOFT_PROFILE_ID}/stats`);
+    u.searchParams.set('spaceId',MOTORFEST_SPACE_ID);u.searchParams.set('statNames','Playtime');
+    const headers={'accept':'application/json','authorization':`Ubi_v1 t=${session.ticket}`,'ubi-appid':session.appId,'ubi-requestedplatformtype':'uplay','ubi-localecode':'en-US','origin':'https://connect.ubisoft.com','referer':'https://connect.ubisoft.com/','user-agent':UA};
+    if(session.sessionId)headers['ubi-sessionid']=session.sessionId;
+    const r=await fetch(u.toString(),{headers});
+    let body={};try{body=await r.json();}catch{}
+    if(!r.ok)throw new Error(`Playtime request returned ${r.status}${body?.message?`: ${body.message}`:''}`);
+    const stat=body?.stats?.Playtime,totalSeconds=Number(stat?.value);
+    if(!Number.isFinite(totalSeconds)||totalSeconds<0)throw new Error('Playtime response did not contain a valid value');
+    return{ok:true,profileId:UBISOFT_PROFILE_ID,spaceId:MOTORFEST_SPACE_ID,totalSeconds:Math.floor(totalSeconds),totalMinutes:Math.floor(totalSeconds/60),startDate:stat?.startDate||null,endDate:stat?.endDate||null,lastModified:stat?.lastModified||null,source:'ubisoft-stats'};
+  }catch(error){return{ok:false,error:String(error?.message||error),profileId:UBISOFT_PROFILE_ID,spaceId:MOTORFEST_SPACE_ID};}
+}
+
 function decodeXml(s){return String(s||'').replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'\"').replace(/&#39;/g,"'");}
 function tag(block,name){const m=block.match(new RegExp(`<${name}>([\\s\\S]*?)<\\/${name}>`,'i'));return decodeXml(m?.[1]||'').trim();}
 function titleKey(value){return String(value||'').replace(/[™®©]/g,'').replace(/[^a-z0-9]+/gi,' ').trim().toLowerCase();}
@@ -120,6 +170,6 @@ function mergeExophaseSteam(stm,exo){
 }
 export async function onRequestGet({env,request}){
   if(!(await isAuthenticated(env,request)))return json({error:'Connect T.I.D.E. Cloud Sync first.'},401);
-  const [exo,rawSteam]=await Promise.all([exophase(env),steam(env)]),stm=mergeExophaseSteam(rawSteam,exo);
-  return json({capturedAt:new Date().toISOString(),exophase:exo,steam:stm,ruleNotes:{legacyPs4:'Frozen PS4 history remains separate from live platform sources.',ubisoft:'The ~99h Ubisoft record is The Crew 2 on PC. Exophase device metadata wins over the Ubisoft/Uplay service label, so Xbox and PlayStation copies remain console sources. T.I.D.E. does not infer Ubisoft Motorfest hours.',steam:'Steam Web API is used when configured; current Steam community data and Exophase Steam are automatic fallbacks.',history:'Sources expose cumulative playtime and first/last played dates. T.I.D.E. creates its own monthly history from snapshots and never fabricates unavailable historical hours.'}});
+  const [exo,rawSteam,ubisoftMf]=await Promise.all([exophase(env),steam(env),ubisoftMotorfest(env)]),stm=mergeExophaseSteam(rawSteam,exo);
+  return json({capturedAt:new Date().toISOString(),exophase:exo,steam:stm,ubisoftMotorfest:ubisoftMf,ruleNotes:{legacyPs4:'Frozen PS4 history remains separate from live platform sources.',ubisoft:'The Crew 2 uses Exophase device metadata so Xbox and PlayStation stay console sources. Motorfest PC is derived each refresh from Ubisoft total Playtime minus current PS5 and Xbox Motorfest totals; Amazon Luna is intentionally not subtracted.',steam:'Steam Web API is used when configured; current Steam community data and Exophase Steam are automatic fallbacks.',history:'Sources expose cumulative playtime and first/last played dates. T.I.D.E. creates its own monthly history from snapshots and never fabricates unavailable historical hours.'}});
 }
