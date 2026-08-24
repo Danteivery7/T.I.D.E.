@@ -1,14 +1,13 @@
 import {displayTitle,gaming,keyTitle,maxDate,now,saveGaming,toast} from './gaming-data.js';
 
-const PC_SOURCE_VERSION='pc-monthly-v11';
+const PC_SOURCE_VERSION='pc-monthly-v12';
 const RECOVERY_VERSION='baseline-month-recovery-v2';
-const UBISOFT_CORRECTION_VERSION='crew2-pc-99-v1';
+const UBISOFT_CORRECTION_VERSION='crew2-device-platform-v2';
 function localToday(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 
-function isUbisoft(x){
-  const env=String(x?.environment||'').toLowerCase(),platform=String(x?.platform||'').toLowerCase(),source=String(x?.sourceKey||'').toLowerCase(),canonical=String(x?.canonicalUrl||'').toLowerCase();
-  return env.includes('uplay')||env.includes('ubisoft')||platform==='ubisoft'||source.includes(':uplay:')||source.includes(':ubisoft:')||canonical.includes('uplay')||canonical.includes('ubisoft');
-}
+// Only a row the server has already classified as Ubisoft PC belongs in the PC identity.
+// Ubisoft/Uplay-linked Xbox and PlayStation rows keep their console platform.
+function isUbisoft(x){return String(x?.platform||'').toLowerCase()==='ubisoft';}
 function isSteam(x){return String(x?.environment||'').toLowerCase()==='steam'||String(x?.platform||'').toLowerCase()==='steam';}
 function isMotorfest(x){return /(?:the\s+crew\s+)?motorfest/i.test(String(x?.title||''));}
 function isCrew2(x){return /(?:the\s+)?crew\s*2/i.test(String(x?.title||''));}
@@ -25,7 +24,7 @@ function cleanInvalidMotorfestInference(g){
     }
   };
   cleanRecords(g.activity);cleanRecords(g.recoveredMonths);
-  g.latestSources=(g.latestSources||[]).filter(x=>!(isUbisoft(x)&&isMotorfest(x)));
+  g.latestSources=(g.latestSources||[]).filter(x=>!(String(x?.platform||'').toLowerCase()==='ubisoft'&&isMotorfest(x)));
   delete g.ubisoftMotorfestPlayerId;delete g.ubisoftMotorfestSourceKey;delete g.ubisoftMotorfestMinutes;
   g.ubisoftCorrectionVersion=UBISOFT_CORRECTION_VERSION;
 }
@@ -104,13 +103,14 @@ function process(data){
       if(isSteam(x))continue;
       if(isUbisoft(x)){
         if(!sameUbisoftAccount(x,ubiIdentity))continue;
-        const kept={...x,sourceFamily:'exophase',platform:'ubisoft',environment:'ubisoft',countMinutes:true};
+        const kept={...x,sourceFamily:'exophase',platform:'ubisoft',countMinutes:true};
         next.push(kept);keptUbisoft.push(kept);continue;
       }
+      // Console rows from a Ubisoft/Uplay service stay Xbox / PS4 / PS5 / PlayStation here.
       next.push({...x,sourceFamily:'exophase',countMinutes:true});
     }
     g._steamLast=steamLast;g._steamFirst=steamFirst;g.exophasePlayerId=data.exophase.playerId||g.exophasePlayerId||'';
-    g.ubisoftLiveDiagnostics={pagesRead:data.exophase.pagesRead||0,pageSizes:data.exophase.pageSizes||[],candidates:data.exophase.ubisoftCandidates||[],identityAnchor:g.ubisoftIdentityAnchor||'',selected:ubiIdentity?{title:ubiIdentity.title,minutes:Number(ubiIdentity.minutes)||0,sourceKey:ubiIdentity.sourceKey,masterPlayerId:ubiIdentity.masterPlayerId||'',platformTokens:ubiIdentity.platformTokens||[]}:null,keptGames:keptUbisoft.map(x=>({title:x.title,minutes:Number(x.minutes)||0,masterPlayerId:x.masterPlayerId||'',sourceKey:x.sourceKey})),updatedAt:now()};
+    g.ubisoftLiveDiagnostics={pagesRead:data.exophase.pagesRead||0,pageSizes:data.exophase.pageSizes||[],candidates:data.exophase.crewCandidates||data.exophase.ubisoftCandidates||[],identityAnchor:g.ubisoftIdentityAnchor||'',selected:ubiIdentity?{title:ubiIdentity.title,minutes:Number(ubiIdentity.minutes)||0,sourceKey:ubiIdentity.sourceKey,masterPlayerId:ubiIdentity.masterPlayerId||'',platformTokens:ubiIdentity.platformTokens||[]}:null,keptGames:keptUbisoft.map(x=>({title:x.title,minutes:Number(x.minutes)||0,masterPlayerId:x.masterPlayerId||'',sourceKey:x.sourceKey})),updatedAt:now()};
   }else next.push(...(g.latestSources||[]).filter(x=>x.sourceFamily==='exophase'));
 
   const steamAdded=new Set();
