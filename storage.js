@@ -1,12 +1,13 @@
 import { freshState } from './engine.js';
 
 const LOCAL_KEY='tide_state_v1';
+const OUTBOX_KEY='tide_shared_outbox_v1';
 const DRAFT_PREFIX='tide_draft:';
-const SYNC_STAMP='tide_shared_sync_stamp_v1';
+const DC_RECOVERY='dc-119-persistence-recovery-v1';
 const nativeSetItem=typeof Storage!=='undefined'?Storage.prototype.setItem:null;
+const nativeRemoveItem=typeof Storage!=='undefined'?Storage.prototype.removeItem:null;
 let syncTimer=null;
-let syncPending=null;
-let syncRunning=false;
+let syncPromise=null;
 
 function migrate(input){
   const base=freshState();
@@ -21,92 +22,37 @@ function migrate(input){
   };
 }
 
-function rawWriteLocal(state){
-  const json=JSON.stringify(state);
-  if(nativeSetItem)nativeSetItem.call(localStorage,LOCAL_KEY,json);
-  else localStorage.setItem(LOCAL_KEY,json);
+function rawSet(key,value){
+  if(nativeSetItem)nativeSetItem.call(localStorage,key,value);
+  else localStorage.setItem(key,value);
 }
-
-async function sharedPush(state){
-  const response=await fetch('/api/tide/state',{
-    method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},
-    body:JSON.stringify({state}),
-  });
-  if(response.status===401||response.status===503)return null;
-  let body={};try{body=await response.json()}catch{}
-  if(!response.ok)throw new Error(body.error||`Shared sync failed (${response.status})`);
-  if(body.state){
-    const latest=loadLocal();
-    const merged=mergeStates(latest,body.state);
-    rawWriteLocal(merged);
-    try{sessionStorage.setItem(SYNC_STAMP,String(merged.updatedAt||''))}catch{}
-    return {...body,state:merged};
-  }
-  try{sessionStorage.setItem(SYNC_STAMP,String(state.updatedAt||''))}catch{}
-  return body;
+function rawRemove(key){
+  if(nativeRemoveItem)nativeRemoveItem.call(localStorage,key);
+  else localStorage.removeItem(key);
 }
-
-async function flushSharedSync(){
-  if(syncRunning||!syncPending)return;
-  syncRunning=true;
+function rawWriteLocal(state){rawSet(LOCAL_KEY,JSON.stringify(migrate(state)));}
+function readLocalRaw(){
+  try{const raw=localStorage.getItem(LOCAL_KEY);return raw?migrate(JSON.parse(raw)):freshState();}
+  catch{return freshState();}
+}
+function envelopeId(){return crypto?.randomUUID?.()||`${Date.now()}-${Math.random().toString(36).slice(2)}`;}
+function readOutbox(){
   try{
-    while(syncPending){
-      const state=syncPending;syncPending=null;
-      try{await sharedPush(state)}catch{}
-    }
-  }finally{syncRunning=false}
+    const raw=localStorage.getItem(OUTBOX_KEY);if(!raw)return null;
+    const parsed=JSON.parse(raw);
+    if(parsed?.state)return {...parsed,state:migrate(parsed.state)};
+    return {id:`legacy-${String(parsed?.updatedAt||Date.now())}`,queuedAt:new Date().toISOString(),state:migrate(parsed)};
+  }catch{return null;}
 }
-
-function scheduleSharedSync(value,{immediate=false}={}){
-  if(typeof window==='undefined')return;
-  let state;try{state=migrate(typeof value==='string'?JSON.parse(value):value)}catch{return}
-  const stamp=String(state.updatedAt||'');
-  try{if(stamp&&sessionStorage.getItem(SYNC_STAMP)===stamp)return}catch{}
-  syncPending=state;
-  clearTimeout(syncTimer);
-  syncTimer=setTimeout(()=>void flushSharedSync(),immediate?0:120);
+function queueState(state){
+  const envelope={id:envelopeId(),queuedAt:new Date().toISOString(),state:migrate(state)};
+  rawSet(OUTBOX_KEY,JSON.stringify(envelope));
+  return envelope;
 }
-
-// Catch writes made by every part of T.I.D.E., including enhancement controls that write localStorage directly.
-if(typeof window!=='undefined'&&nativeSetItem&&!window.__tideSharedStoragePatched){
-  window.__tideSharedStoragePatched=true;
-  Storage.prototype.setItem=function(key,value){
-    nativeSetItem.call(this,key,value);
-    if(this===localStorage&&key===LOCAL_KEY)scheduleSharedSync(value);
-  };
-  // A reload immediately after a local write cannot lose the sync: the new page uploads the newest state here.
-  const existing=localStorage.getItem(LOCAL_KEY);
-  if(existing)scheduleSharedSync(existing,{immediate:true});
+function clearEnvelope(id){
+  const current=readOutbox();
+  if(current?.id===id)rawRemove(OUTBOX_KEY);
 }
-
-export function loadLocal(){try{const raw=localStorage.getItem(LOCAL_KEY);if(!raw)return freshState();return migrate(JSON.parse(raw))}catch{return freshState()}}
-export function saveLocal(state){state=migrate(state);state.updatedAt=new Date().toISOString();localStorage.setItem(LOCAL_KEY,JSON.stringify(state));return state}
-export function saveDraft(date,text){localStorage.setItem(`${DRAFT_PREFIX}${date}`,String(text||''))}
-export function loadDraft(date){return localStorage.getItem(`${DRAFT_PREFIX}${date}`)}
-export function clearDraft(date){localStorage.removeItem(`${DRAFT_PREFIX}${date}`)}
-export function exportState(state){return new Blob([JSON.stringify(state,null,2)],{type:'application/json'})}
-export function importStateObject(obj){return migrate(obj)}
-
-async function jsonFetch(url,options={}){
-  const response=await fetch(url,{credentials:'same-origin',headers:{'content-type':'application/json',...(options.headers||{})},...options});
-  let body={};try{body=await response.json()}catch{}
-  if(!response.ok)throw new Error(body.error||`Request failed (${response.status})`);
-  return body;
-}
-
-export async function cloudStatus(){try{return await jsonFetch('/api/auth/status',{method:'GET',headers:{}})}catch{return {configured:false,authenticated:false,offline:true}}}
-export async function cloudLogin(password){
-  const result=await jsonFetch('/api/auth/login',{method:'POST',body:JSON.stringify({password})});
-  // Connection itself performs the migration: merge this device with shared state, then upload the merged database.
-  const pulled=await jsonFetch('/api/tide/state',{method:'GET',headers:{}});
-  const merged=mergeStates(loadLocal(),pulled.state);
-  rawWriteLocal(merged);
-  await sharedPush(merged);
-  return result;
-}
-export async function cloudLogout(){return jsonFetch('/api/auth/logout',{method:'POST',body:'{}'})}
-export async function cloudPull(){return jsonFetch('/api/tide/state',{method:'GET',headers:{}})}
-export async function cloudPush(state,etag=null){return jsonFetch('/api/tide/state',{method:'POST',body:JSON.stringify({state,etag})})}
 
 function newer(a,b){
   if(!a)return b;if(!b)return a;
@@ -129,7 +75,6 @@ function mergeCounters(local={},remote={}){
   out.authoritativeTrackerTotals=mergeMapByTime(remote.authoritativeTrackerTotals||{},local.authoritativeTrackerTotals||{});
   return out;
 }
-
 export function mergeStates(local,remote){
   if(!remote)return migrate(local);
   if(!local)return migrate(remote);
@@ -151,4 +96,120 @@ export function mergeStates(local,remote){
   out.settings={...(r.settings||{}),...(l.settings||{}),migrations:{...(r.settings?.migrations||{}),...(l.settings?.migrations||{})}};
   out.updatedAt=new Date().toISOString();
   return out;
+}
+
+export function loadLocal(){
+  const local=readLocalRaw(),pending=readOutbox();
+  return pending?.state?mergeStates(local,pending.state):local;
+}
+export function saveLocal(state){
+  state=migrate(state);state.updatedAt=new Date().toISOString();
+  localStorage.setItem(LOCAL_KEY,JSON.stringify(state));
+  return state;
+}
+export function saveDraft(date,text){localStorage.setItem(`${DRAFT_PREFIX}${date}`,String(text||''));}
+export function loadDraft(date){return localStorage.getItem(`${DRAFT_PREFIX}${date}`);}
+export function clearDraft(date){localStorage.removeItem(`${DRAFT_PREFIX}${date}`);}
+export function exportState(state){return new Blob([JSON.stringify(state,null,2)],{type:'application/json'});}
+export function importStateObject(obj){return migrate(obj);}
+
+async function jsonFetch(url,options={}){
+  const response=await fetch(url,{credentials:'same-origin',headers:{'content-type':'application/json',...(options.headers||{})},...options});
+  let body={};try{body=await response.json();}catch{}
+  if(!response.ok)throw new Error(body.error||`Request failed (${response.status})`);
+  return body;
+}
+
+async function pushEnvelope(envelope){
+  const response=await fetch('/api/tide/state',{
+    method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},
+    body:JSON.stringify({state:envelope.state}),
+  });
+  let body={};try{body=await response.json();}catch{}
+  if(!response.ok)throw new Error(body.error||`Shared sync failed (${response.status})`);
+  const latest=loadLocal();
+  const confirmed=body.state?mergeStates(latest,body.state):latest;
+  rawWriteLocal(confirmed);
+  clearEnvelope(envelope.id);
+  return {...body,ok:body.ok!==false,state:confirmed};
+}
+
+export async function flushSharedSync(){
+  if(syncPromise)return syncPromise;
+  syncPromise=(async()=>{
+    let last=null;
+    while(true){
+      const envelope=readOutbox();
+      if(!envelope)return last;
+      last=await pushEnvelope(envelope);
+    }
+  })();
+  try{return await syncPromise;}
+  finally{syncPromise=null;}
+}
+function scheduleSharedSync({immediate=false}={}){
+  if(typeof window==='undefined'||!readOutbox())return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>{void flushSharedSync().catch(()=>{});},immediate?0:120);
+}
+
+// Every T.I.D.E. state write is synchronously copied to a durable outbox before any reload/navigation can interrupt networking.
+if(typeof window!=='undefined'&&nativeSetItem&&!window.__tideSharedStoragePatched){
+  window.__tideSharedStoragePatched=true;
+  Storage.prototype.setItem=function(key,value){
+    nativeSetItem.call(this,key,value);
+    if(this===localStorage&&key===LOCAL_KEY){
+      try{queueState(JSON.parse(value));scheduleSharedSync();}catch{}
+    }
+  };
+  if(readOutbox())scheduleSharedSync({immediate:true});
+}
+
+function recoverDailyChallenge119(){
+  try{
+    const state=readLocalRaw();
+    state.settings||={};state.settings.migrations||={};
+    if(state.settings.migrations[DC_RECOVERY])return;
+    const dc=state?.tideCounters?.dailyChallenge;
+    const current=Number(dc?.current);
+    if(current===118){
+      const stamp=new Date().toISOString();
+      state.tideCounters||={};
+      state.tideCounters.dailyChallenge={
+        ...(dc||{}),current:119,longest:Math.max(119,Number(dc?.longest)||0),lastCounted:'2026-08-23',
+        longestEnd:Number(dc?.longest)>=119?(dc?.longestEnd||'2026-08-23'):'2026-08-23',updatedAt:stamp,
+      };
+      state.settings.migrations[DC_RECOVERY]=true;
+      state.updatedAt=stamp;
+      localStorage.setItem(LOCAL_KEY,JSON.stringify(state));
+    }else if(current>=119){
+      state.settings.migrations[DC_RECOVERY]=true;
+      state.updatedAt=new Date().toISOString();
+      localStorage.setItem(LOCAL_KEY,JSON.stringify(state));
+    }
+  }catch{}
+}
+if(typeof window!=='undefined')recoverDailyChallenge119();
+
+export async function cloudStatus(){try{return await jsonFetch('/api/auth/status',{method:'GET',headers:{}});}catch{return {configured:false,authenticated:false,offline:true};}}
+export async function cloudLogin(password){
+  const result=await jsonFetch('/api/auth/login',{method:'POST',body:JSON.stringify({password})});
+  const pulled=await jsonFetch('/api/tide/state',{method:'GET',headers:{}});
+  const merged=mergeStates(loadLocal(),pulled.state);
+  rawWriteLocal(merged);
+  queueState(merged);
+  await flushSharedSync();
+  return result;
+}
+export async function cloudLogout(){return jsonFetch('/api/auth/logout',{method:'POST',body:'{}'});}
+export async function cloudPull(){
+  // Pending local changes always reach D1 before an older cloud snapshot is allowed to come back down.
+  if(readOutbox())await flushSharedSync();
+  return jsonFetch('/api/tide/state',{method:'GET',headers:{}});
+}
+export async function cloudPush(state,etag=null){
+  const next=migrate(state);next.updatedAt=String(next.updatedAt||new Date().toISOString());
+  rawWriteLocal(next);
+  queueState(next);
+  return await flushSharedSync();
 }
