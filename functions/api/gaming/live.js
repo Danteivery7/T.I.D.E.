@@ -31,24 +31,30 @@ function environmentFor(game){
   return'';
 }
 function platformFor(game,environment=environmentFor(game)){
-  const env=String(environment||'').toLowerCase(),tokens=platformTokens(game),has=x=>tokens.some(t=>t.includes(x));
-  if(env.includes('uplay')||env.includes('ubisoft'))return'ubisoft';
-  if(env.includes('steam'))return'steam';
+  const env=String(environment||'').toLowerCase(),tokens=platformTokens(game),joined=tokens.join(' '),has=x=>tokens.some(t=>t.includes(x));
+  const ps5=/\bps\s*5\b|playstation\s*5|playstation5/.test(joined),ps4=/\bps\s*4\b|playstation\s*4|playstation4/.test(joined),playstation=ps5||ps4||has('playstation')||has('psn');
+  const xbox=/xbox\s*(one|series|360)|\bxbox\b/.test(joined),nintendo=/nintendo|switch/.test(joined),steam=has('steam'),windows=/\bwindows\b|\bpc\b/.test(joined);
+  // Exophase can expose Ubisoft/Uplay as the service while its platform metadata
+  // identifies the actual device. Device metadata wins so console copies never
+  // get flattened into Ubisoft PC.
+  if(ps5&&!ps4)return'ps5';
+  if(ps4&&!ps5)return'ps4';
+  if(playstation)return'playstation';
+  if(xbox)return'xbox';
+  if(nintendo)return'nintendo';
+  if(steam)return'steam';
+  if(env.includes('xbox'))return'xbox';
+  if(env==='ps5')return'ps5';
+  if(env==='ps4')return'ps4';
+  if(env==='psn'||env.includes('playstation'))return'playstation';
   if(env.includes('nintendo')||env.includes('switch'))return'nintendo';
+  if(env.includes('steam'))return'steam';
+  if(env.includes('uplay')||env.includes('ubisoft'))return'ubisoft';
   if(env==='origin'||env==='ea')return'ea';
   if(env==='gog')return'gog';
   if(env==='epic')return'epic';
-  if(env.includes('xbox'))return'xbox';
-  if(env==='psn'||env.includes('playstation')||env==='ps4'||env==='ps5'){
-    const p4=has('ps4'),p5=has('ps5');
-    if(p5&&!p4)return'ps5';
-    if(p4&&!p5)return'ps4';
-    return'playstation';
-  }
-  if(env==='windows')return'windows';
-  if(has('steam'))return'steam';if(has('xbox'))return'xbox';if(has('switch')||has('nintendo'))return'nintendo';
-  if(has('playstation')||has('ps4')||has('ps5'))return has('ps5')&&!has('ps4')?'ps5':has('ps4')&&!has('ps5')?'ps4':'playstation';
-  if(has('windows'))return'windows';return env||'other';
+  if(env==='windows'||windows)return'windows';
+  return env||'other';
 }
 function normalizeExophaseGame(g,index=0){
   const title=String(g?.meta?.title||g?.title||'').trim();if(!title)return null;
@@ -73,8 +79,9 @@ async function exophase(env){
       for(let i=0;i<rows.length;i++){const item=normalizeExophaseGame(rows[i],games.length+i);if(item)games.push(item);}
       if(rows.length<50)break;
     }
-    const ubisoftCandidates=games.filter(x=>x.platform==='ubisoft'&&/the crew 2|motorfest/i.test(x.title)).map(x=>({title:x.title,minutes:x.minutes,sourceKey:x.sourceKey,masterPlayerId:x.masterPlayerId,masterId:x.masterId,environment:x.environment,platformTokens:x.platformTokens,canonicalUrl:x.canonicalUrl}));
-    return{ok:true,playerId,games,pagesRead:pageSizes.filter(n=>n>0).length,pageSizes,ubisoftCandidates};
+    const crewCandidates=games.filter(x=>/the crew 2|motorfest/i.test(x.title)).map(x=>({title:x.title,minutes:x.minutes,sourceKey:x.sourceKey,masterPlayerId:x.masterPlayerId,masterId:x.masterId,environment:x.environment,platform:x.platform,platformTokens:x.platformTokens,canonicalUrl:x.canonicalUrl}));
+    const ubisoftCandidates=crewCandidates.filter(x=>x.platform==='ubisoft');
+    return{ok:true,playerId,games,pagesRead:pageSizes.filter(n=>n>0).length,pageSizes,crewCandidates,ubisoftCandidates};
   }catch(error){return{ok:false,error:String(error?.message||error),games:[]};}
 }
 
@@ -114,5 +121,5 @@ function mergeExophaseSteam(stm,exo){
 export async function onRequestGet({env,request}){
   if(!(await isAuthenticated(env,request)))return json({error:'Connect T.I.D.E. Cloud Sync first.'},401);
   const [exo,rawSteam]=await Promise.all([exophase(env),steam(env)]),stm=mergeExophaseSteam(rawSteam,exo);
-  return json({capturedAt:new Date().toISOString(),exophase:exo,steam:stm,ruleNotes:{legacyPs4:'Frozen PS4 history remains separate from live platform sources.',ubisoft:'The ~99h Ubisoft record is The Crew 2 on PC. T.I.D.E. does not infer or fabricate Ubisoft Motorfest hours. If Exophase later exposes real Motorfest playtime, it can be used then.',steam:'Steam Web API is used when configured; current Steam community data and Exophase Steam are automatic fallbacks.',history:'Sources expose cumulative playtime and first/last played dates. T.I.D.E. creates its own monthly history from snapshots and never fabricates unavailable historical hours.'}});
+  return json({capturedAt:new Date().toISOString(),exophase:exo,steam:stm,ruleNotes:{legacyPs4:'Frozen PS4 history remains separate from live platform sources.',ubisoft:'The ~99h Ubisoft record is The Crew 2 on PC. Exophase device metadata wins over the Ubisoft/Uplay service label, so Xbox and PlayStation copies remain console sources. T.I.D.E. does not infer Ubisoft Motorfest hours.',steam:'Steam Web API is used when configured; current Steam community data and Exophase Steam are automatic fallbacks.',history:'Sources expose cumulative playtime and first/last played dates. T.I.D.E. creates its own monthly history from snapshots and never fabricates unavailable historical hours.'}});
 }
