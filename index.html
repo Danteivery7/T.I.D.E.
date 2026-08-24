@@ -73,8 +73,12 @@
   </dialog>
 
   <script type="importmap">{"imports":{"./engine.js":"./engine-v3.js"}}</script>
-  <script type="module" src="app.js"></script>
-  <script type="module" src="enhancements.js"></script>
-  <script type="module" src="platform-copy.js"></script>
+  <script type="module">
+    import { ensureBundledHistory } from './history-bootstrap.js';
+    await ensureBundledHistory();
+    await import('./app.js');
+    await import('./enhancements.js');
+    await import('./platform-copy.js');
+  </script>
 </body>
 </html>
