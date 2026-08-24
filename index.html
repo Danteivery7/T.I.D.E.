@@ -72,13 +72,13 @@
     <div id="modal-body" class="modal-body"></div>
   </dialog>
 
-  <script type="importmap">{"imports":{"./engine.js":"./engine-v3.js"}}</script>
+  <script type="importmap">{"imports":{"./engine.js":"./engine-v4.js"}}</script>
   <script type="module">
     import { ensureBundledHistory } from './history-bootstrap.js';
     await ensureBundledHistory();
     await import('./app.js');
     await import('./enhancements.js');
-    await import('./tenk-control.js');
+    await import('./tracker-upgrades.js');
     await import('./platform-copy.js');
   </script>
 </body>
