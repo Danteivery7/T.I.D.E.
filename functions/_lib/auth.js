@@ -1,5 +1,5 @@
 const COOKIE_NAME='tide_session';
-const SESSION_SECONDS=60*60*24*30;
+const SESSION_SECONDS=60*60*24*3650;
 
 export function isConfigured(env){return Boolean(env?.TIDE_ACCESS_CODE&&env?.TIDE_DB)}
 
