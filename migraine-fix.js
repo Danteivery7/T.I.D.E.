@@ -2,6 +2,8 @@ import { loadLocal, saveLocal } from './storage.js';
 import { trackerTotal } from './engine-v4.js';
 
 const ID='migraines';
+const COLLISIONS='apartment-collisions';
+const COLLISION_SPLIT_MIGRATION='collision-month-split-v1';
 const root=document.querySelector('#view-root');
 
 function otherYears(state){
@@ -42,16 +44,38 @@ function applyMigraineHistory(){
   saveLocal(state);
 }
 
-function hideDuplicate10k(){
+function applyCollisionSplit(){
+  const state=loadLocal();
+  state.settings||={};state.settings.migrations||={};state.tideCounters||={};state.tideCounters.authoritativeTrackerTotals||={};
+  if(state.settings.migrations[COLLISION_SPLIT_MIGRATION])return;
+  const rec=state.tideCounters.authoritativeTrackerTotals[COLLISIONS];
+  if(!rec)return;
+  rec.months={...(rec.months||{}),'2026-07':6,'2026-08':6};
+  rec.updatedAt=new Date().toISOString();
+  state.tideCounters.authoritativeTrackerTotals[COLLISIONS]=rec;
+  state.settings.migrations[COLLISION_SPLIT_MIGRATION]=true;
+  saveLocal(state);
+}
+
+function fixTrackerRows(){
   if((root?.querySelector('.page-head h1')?.textContent||'')!=='Trackers')return;
   root.querySelectorAll('.tracker-row').forEach(row=>{
-    if(row.querySelector('.tracker-name b')?.textContent?.trim()==='Geoguessr 10K Streak')row.style.display='none';
+    const name=row.querySelector('.tracker-name b')?.textContent?.trim();
+    if(name==='Geoguessr 10K Streak')row.style.display='none';
+    if(['Collisions','Walked into an object (Apartment)'].includes(name))row.style.display='';
   });
+  const collisionInput=root.querySelector('#authoritative-collisions');
+  if(collisionInput){
+    const filter=collisionInput.closest('.filter-row'),title=filter?.previousElementSibling;
+    if(title?.classList.contains('section-title')&&title.textContent?.trim()==='COLLISIONS')title.remove();
+    filter?.remove();
+  }
 }
 
 function refresh(){
   applyMigraineHistory();
-  requestAnimationFrame(()=>requestAnimationFrame(hideDuplicate10k));
+  applyCollisionSplit();
+  setTimeout(fixTrackerRows,40);
 }
 
 refresh();
