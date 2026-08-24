@@ -1,21 +1,30 @@
 import {displayTitle,gaming,hours,keyTitle,maxDate,now,saveGaming,toast} from './gaming-data.js';
 
-const PC_SOURCE_VERSION='pc-monthly-v4';
+const PC_SOURCE_VERSION='pc-monthly-v5';
 const RECOVERY_VERSION='baseline-month-recovery-v2';
 function localToday(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 
-function isUbisoft(x){return x.environment==='uplay'||x.environment==='ubisoft';}
+function isUbisoft(x){
+  const env=String(x?.environment||'').toLowerCase(),platform=String(x?.platform||'').toLowerCase(),source=String(x?.sourceKey||'').toLowerCase();
+  return env.includes('uplay')||env.includes('ubisoft')||platform==='ubisoft'||source.includes(':uplay:')||source.includes(':ubisoft:');
+}
+function isMotorfest(x){return /(?:the\s+crew\s+)?motorfest/i.test(String(x?.title||''));}
 function chooseUbisoftIdentity(g,games){
-  const candidates=games.filter(x=>isUbisoft(x)&&/the crew motorfest/i.test(x.title||''));
+  const candidates=games.filter(x=>isUbisoft(x)&&isMotorfest(x));
   if(!candidates.length)return null;
-  const savedPlayer=String(g.ubisoftMotorfestPlayerId||''),positive=candidates.filter(x=>(Number(x.minutes)||0)>0);
-  let chosen=savedPlayer?candidates.find(x=>String(x.masterPlayerId||'')===savedPlayer):null;
-  if(!chosen||((Number(chosen.minutes)||0)<=0&&positive.length)){
-    const pool=positive.length?positive:candidates;
-    chosen=pool.slice().sort((a,b)=>Math.abs((Number(a.minutes)||0)-5940)-Math.abs((Number(b.minutes)||0)-5940))[0];
+  const savedPlayer=String(g.ubisoftMotorfestPlayerId||''),positive=candidates.filter(x=>(Number(x.minutes)||0)>0),pool=positive.length?positive:candidates;
+  const chosen=pool.slice().sort((a,b)=>{
+    const da=Math.abs((Number(a.minutes)||0)-5940),db=Math.abs((Number(b.minutes)||0)-5940);
+    if(da!==db)return da-db;
+    const as=String(a.masterPlayerId||'')===savedPlayer?0:1,bs=String(b.masterPlayerId||'')===savedPlayer?0:1;
+    return as-bs;
+  })[0]||null;
+  if(chosen){
+    g.ubisoftMotorfestPlayerId=String(chosen.masterPlayerId||'');
+    g.ubisoftMotorfestSourceKey=chosen.sourceKey;
+    g.ubisoftMotorfestMinutes=Number(chosen.minutes)||0;
   }
-  if(chosen){g.ubisoftMotorfestPlayerId=String(chosen.masterPlayerId||'');g.ubisoftMotorfestSourceKey=chosen.sourceKey;}
-  return chosen||null;
+  return chosen;
 }
 function shift(date,n){const [y,m,d]=String(date).split('-').map(Number);return new Date(Date.UTC(y,m-1,d+n)).toISOString().slice(0,10);}
 function trackedByGamePlatform(g,start,end){
@@ -67,7 +76,11 @@ function process(data){
     for(const x of exoGames)if(x.environment==='steam'){steamLast[keyTitle(x.title)]=x.lastPlayed||'';steamFirst[keyTitle(x.title)]=x.firstPlayed||'';exoSteam.push(x);}
     for(const x of exoGames){
       if(x.environment==='steam')continue;
-      if(isUbisoft(x)&&(!ubiIdentity||String(x.masterPlayerId||'')!==String(ubiIdentity.masterPlayerId||'')))continue;
+      if(isUbisoft(x)){
+        if(!ubiIdentity||x.sourceKey!==ubiIdentity.sourceKey)continue;
+        next.push({...x,sourceFamily:'exophase',platform:'ubisoft',environment:'ubisoft',countMinutes:true});
+        continue;
+      }
       next.push({...x,sourceFamily:'exophase',countMinutes:true});
     }
     g._steamLast=steamLast;g._steamFirst=steamFirst;g.exophasePlayerId=data.exophase.playerId||g.exophasePlayerId||'';
