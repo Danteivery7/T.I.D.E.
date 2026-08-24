@@ -1,6 +1,6 @@
 import {displayTitle,gaming,hours,keyTitle,maxDate,now,saveGaming,toast} from './gaming-data.js';
 
-const PC_SOURCE_VERSION='pc-monthly-v6';
+const PC_SOURCE_VERSION='pc-monthly-v7';
 const RECOVERY_VERSION='baseline-month-recovery-v2';
 function localToday(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 
@@ -85,7 +85,7 @@ function process(data){
       next.push({...x,sourceFamily:'exophase',countMinutes:true});
     }
     g._steamLast=steamLast;g._steamFirst=steamFirst;g.exophasePlayerId=data.exophase.playerId||g.exophasePlayerId||'';
-    g.ubisoftLiveDiagnostics={pagesRead:data.exophase.pagesRead||0,pageSizes:data.exophase.pageSizes||[],candidates:data.exophase.ubisoftCandidates||[],selected:ubiIdentity?{title:ubiIdentity.title,minutes:Number(ubiIdentity.minutes)||0,sourceKey:ubiIdentity.sourceKey,masterPlayerId:ubiIdentity.masterPlayerId||'',canonicalUrl:ubiIdentity.canonicalUrl||''}:null,updatedAt:now()};
+    g.ubisoftLiveDiagnostics={pagesRead:data.exophase.pagesRead||0,pageSizes:data.exophase.pageSizes||[],profileFetch:data.exophase.profileFetch||'',recentGameCount:data.exophase.recentGameCount||0,candidates:data.exophase.ubisoftCandidates||[],enrichment:data.exophase.ubisoftEnrichment||{},selected:ubiIdentity?{title:ubiIdentity.title,minutes:Number(ubiIdentity.minutes)||0,sourceKey:ubiIdentity.sourceKey,masterPlayerId:ubiIdentity.masterPlayerId||'',canonicalUrl:ubiIdentity.canonicalUrl||'',source:ubiIdentity.source||''}:null,updatedAt:now()};
   }else next.push(...(g.latestSources||[]).filter(x=>x.sourceFamily==='exophase'));
 
   const steamAdded=new Set();
@@ -129,9 +129,12 @@ export async function refreshGaming({manual=false,onDone=null}={}){
     if(manual)toast('Refreshing gaming accounts…');
     const r=await fetch('/api/gaming/live',{credentials:'same-origin',cache:'no-store'}),data=await r.json();
     if(!r.ok)throw new Error(data.error||`Gaming refresh failed (${r.status})`);
-    const result=process(data),errors=[data.exophase?.ok?'':`Exophase: ${data.exophase?.error||'unavailable'}`,data.steam?.ok?'':`Steam: ${data.steam?.error||'unavailable'}`].filter(Boolean),ubi=result.ubiIdentity;
-    if(data.exophase?.ok&&!ubi)errors.push(`Ubisoft Motorfest: not found after ${data.exophase?.pagesRead||0} Exophase page${data.exophase?.pagesRead===1?'':'s'}`);
-    const ubiNote=ubi?` · Motorfest PC ${hours(Number(ubi.minutes)||0)} loaded`:'';
+    const result=process(data),errors=[data.exophase?.ok?'':`Exophase: ${data.exophase?.error||'unavailable'}`,data.steam?.ok?'':`Steam: ${data.steam?.error||'unavailable'}`].filter(Boolean),ubi=result.ubiIdentity,ubiMinutes=Number(ubi?.minutes)||0;
+    if(data.exophase?.ok&&ubiMinutes<=0){
+      const enrich=data.exophase.ubisoftEnrichment||{},recent=(enrich.recentCandidates||[]).length,direct=(enrich.directPlayerLookups||[]).length;
+      errors.push(`Ubisoft Motorfest: live playtime still 0h · recent ${recent} · direct ${direct}`);
+    }
+    const ubiSource=String(ubi?.source||'').replace(/-/g,' '),ubiNote=ubiMinutes>0?` · Motorfest PC ${hours(ubiMinutes)} loaded${ubiSource?` via ${ubiSource}`:''}`:'';
     if(manual)toast(errors.length?`Refresh saved with partial data · ${errors.join(' · ')}${ubiNote}`:result.first?`Gaming baseline established${ubiNote}. Future playtime changes will feed Month/Year automatically.`:`Gaming refreshed${result.added?` · +${hours(result.added)} tracked`:''}${ubiNote}.`,errors.length?'bad':'good');
     onDone?.(data,result);return data;
   }catch(e){if(manual)toast(e.message,'bad');return null;}
