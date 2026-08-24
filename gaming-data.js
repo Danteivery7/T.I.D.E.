@@ -16,8 +16,14 @@ export const fmt=n=>new Intl.NumberFormat('en-US').format(Math.round(Number(n)||
 export const hours=min=>{const n=Math.max(0,Number(min)||0),h=Math.floor(n/60),m=Math.round(n%60);return m?`${fmt(h)}h ${m}m`:`${fmt(h)}h`;};
 export function shortDate(d){if(!d)return'—';if(/^\d{4}-\d{2}$/.test(d)){const [y,m]=d.split('-').map(Number);return new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(new Date(y,m-1,1));}return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(new Date(`${d}T12:00:00`));}
 export const clean=s=>String(s||'').replace(/[™®©]/g,'').replace(/\bNA\b$/i,'').replace(/[^a-z0-9]+/gi,' ').trim().toLowerCase();
-export function keyTitle(title){const n=clean(title);return clean(aliases[n]||n);}
-export function displayTitle(title){const n=clean(title);return aliases[n]||String(title||'Unknown Game').replace(/[™®©]/g,'').trim();}
+function canonicalTitle(title){
+  const n=clean(title);
+  if(aliases[n])return aliases[n];
+  if(/^(?:grand theft auto|gta) (?:v|5)(?: |$)/.test(n))return'Grand Theft Auto V';
+  return String(title||'Unknown Game').replace(/[™®©]/g,'').trim();
+}
+export function keyTitle(title){return clean(canonicalTitle(title));}
+export function displayTitle(title){return canonicalTitle(title);}
 export const maxDate=(a,b)=>!a?(b||''):!b?a:(String(b)>String(a)?b:a);
 export const platformLabel=p=>({ps4:'PS4',ps5:'PS5',playstation:'PlayStation',xbox:'Xbox',nintendo:'Nintendo',steam:'Steam',ubisoft:'Ubisoft PC',ea:'EA PC',gog:'GOG',epic:'Epic',windows:'Windows PC',pc:'PC'})[p]||String(p||'Other').toUpperCase();
 export const isPcPlatform=p=>['steam','ubisoft','ea','gog','epic','windows','pc'].includes(p);
