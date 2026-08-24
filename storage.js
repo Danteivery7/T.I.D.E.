@@ -16,6 +16,7 @@ function migrate(input){
     entries:s.entries||{},monthlyReviews:s.monthlyReviews||{},yearlyReviews:s.yearlyReviews||{},
     occurrences:Array.isArray(s.occurrences)?s.occurrences:[],trackerOverrides:s.trackerOverrides||{},
     musicCache:s.musicCache||{},rawImports:Array.isArray(s.rawImports)?s.rawImports:[],tideCounters:s.tideCounters||{},
+    yearRankings:s.yearRankings||null,
     settings:{...base.settings,...(s.settings||{}),migrations:{...(base.settings?.migrations||{}),...(s.settings?.migrations||{})}},
   };
 }
@@ -146,6 +147,7 @@ export function mergeStates(local,remote){
   out.musicCache={...(r.musicCache||{}),...(l.musicCache||{})};
   const imports=new Map();for(const x of [...(r.rawImports||[]),...(l.rawImports||[])])imports.set(x.id||`${x.importedAt}:${x.characters}`,x);out.rawImports=[...imports.values()];
   out.tideCounters=mergeCounters(l.tideCounters,r.tideCounters);
+  out.yearRankings=newer(r.yearRankings,l.yearRankings)||l.yearRankings||r.yearRankings||null;
   out.settings={...(r.settings||{}),...(l.settings||{}),migrations:{...(r.settings?.migrations||{}),...(l.settings?.migrations||{})}};
   out.updatedAt=new Date().toISOString();
   return out;
