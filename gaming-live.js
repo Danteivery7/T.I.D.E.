@@ -1,6 +1,6 @@
-import {displayTitle,gaming,hours,keyTitle,maxDate,now,saveGaming,toast} from './gaming-data.js';
+import {displayTitle,gaming,keyTitle,maxDate,now,saveGaming,toast} from './gaming-data.js';
 
-const PC_SOURCE_VERSION='pc-monthly-v10';
+const PC_SOURCE_VERSION='pc-monthly-v11';
 const RECOVERY_VERSION='baseline-month-recovery-v2';
 const UBISOFT_CORRECTION_VERSION='crew2-pc-99-v1';
 function localToday(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
@@ -32,18 +32,20 @@ function cleanInvalidMotorfestInference(g){
 function chooseUbisoftPcIdentity(g,games){
   const crew2=games.filter(x=>isUbisoft(x)&&isCrew2(x)&&(Number(x.minutes)||0)>0);
   const savedPlayer=String(g.ubisoftPcPlayerId||'');
-  let chosen=crew2.slice().sort((a,b)=>{
-    const da=Math.abs((Number(a.minutes)||0)-5940),db=Math.abs((Number(b.minutes)||0)-5940);
-    if(da!==db)return da-db;
-    const as=String(a.masterPlayerId||'')===savedPlayer?0:1,bs=String(b.masterPlayerId||'')===savedPlayer?0:1;
-    return as-bs;
-  })[0]||null;
+  let chosen=savedPlayer?crew2.find(x=>String(x.masterPlayerId||'')===savedPlayer)||null:null;
+  if(!chosen){
+    chosen=crew2.slice().sort((a,b)=>{
+      const da=Math.abs((Number(a.minutes)||0)-5940),db=Math.abs((Number(b.minutes)||0)-5940);
+      if(da!==db)return da-db;
+      return String(a.masterPlayerId||'').localeCompare(String(b.masterPlayerId||''));
+    })[0]||null;
+  }
   if(!chosen&&savedPlayer)chosen=games.find(x=>isUbisoft(x)&&String(x.masterPlayerId||'')===savedPlayer)||null;
   if(chosen){
     g.ubisoftPcPlayerId=String(chosen.masterPlayerId||'');
     g.ubisoftCrew2SourceKey=chosen.sourceKey;
     g.ubisoftCrew2Minutes=Number(chosen.minutes)||0;
-    g.ubisoftIdentityAnchor='crew2-pc-99h';
+    g.ubisoftIdentityAnchor=savedPlayer&&String(chosen.masterPlayerId||'')===savedPlayer?'crew2-pc-saved-identity':'crew2-pc-99h-initial';
   }
   return chosen;
 }
@@ -136,11 +138,10 @@ export async function refreshGaming({manual=false,onDone=null}={}){
   try{
     if(manual)toast('Refreshing gaming accounts…');
     const r=await fetch('/api/gaming/live',{credentials:'same-origin',cache:'no-store'}),data=await r.json();if(!r.ok)throw new Error(data.error||`Gaming refresh failed (${r.status})`);
-    const result=process(data),errors=[data.exophase?.ok?'':`Exophase: ${data.exophase?.error||'unavailable'}`,data.steam?.ok?'':`Steam: ${data.steam?.error||'unavailable'}`].filter(Boolean),crew2=result.keptUbisoft.find(isCrew2),motorfest=result.keptUbisoft.find(isMotorfest),crew2Minutes=Number(crew2?.minutes)||0,motorfestMinutes=Number(motorfest?.minutes)||0;
-    if(data.exophase?.ok&&!result.ubiIdentity)errors.push('Ubisoft PC: the ~99h Crew 2 identity was not found');
-    if(data.exophase?.ok&&result.ubiIdentity&&crew2Minutes<=0)errors.push('Ubisoft PC Crew 2: selected identity returned 0h');
-    const crew2Note=crew2Minutes>0?` · Crew 2 PC ${hours(crew2Minutes)}`:'',motorfestNote=motorfestMinutes>0?` · Motorfest PC ${hours(motorfestMinutes)}`:' · Motorfest PC unavailable from Exophase';
-    if(manual)toast(errors.length?`Refresh saved with partial data · ${errors.join(' · ')}${crew2Note}${motorfestNote}`:result.first?`Gaming baseline established${crew2Note}${motorfestNote}. Future playtime changes will feed Month/Year automatically.`:`Gaming refreshed${result.added?` · +${hours(result.added)} tracked`:''}${crew2Note}${motorfestNote}.`,errors.length?'bad':'good');
+    const result=process(data),errors=[data.exophase?.ok?'':`Exophase: ${data.exophase?.error||'unavailable'}`,data.steam?.ok?'':`Steam: ${data.steam?.error||'unavailable'}`].filter(Boolean),crew2=result.keptUbisoft.find(isCrew2),crew2Minutes=Number(crew2?.minutes)||0;
+    if(data.exophase?.ok&&!result.ubiIdentity)errors.push('Ubisoft PC identity unavailable');
+    if(data.exophase?.ok&&result.ubiIdentity&&crew2Minutes<=0)errors.push('Ubisoft PC Crew 2 returned no playtime');
+    if(manual)toast(errors.length?`Refresh saved with partial data · ${errors.join(' · ')}`:result.first?'Gaming baseline established. Future playtime changes will feed Month/Year automatically.':'Gaming refreshed.',errors.length?'bad':'good');
     onDone?.(data,result);return data;
   }catch(e){if(manual)toast(e.message,'bad');return null;}
 }
