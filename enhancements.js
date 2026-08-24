@@ -224,7 +224,6 @@ function observe(){
 function run(){
   if(!root)return;
   const s=ensureCounters(read());
-  injectToday(s);
   injectTrackers(s);
   injectRecords(s);
   injectMonthly(s);
