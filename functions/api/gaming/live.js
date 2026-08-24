@@ -11,51 +11,74 @@ function playMinutes(game){
   const s=String(game?.playtime||''),h=Number(s.match(/([\d.]+)\s*h/i)?.[1]||0),m=Number(s.match(/(\d+)\s*m/i)?.[1]||0);
   return Math.max(0,Math.round(h*60)+m);
 }
-function platformFor(game){
-  const env=String(game?.meta?.environment_slug||'').toLowerCase(),slugs=(game?.meta?.platforms||[]).map(p=>String(p?.slug||p?.name||'').toLowerCase()),has=x=>slugs.some(s=>s.includes(x));
-  if(env==='steam'||has('steam'))return'steam';
-  if(env==='nintendo'||has('switch'))return'nintendo';
-  if(env==='uplay'||env==='ubisoft')return'ubisoft';
+function platformTokens(game){
+  return(game?.meta?.platforms||[]).flatMap(p=>[p?.slug,p?.name]).filter(Boolean).map(x=>String(x).toLowerCase());
+}
+function environmentFor(game){
+  const explicit=String(game?.meta?.environment_slug||game?.environment_slug||game?.environment||'').toLowerCase();
+  if(explicit)return explicit;
+  const canonical=String(game?.meta?.canonical_url||game?.canonical_url||'').toLowerCase(),tokens=platformTokens(game),has=x=>tokens.some(t=>t.includes(x));
+  if(/(?:uplay|ubisoft)/.test(canonical)||has('uplay')||has('ubisoft'))return'uplay';
+  if(/steam/.test(canonical)||has('steam'))return'steam';
+  if(/(?:psn|playstation|ps5|ps4)/.test(canonical)||has('playstation')||has('ps5')||has('ps4'))return'psn';
+  if(/xbox/.test(canonical)||has('xbox'))return'xbox';
+  if(/(?:switch|nintendo)/.test(canonical)||has('switch')||has('nintendo'))return'nintendo';
+  if(/(?:origin|\bea\b)/.test(canonical)||has('origin')||has('ea'))return'ea';
+  if(/epic/.test(canonical)||has('epic'))return'epic';
+  if(/gog/.test(canonical)||has('gog'))return'gog';
+  if(/windows/.test(canonical)||has('windows'))return'windows';
+  return'';
+}
+function platformFor(game,environment=environmentFor(game)){
+  const env=String(environment||'').toLowerCase(),tokens=platformTokens(game),has=x=>tokens.some(t=>t.includes(x));
+  if(env.includes('uplay')||env.includes('ubisoft'))return'ubisoft';
+  if(env==='steam'||env.includes('steam'))return'steam';
+  if(env==='nintendo'||env.includes('switch'))return'nintendo';
   if(env==='origin'||env==='ea')return'ea';
   if(env==='gog')return'gog';
   if(env==='epic')return'epic';
-  if(env==='xbox'||has('xbox'))return'xbox';
-  if(env==='psn'||has('playstation')||has('ps4')||has('ps5')){
+  if(env==='xbox'||env.includes('xbox'))return'xbox';
+  if(env==='psn'||env.includes('playstation')||env==='ps4'||env==='ps5'){
     const p4=has('ps4'),p5=has('ps5');
     if(p5&&!p4)return'ps5';
     if(p4&&!p5)return'ps4';
     return'playstation';
   }
-  if(env==='windows'||has('windows'))return'windows';
+  if(env==='windows')return'windows';
+  if(has('uplay')||has('ubisoft'))return'ubisoft';
+  if(has('steam'))return'steam';
+  if(has('xbox'))return'xbox';
+  if(has('switch')||has('nintendo'))return'nintendo';
+  if(has('playstation')||has('ps4')||has('ps5'))return has('ps5')&&!has('ps4')?'ps5':has('ps4')&&!has('ps5')?'ps4':'playstation';
+  if(has('windows'))return'windows';
   return env||'other';
 }
 async function resolveExophaseId(env){
   if(env?.EXOPHASE_PLAYER_ID)return String(env.EXOPHASE_PLAYER_ID);
   const r=await fetch(`https://www.exophase.com/user/${EXOPHASE_USER}/`,{headers:{'user-agent':UA,'accept':'text/html,application/xhtml+xml','accept-language':'en-US,en;q=0.9'}}),text=await r.text();
   if(!r.ok)throw new Error(`profile lookup returned ${r.status}`);
-  const m=text.match(/playerProfileId\s*[=:]\s*['\"]?([0-9]+)/i)||text.match(/\"playerProfileId\"\s*:\s*\"?([0-9]+)/i);
+  const m=text.match(/playerProfileId\s*[=:]\s*['\"]?([0-9]+)/i)||text.match(/\"playerProfileId\"\s*:\s*\"?([0-9]+)/i)||text.match(/public\/player\/([0-9]+)/i);
   if(!m)throw new Error('player id was not exposed by the profile page');
   return m[1];
 }
 async function exophase(env){
   try{
-    const playerId=await resolveExophaseId(env),games=[];
+    const playerId=await resolveExophaseId(env),games=[],pageSizes=[];
     for(let page=1;page<=200;page++){
       const u=`https://api.exophase.com/public/player/${encodeURIComponent(playerId)}/games?page=${page}&environment=&sort=1&showHidden=0&me=0&query=`,r=await fetch(u,{headers:{'user-agent':UA,'accept':'application/json, text/plain, */*','referer':'https://www.exophase.com/'}});
-      if(!r.ok)throw new Error(`games feed returned ${r.status}`);
+      if(!r.ok)throw new Error(`games feed returned ${r.status} on page ${page}`);
       const body=await r.json();
       if(!body?.success){if(page===1)throw new Error('games feed returned success=false');break;}
-      const rows=Array.isArray(body.games)?body.games:[];
+      const rows=Array.isArray(body.games)?body.games:[];pageSizes.push(rows.length);
       if(!rows.length)break;
       for(const g of rows){
-        const title=String(g?.meta?.title||'').trim();
-        if(!title)continue;
-        const environment=String(g?.meta?.environment_slug||'').toLowerCase(),masterId=g.master_id||g.meta?.master_id||null,masterPlayerId=g.master_playerid||null;
-        games.push({sourceKey:`exophase:${environment||'unknown'}:${masterPlayerId||'player'}:${masterId||games.length}`,title,minutes:playMinutes(g),firstPlayed:dateFromUnix(g.firstplayed),lastPlayed:dateFromUnix(g.lastplayed_utc||g.lastplayed),platform:platformFor(g),environment,image:g.resource_standard||g.resource_tile||g.meta?.image||'',masterId,masterPlayerId});
+        const title=String(g?.meta?.title||'').trim();if(!title)continue;
+        const environment=environmentFor(g),masterId=g.master_id||g.id||g.meta?.master_id||null,masterPlayerId=g.master_playerid||g.master_player_id||g.player_id||null,canonicalUrl=String(g?.meta?.canonical_url||g?.canonical_url||'');
+        games.push({sourceKey:`exophase:${environment||'unknown'}:${masterPlayerId||'player'}:${masterId||games.length}`,title,minutes:playMinutes(g),firstPlayed:dateFromUnix(g.firstplayed),lastPlayed:dateFromUnix(g.lastplayed_utc||g.lastplayed),platform:platformFor(g,environment),environment,image:g.resource_standard||g.resource_tile||g.meta?.image||'',canonicalUrl,masterId,masterPlayerId});
       }
-      if(rows.length<50)break;
     }
-    return{ok:true,playerId,games};
+    const ubisoftCandidates=games.filter(x=>(x.platform==='ubisoft'||/uplay|ubisoft/i.test(x.environment)||/uplay|ubisoft/i.test(x.canonicalUrl))&&/crew|motorfest/i.test(x.title)).map(x=>({title:x.title,minutes:x.minutes,sourceKey:x.sourceKey,masterPlayerId:x.masterPlayerId,environment:x.environment,platform:x.platform,canonicalUrl:x.canonicalUrl}));
+    return{ok:true,playerId,games,pagesRead:pageSizes.filter(n=>n>0).length,pageSizes,ubisoftCandidates};
   }catch(error){return{ok:false,error:String(error?.message||error),games:[]};}
 }
 
@@ -67,9 +90,8 @@ function addSteam(map,row,source='steam-page'){
   if(!appId&&!title)return;
   const key=appId?`app:${appId}`:`title:${titleKey(title)}`,existing=map.get(key),iconHash=String(row?.img_icon_url||'').trim(),image=String(row?.image||row?.logo||'').trim()||(appId&&iconHash?`https://media.steampowered.com/steamcommunity/public/images/apps/${appId}/${iconHash}.jpg`:''),lastPlayed=row?.lastPlayed||dateFromUnix(row?.rtime_last_played),firstPlayed=row?.firstPlayed||'';
   const next={sourceKey:appId?`steam:${appId}`:`steam:title:${titleKey(title)}`,appId:appId||null,title:title||existing?.title||`Steam ${appId}`,minutes,recentMinutes,hoursLast2Weeks:recentMinutes/60,firstPlayed,lastPlayed,platform:'steam',environment:'steam',image,source};
-  if(!existing||next.minutes>existing.minutes){
-    map.set(key,{...existing,...next,firstPlayed:existing?.firstPlayed||next.firstPlayed,lastPlayed:String(existing?.lastPlayed||'')>String(next.lastPlayed||'')?existing.lastPlayed:next.lastPlayed,image:next.image||existing?.image||''});
-  }else{
+  if(!existing||next.minutes>existing.minutes)map.set(key,{...existing,...next,firstPlayed:existing?.firstPlayed||next.firstPlayed,lastPlayed:String(existing?.lastPlayed||'')>String(next.lastPlayed||'')?existing.lastPlayed:next.lastPlayed,image:next.image||existing?.image||''});
+  else{
     if(lastPlayed&&lastPlayed>String(existing.lastPlayed||''))existing.lastPlayed=lastPlayed;
     if(!existing.firstPlayed&&firstPlayed)existing.firstPlayed=firstPlayed;
     if(recentMinutes>Number(existing.recentMinutes||0)){existing.recentMinutes=recentMinutes;existing.hoursLast2Weeks=recentMinutes/60;}
@@ -77,61 +99,53 @@ function addSteam(map,row,source='steam-page'){
   }
 }
 async function steamOfficial(env,map){
-  const key=String(env?.STEAM_API_KEY||'').trim();
-  if(!key)return false;
+  const key=String(env?.STEAM_API_KEY||'').trim();if(!key)return false;
   const u=new URL('https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/');
   u.searchParams.set('key',key);u.searchParams.set('steamid',STEAM_ID);u.searchParams.set('include_appinfo','1');u.searchParams.set('include_played_free_games','1');u.searchParams.set('format','json');
-  const r=await fetch(u.toString(),{headers:{'user-agent':UA,'accept':'application/json'}});
-  if(!r.ok)throw new Error(`Steam Web API returned ${r.status}`);
-  const body=await r.json(),rows=body?.response?.games;
-  if(!Array.isArray(rows)||!rows.length)throw new Error('Steam Web API returned no owned games');
-  for(const row of rows)addSteam(map,row,'steam-web-api');
-  return true;
+  const r=await fetch(u.toString(),{headers:{'user-agent':UA,'accept':'application/json'}});if(!r.ok)throw new Error(`Steam Web API returned ${r.status}`);
+  const rows=(await r.json())?.response?.games;if(!Array.isArray(rows)||!rows.length)throw new Error('Steam Web API returned no owned games');
+  for(const row of rows)addSteam(map,row,'steam-web-api');return true;
 }
 function parseJsonStringLiteral(text,marker){const start=text.indexOf(marker);if(start<0)return null;const tail=text.slice(start+marker.length),m=tail.match(/^\s*\(\s*("(?:\\.|[^"\\])*")\s*\)/);if(!m)return null;try{return JSON.parse(m[1]);}catch{return null;}}
 function balancedJson(text,marker){const start=text.indexOf(marker);if(start<0)return null;let i=start+marker.length;while(i<text.length&&text[i]!=='['&&text[i]!=='{')i++;if(i>=text.length)return null;const open=text[i],close=open==='['?']':'}';let depth=0,quote='',escape=false;for(let j=i;j<text.length;j++){const c=text[j];if(quote){if(escape)escape=false;else if(c==='\\')escape=true;else if(c===quote)quote='';continue;}if(c==='"'||c==="'"){quote=c;continue;}if(c===open)depth++;else if(c===close){depth--;if(depth===0)return text.slice(i,j+1);}}return null;}
 function collectSteam(value,map,depth=0){if(value==null||depth>12)return;if(Array.isArray(value)){for(const x of value)collectSteam(x,map,depth+1);return;}if(typeof value==='object'){if((value.appid!=null||value.appID!=null||value.appId!=null)&&(value.playtime_forever!=null||value.minutes!=null))addSteam(map,value);for(const v of Object.values(value))collectSteam(v,map,depth+1);return;}if(typeof value==='string'&&value.length<8000000){const t=value.trim();if((t.startsWith('{')||t.startsWith('['))&&(t.includes('OwnedGames')||t.includes('rgGames')||t.includes('playtime_forever'))){try{collectSteam(JSON.parse(t),map,depth+1);}catch{}}}}
 function parseSteamHtml(html,map){
-  const renderText=parseJsonStringLiteral(html,'window.SSR.renderContext=JSON.parse');
-  if(renderText)try{collectSteam(JSON.parse(renderText),map);}catch{}
+  const renderText=parseJsonStringLiteral(html,'window.SSR.renderContext=JSON.parse');if(renderText)try{collectSteam(JSON.parse(renderText),map);}catch{}
   for(const marker of ['window.SSR.loaderData =','window.SSR.loaderData=','var rgGames =','var rgGames=']){const raw=balancedJson(html,marker);if(raw)try{collectSteam(JSON.parse(raw),map);}catch{}}
   const direct=html.match(/var\s+rgGames\s*=\s*(\[[\s\S]*?\])\s*;/);if(direct)try{collectSteam(JSON.parse(direct[1]),map);}catch{}
 }
 function parseSteamXml(xml,map){
   for(const m of xml.matchAll(/<game>([\s\S]*?)<\/game>/gi)){
-    const block=m[1],appId=tag(block,'appID'),title=tag(block,'name'),raw=tag(block,'hoursOnRecord').replace(/,/g,''),hrs=Number(raw||0);
+    const block=m[1],appId=tag(block,'appID'),title=tag(block,'name'),hrs=Number(tag(block,'hoursOnRecord').replace(/,/g,'')||0),recent=Number(tag(block,'hoursLast2Weeks').replace(/,/g,'')||0);
     if(!title||!appId)continue;
-    addSteam(map,{appid:Number(appId),name:title,playtime_forever:Math.max(0,Math.round(hrs*60)),playtime_2weeks:Math.max(0,Math.round(Number(tag(block,'hoursLast2Weeks').replace(/,/g,'')||0)*60)),logo:tag(block,'logo')},'steam-xml-fallback');
+    addSteam(map,{appid:Number(appId),name:title,playtime_forever:Math.max(0,Math.round(hrs*60)),playtime_2weeks:Math.max(0,Math.round(recent*60)),logo:tag(block,'logo')},'steam-xml');
   }
 }
 async function steam(env){
   const map=new Map(),methods=[],errors=[];
   try{if(await steamOfficial(env,map))methods.push('web-api');}catch(error){errors.push(String(error?.message||error));}
   const headers={'user-agent':UA,'accept':'text/html,application/xhtml+xml,application/xml;q=0.8','accept-language':'en-US,en;q=0.9'};
-  const [page,xml]=await Promise.allSettled([fetch(`https://steamcommunity.com/profiles/${STEAM_ID}/games/?tab=all`,{headers}),fetch(`https://steamcommunity.com/profiles/${STEAM_ID}/games?xml=1`,{headers})]);
-  if(page.status==='fulfilled'&&page.value.ok){parseSteamHtml(await page.value.text(),map);methods.push('community-page');}
-  if(xml.status==='fulfilled'&&xml.value.ok){parseSteamXml(await xml.value.text(),map);methods.push('xml');}
+  const urls=[`https://steamcommunity.com/profiles/${STEAM_ID}/games?tab=all&xml=1`,`https://steamcommunity.com/profiles/${STEAM_ID}/games?xml=1`,`https://steamcommunity.com/profiles/${STEAM_ID}/games?tab=all`];
+  const responses=await Promise.allSettled(urls.map(u=>fetch(u,{headers})));
+  for(let i=0;i<responses.length;i++){
+    const x=responses[i];if(x.status!=='fulfilled'||!x.value.ok)continue;const text=await x.value.text();
+    if(i<2){parseSteamXml(text,map);methods.push(i===0?'xml-all':'xml');}else{parseSteamHtml(text,map);methods.push('community-page');}
+  }
   const games=[...map.values()];
-  if(!games.length)return{ok:false,error:errors[0]||'Steam public sources returned no owned-game playtime',games:[]};
-  return{ok:true,steamId:STEAM_ID,games,method:methods.join('+')||'community',warnings:errors};
+  if(!games.length)return{ok:false,error:errors[0]||'Steam public sources returned no owned-game playtime',games:[],method:methods.join('+')};
+  return{ok:true,steamId:STEAM_ID,games,method:[...new Set(methods)].join('+')||'community',warnings:errors};
 }
 function mergeExophaseSteam(stm,exo){
   if(!exo?.ok)return stm;
-  const exoSteam=(exo.games||[]).filter(x=>x.environment==='steam'),byTitle=new Map((stm.games||[]).map((x,i)=>[titleKey(x.title),i]));
+  const exoSteam=(exo.games||[]).filter(x=>x.environment==='steam'||x.platform==='steam'),byTitle=new Map((stm.games||[]).map((x,i)=>[titleKey(x.title),i]));
   for(const x of exoSteam){
-    const key=titleKey(x.title);if(!key)continue;
-    const i=byTitle.get(key);
+    const key=titleKey(x.title);if(!key)continue;const i=byTitle.get(key);
     if(i!=null){
-      const cur=stm.games[i];
-      if((Number(cur.minutes)||0)<=0&&(Number(x.minutes)||0)>0)cur.minutes=Number(x.minutes)||0;
-      if(x.lastPlayed>String(cur.lastPlayed||''))cur.lastPlayed=x.lastPlayed;
-      if(!cur.firstPlayed&&x.firstPlayed)cur.firstPlayed=x.firstPlayed;
-      if(!cur.image&&x.image)cur.image=x.image;
-      continue;
+      const cur=stm.games[i];if((Number(cur.minutes)||0)<=0&&(Number(x.minutes)||0)>0)cur.minutes=Number(x.minutes)||0;
+      if(x.lastPlayed>String(cur.lastPlayed||''))cur.lastPlayed=x.lastPlayed;if(!cur.firstPlayed&&x.firstPlayed)cur.firstPlayed=x.firstPlayed;if(!cur.image&&x.image)cur.image=x.image;continue;
     }
     if((Number(x.minutes)||0)<=0)continue;
-    byTitle.set(key,stm.games.length);
-    stm.games.push({sourceKey:`steam:exophase:${x.masterPlayerId||'player'}:${x.masterId||key}`,appId:null,title:x.title,minutes:Number(x.minutes)||0,recentMinutes:0,hoursLast2Weeks:0,firstPlayed:x.firstPlayed||'',lastPlayed:x.lastPlayed||'',platform:'steam',environment:'steam',image:x.image||'',source:'exophase-steam-fallback'});
+    byTitle.set(key,stm.games.length);stm.games.push({sourceKey:`steam:exophase:${x.masterPlayerId||'player'}:${x.masterId||key}`,appId:null,title:x.title,minutes:Number(x.minutes)||0,recentMinutes:0,hoursLast2Weeks:0,firstPlayed:x.firstPlayed||'',lastPlayed:x.lastPlayed||'',platform:'steam',environment:'steam',image:x.image||'',source:'exophase-steam-fallback'});
   }
   if(!stm.ok&&stm.games.length){stm.ok=true;stm.error='';stm.method='exophase-steam-fallback';}
   return stm;
@@ -139,5 +153,5 @@ function mergeExophaseSteam(stm,exo){
 export async function onRequestGet({env,request}){
   if(!(await isAuthenticated(env,request)))return json({error:'Connect T.I.D.E. Cloud Sync first.'},401);
   const [exo,rawSteam]=await Promise.all([exophase(env),steam(env)]),stm=mergeExophaseSteam(rawSteam,exo);
-  return json({capturedAt:new Date().toISOString(),exophase:exo,steam:stm,ruleNotes:{legacyPs4:'19 visible games plus 118 unassigned lifetime hours',ubisoft:'One stable Exophase Ubisoft player identity is selected from Motorfest and all games on that PC identity are counted; duplicate Ubisoft identities are ignored.',steam:'Steam Web API is used when configured; current Steam community data and Exophase Steam are automatic fallbacks.',history:'Sources expose cumulative playtime and first/last played dates. T.I.D.E. creates its own exact monthly history from snapshots and recovers only defensible pre-baseline hours.'}});
+  return json({capturedAt:new Date().toISOString(),exophase:exo,steam:stm,ruleNotes:{legacyPs4:'19 visible games plus 118 unassigned lifetime hours',ubisoft:'Exophase pages are read until an empty page. Ubisoft is inferred from environment, platform metadata, or canonical URL; the client keeps only the single Motorfest identity closest to the known ~99h PC record.',steam:'Steam Web API is used when configured; current Steam community data and Exophase Steam are automatic fallbacks.',history:'Sources expose cumulative playtime and first/last played dates. T.I.D.E. creates its own exact monthly history from snapshots and recovers only defensible pre-baseline hours.'}});
 }
