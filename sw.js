@@ -1,5 +1,5 @@
-const CACHE='tide-shell-v5';
-const CORE=['/','/index.html','/styles.css','/app.js','/engine.js','/engine-v2.js','/engine-v3.js','/enhancements.js','/storage.js','/spotify.js','/icon.svg','/manifest.webmanifest'];
+const CACHE='tide-shell-v6';
+const CORE=['/','/index.html','/styles.css','/app.js','/engine.js','/engine-v2.js','/engine-v3.js','/enhancements.js','/history-bootstrap.js','/storage.js','/spotify.js','/icon.svg','/manifest.webmanifest'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
