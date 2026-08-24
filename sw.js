@@ -1,4 +1,4 @@
-const CACHE='tide-shell-v16';
+const CACHE='tide-shell-v17';
 const CORE=['/','/index.html','/styles.css','/app.js','/engine.js','/engine-v2.js','/engine-v3.js','/engine-v4.js','/enhancements.js','/history-bootstrap.js','/migraine-fix.js','/tracker-upgrades.js','/shared-save.js','/year-rankings.js','/gaming.js','/gaming-data.js','/gaming-live.js','/gaming-view.js','/gaming-ask.js','/storage.js','/spotify.js','/icon.svg','/manifest.webmanifest'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
