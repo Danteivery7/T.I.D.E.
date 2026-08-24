@@ -1,7 +1,7 @@
 import {displayTitle,gaming,hours,keyTitle,maxDate,now,saveGaming,today,toast} from './gaming-data.js';
 
-const PC_SOURCE_VERSION='pc-monthly-v3';
-const RECOVERY_VERSION='baseline-month-recovery-v1';
+const PC_SOURCE_VERSION='pc-monthly-v4';
+const RECOVERY_VERSION='baseline-month-recovery-v2';
 
 function isUbisoft(x){return x.environment==='uplay'||x.environment==='ubisoft';}
 function chooseUbisoftIdentity(g,games){
@@ -42,7 +42,7 @@ function addRecovered(rec,source,minutes,reason){
 function recoverBaselineMonth(g,next,date,data){
   if(g.monthRecoveryVersion===RECOVERY_VERSION)return;
   if(!g.baselineDate||g.baselineDate.slice(0,7)!==date.slice(0,7))return;
-  if(!data.exophase?.ok||!data.steam?.ok)return;
+  if(!data.exophase?.ok&&!data.steam?.ok)return;
   const month=g.baselineDate.slice(0,7),monthStart=`${month}-01`,tracked=trackedByGamePlatform(g,g.baselineDate,date),
     rec={games:{},cutoffDate:date,baselineDate:g.baselineDate,updatedAt:now(),note:'Defensible pre-baseline recovery only. Steam recent-two-week time and games first played this month can be recovered; older long-running games remain partial.'};
   const recentStart=shift(date,-13);
@@ -51,37 +51,36 @@ function recoverBaselineMonth(g,next,date,data){
     let candidate=0,reason='';
     const recent=Math.max(0,Number(source.recentMinutes)||Math.round((Number(source.hoursLast2Weeks)||0)*60));
     if(source.platform==='steam'&&recent>0&&recentStart>=monthStart){candidate=recent;reason='Steam recent two-week playtime';}
-    if(source.firstPlayed&&String(source.firstPlayed)>=monthStart&&String(source.firstPlayed)<=date&&(Number(source.minutes)||0)>candidate){
-      candidate=Number(source.minutes)||0;reason='Entire lifetime falls after first-played date this month';
-    }
+    if(source.firstPlayed&&String(source.firstPlayed)>=monthStart&&String(source.firstPlayed)<=date&&(Number(source.minutes)||0)>candidate){candidate=Number(source.minutes)||0;reason='Entire lifetime falls after first-played date this month';}
     if(candidate<=0)continue;
     const id=`${keyTitle(source.title)}|${source.platform}`,already=tracked.get(id)||0,recovered=Math.max(0,candidate-already);
     addRecovered(rec,source,recovered,reason);
   }
-  g.recoveredMonths||={};
-  g.recoveredMonths[month]=rec;
-  g.monthRecoveryVersion=RECOVERY_VERSION;
+  g.recoveredMonths||={};g.recoveredMonths[month]=rec;g.monthRecoveryVersion=RECOVERY_VERSION;
 }
+function steamFallbackSource(x){return{...x,sourceKey:`steam:exophase:${x.masterPlayerId||'player'}:${x.masterId||keyTitle(x.title)}`,sourceFamily:'steam',platform:'steam',countMinutes:true};}
 function process(data){
-  const g=gaming(),previous=new Map((g.latestSources||[]).map(x=>[x.sourceKey,x])),next=[];
+  const g=gaming(),previous=new Map((g.latestSources||[]).map(x=>[x.sourceKey,x])),next=[],exoSteam=[];
   if(data.exophase?.ok){
     const steamLast={},steamFirst={},exoGames=data.exophase.games||[],ubiIdentity=chooseUbisoftIdentity(g,exoGames);
-    for(const x of exoGames)if(x.environment==='steam'){steamLast[keyTitle(x.title)]=x.lastPlayed||'';steamFirst[keyTitle(x.title)]=x.firstPlayed||'';}
+    for(const x of exoGames)if(x.environment==='steam'){steamLast[keyTitle(x.title)]=x.lastPlayed||'';steamFirst[keyTitle(x.title)]=x.firstPlayed||'';exoSteam.push(x);}
     for(const x of exoGames){
       if(x.environment==='steam')continue;
       if(isUbisoft(x)&&(!ubiIdentity||String(x.masterPlayerId||'')!==String(ubiIdentity.masterPlayerId||'')))continue;
       next.push({...x,sourceFamily:'exophase',countMinutes:true});
     }
-    g._steamLast=steamLast;g._steamFirst=steamFirst;
+    g._steamLast=steamLast;g._steamFirst=steamFirst;g.exophasePlayerId=data.exophase.playerId||g.exophasePlayerId||'';
   }else next.push(...(g.latestSources||[]).filter(x=>x.sourceFamily==='exophase'));
 
+  const steamAdded=new Set();
   if(data.steam?.ok){
-    for(const x of data.steam.games||[])next.push({
-      ...x,sourceFamily:'steam',platform:'steam',countMinutes:true,
-      firstPlayed:x.firstPlayed||g._steamFirst?.[keyTitle(x.title)]||'',
-      lastPlayed:maxDate(x.lastPlayed,g._steamLast?.[keyTitle(x.title)])
-    });
-  }else next.push(...(g.latestSources||[]).filter(x=>x.sourceFamily==='steam'));
+    for(const x of data.steam.games||[]){
+      const k=keyTitle(x.title);steamAdded.add(k);
+      next.push({...x,sourceFamily:'steam',platform:'steam',countMinutes:true,firstPlayed:x.firstPlayed||g._steamFirst?.[k]||'',lastPlayed:maxDate(x.lastPlayed,g._steamLast?.[k])});
+    }
+  }
+  for(const x of exoSteam){const k=keyTitle(x.title);if(!steamAdded.has(k)&&(Number(x.minutes)||0)>0){next.push(steamFallbackSource(x));steamAdded.add(k);}}
+  if(!data.steam?.ok&&!exoSteam.length)next.push(...(g.latestSources||[]).filter(x=>x.sourceFamily==='steam'));
 
   const first=!g.baselineDate,date=today(),deltaGames={};
   if(!first){
