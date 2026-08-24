@@ -5,10 +5,11 @@ const ID='migraines';
 const root=document.querySelector('#view-root');
 
 function otherYears(state){
-  const years=new Set();
+  const years=new Set([2026]);
   for(const row of state.occurrences||[]){
     if(row.trackerId===ID&&/^20\d{2}-/.test(String(row.date||'')))years.add(Number(String(row.date).slice(0,4)));
   }
+  for(const month of Object.keys(state.monthlyReviews||{}))if(/^20\d{2}-\d{2}$/.test(month))years.add(Number(month.slice(0,4)));
   for(const year of Object.keys(state.yearlyReviews||{}))if(/^20\d{2}$/.test(year))years.add(Number(year));
   years.delete(2024);years.delete(2025);
   return [...years].sort();
