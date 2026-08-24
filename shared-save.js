@@ -90,10 +90,11 @@ if(getPending())void commitPending({announce:false});
 document.addEventListener('click',async event=>{
   const button=event.target.closest('#save-day');if(!button)return;
   const payload=currentPayload();
-  const fresh=status.authenticated?status:await refreshStatus(true);
-  if(!fresh.authenticated){
+  if(!status.authenticated){
     event.preventDefault();event.stopImmediatePropagation();
     if(payload.date)saveDraft(payload.date,payload.text);
+    const fresh=await refreshStatus(true);
+    if(fresh.authenticated){button.click();return;}
     toast(fresh.configured?'Cloud Sync is not connected on this device. Open Settings and connect once; your draft is preserved.':'Shared Cloudflare storage is not configured. Your draft is preserved.','bad');
     return;
   }
