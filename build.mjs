@@ -1,8 +1,8 @@
 import { mkdir,rm,copyFile,cp } from 'node:fs/promises';
 
 const files=[
-  'index.html','styles.css','app.js','engine.js','engine-v2.js','engine-v3.js',
-  'enhancements.js','history-bootstrap.js','tenk-control.js','platform-copy.js','storage.js','spotify.js','sw.js','manifest.webmanifest','icon.svg'
+  'index.html','styles.css','app.js','engine.js','engine-v2.js','engine-v3.js','engine-v4.js',
+  'enhancements.js','history-bootstrap.js','tracker-upgrades.js','platform-copy.js','storage.js','spotify.js','sw.js','manifest.webmanifest','icon.svg'
 ];
 await rm('dist',{recursive:true,force:true});
 await mkdir('dist',{recursive:true});
