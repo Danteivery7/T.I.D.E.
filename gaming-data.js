@@ -28,6 +28,7 @@ export const maxDate=(a,b)=>!a?(b||''):!b?a:(String(b)>String(a)?b:a);
 export const platformLabel=p=>({ps4:'PS4',ps5:'PS5',playstation:'PlayStation',xbox:'Xbox',nintendo:'Nintendo',steam:'Steam',ubisoft:'Ubisoft PC',ea:'EA PC',gog:'GOG',epic:'Epic',windows:'Windows PC',pc:'PC'})[p]||String(p||'Other').toUpperCase();
 export const isPcPlatform=p=>['steam','ubisoft','ea','gog','epic','windows','pc'].includes(p);
 export function filterAllows(p,filter='all'){if(filter==='all')return true;if(filter==='pc')return isPcPlatform(p);if(filter==='console')return ['ps4','ps5','playstation','xbox','nintendo'].includes(p);if(filter==='playstation')return ['ps4','ps5','playstation'].includes(p);return p===filter;}
+function ignoreGamePlatform(title,platform){return String(platform||'').toLowerCase()==='xbox'&&clean(title)==='forza horizon 6';}
 
 function blank(){return{latestSources:[],activity:{},recoveredMonths:{},baselineDate:null,liveStatus:{},updatedAt:''};}
 function shape(x){
@@ -56,7 +57,7 @@ export function mergeGaming(a={},b={}){
 export async function pullGaming(){try{const r=await fetch('/api/gaming/state',{credentials:'same-origin'});if(!r.ok)return cache;const body=await r.json();cache=mergeGaming(cache,body.gaming||{});localStorage.setItem(KEY,JSON.stringify(cache));return cache;}catch{return cache;}}
 export function saveGaming(g,{sync=true}={}){g=shape(g);g.updatedAt=now();cache=g;localStorage.setItem(KEY,JSON.stringify(g));if(sync)fetch('/api/gaming/state',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({gaming:g})}).catch(()=>{});return g;}
 
-export function currentSources(){return[...LEGACY_GAMES,...gaming().latestSources];}
+export function currentSources(){return[...LEGACY_GAMES,...gaming().latestSources].filter(s=>!ignoreGamePlatform(s.title,s.platform));}
 function addAggregate(map,title,platform,minutes,lastPlayed='',image='',source=null){
   minutes=Math.max(0,Number(minutes)||0);if(!minutes)return;
   const k=keyTitle(title),g=map.get(k)||{key:k,title:displayTitle(title),minutes:0,lastPlayed:'',platformMinutes:{},sources:[],image:''};
@@ -77,20 +78,20 @@ export function activityRange(start,end,filter='all'){
   for(const [month,rec] of Object.entries(gaming().recoveredMonths||{})){
     if(!monthKeyInRange(month,start,end))continue;
     for(const item of Object.values(rec.games||{})){
-      let mins=0;
-      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(filterAllows(p,filter))mins+=Number(v)||0;
+      const title=item.title||item.key;let mins=0;
+      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(p,filter))mins+=Number(v)||0;
       if(!mins)continue;
-      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(filterAllows(p,filter))addAggregate(map,item.title||item.key,p,v,item.lastPlayed,item.image);
+      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(p,filter))addAggregate(map,title,p,v,item.lastPlayed,item.image);
       recoveredMinutes+=mins;total+=mins;
     }
   }
   for(const [date,rec] of Object.entries(gaming().activity||{})){
     if(date<start||date>end)continue;
     for(const item of Object.values(rec.games||{})){
-      let mins=0;
-      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(filterAllows(p,filter))mins+=Number(v)||0;
+      const title=item.title||item.key;let mins=0;
+      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(p,filter))mins+=Number(v)||0;
       if(!mins)continue;
-      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(filterAllows(p,filter))addAggregate(map,item.title||item.key,p,v,item.lastPlayed,item.image);
+      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(p,filter))addAggregate(map,title,p,v,item.lastPlayed,item.image);
       trackedMinutes+=mins;total+=mins;
     }
   }
