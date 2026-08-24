@@ -24,7 +24,9 @@ function mergeCounters(a={},b={}){
   const out={...a,...b};
   out.dailyChallenge=newer(a.dailyChallenge,b.dailyChallenge)||a.dailyChallenge||b.dailyChallenge;
   out.montyOverall=newer(a.montyOverall,b.montyOverall)||a.montyOverall||b.montyOverall;
+  out.geoguessr10k=newer(a.geoguessr10k,b.geoguessr10k)||a.geoguessr10k||b.geoguessr10k;
   const years={...(a.montyYears||{})};for(const [year,value] of Object.entries(b.montyYears||{}))years[year]=newer(years[year],value);out.montyYears=years;
+  out.authoritativeTrackerTotals=mergeMapByTime(a.authoritativeTrackerTotals||{},b.authoritativeTrackerTotals||{});
   return out;
 }
 export function mergeStates(remote,incoming){
