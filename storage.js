@@ -121,9 +121,11 @@ function mergeCounters(local={},remote={}){
   const out={...remote,...local};
   out.dailyChallenge=newer(remote.dailyChallenge,local.dailyChallenge)||local.dailyChallenge||remote.dailyChallenge;
   out.montyOverall=newer(remote.montyOverall,local.montyOverall)||local.montyOverall||remote.montyOverall;
+  out.geoguessr10k=newer(remote.geoguessr10k,local.geoguessr10k)||local.geoguessr10k||remote.geoguessr10k;
   const years={...(remote.montyYears||{})};
   for(const [year,value] of Object.entries(local.montyYears||{}))years[year]=newer(years[year],value);
   out.montyYears=years;
+  out.authoritativeTrackerTotals=mergeMapByTime(remote.authoritativeTrackerTotals||{},local.authoritativeTrackerTotals||{});
   return out;
 }
 
