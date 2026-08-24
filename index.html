@@ -28,6 +28,7 @@
         <button class="nav-item" data-view="on-this-day"><span>↺</span><b>On This Day</b></button>
         <button class="nav-item" data-view="monthly"><span>◫</span><b>Monthly Review</b></button>
         <button class="nav-item" data-view="yearly"><span>◎</span><b>Year in Review</b></button>
+        <button class="nav-item" data-view="year-rankings"><span>↕</span><b>Year Rankings</b></button>
         <button class="nav-item" data-view="trackers"><span>⌁</span><b>Trackers</b></button>
         <button class="nav-item" data-view="music"><span>♫</span><b>Music</b></button>
         <button class="nav-item" data-view="records"><span>◆</span><b>Personal Records</b></button>
@@ -77,6 +78,7 @@
     import { ensureBundledHistory } from './history-bootstrap.js';
     await ensureBundledHistory();
     await import('./app.js');
+    await import('./year-rankings.js');
     await import('./shared-save.js');
     await import('./enhancements.js');
     await import('./migraine-fix.js');
