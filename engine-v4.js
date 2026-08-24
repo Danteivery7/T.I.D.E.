@@ -45,6 +45,23 @@ export function trackerTotal(state,id,scope={}){
   return v3.trackerTotal(state,key,scope);
 }
 
+export function addManualOccurrence(state,args={}){
+  const key=canonical(args.trackerId);
+  v3.addManualOccurrence(state,{...args,trackerId:key});
+  if(key!==CANONICAL_COLLISIONS)return;
+  state.tideCounters||={};state.tideCounters.authoritativeTrackerTotals||={};
+  const rec=state.tideCounters.authoritativeTrackerTotals[CANONICAL_COLLISIONS];
+  if(!rec)return;
+  const count=Math.max(0,Number(args.count)||0),date=String(args.date||v3.isoToday()),year=date.slice(0,4),month=date.slice(0,7);
+  rec.years={...(rec.years||{})};rec.months={...(rec.months||{})};
+  rec.allTime=Math.max(0,Number(rec.allTime)||0)+count;
+  rec.years[year]=(num(rec.years[year])??v3.trackerTotal(state,CANONICAL_COLLISIONS,{year:Number(year)}))+count;
+  rec.months[month]=(num(rec.months[month])??v3.trackerTotal(state,CANONICAL_COLLISIONS,{month}))+count;
+  rec.updatedAt=new Date().toISOString();
+  state.tideCounters.authoritativeTrackerTotals[CANONICAL_COLLISIONS]=rec;
+  state.updatedAt=rec.updatedAt;
+}
+
 function scopedQuestion(q){
   const lower=q.toLowerCase(),today=v3.isoToday();
   const explicitYear=lower.match(/\b(20\d{2})\b/)?.[1];
