@@ -29,6 +29,28 @@ function mergeCounters(a={},b={}){
   out.authoritativeTrackerTotals=mergeMapByTime(a.authoritativeTrackerTotals||{},b.authoritativeTrackerTotals||{});
   return out;
 }
+function normalOccurrenceKey(x){return x.id||`${x.trackerId}:${x.date}:${x.snippet}:${x.result||''}:${x.value??''}`}
+function detectedOccurrenceKey(x){return `detected:${x.trackerId}:${x.date}:${x.snippet||''}:${x.result||''}:${x.value??''}`}
+function mergeOccurrences(remoteRows=[],incomingRows=[],remoteEntries={},incomingEntries={}){
+  const out=new Map();
+  for(const row of [...remoteRows,...incomingRows]){
+    if(row?.source==='detected')continue;
+    const key=normalOccurrenceKey(row);out.set(key,newer(out.get(key),row));
+  }
+  const dates=new Set([...remoteRows,...incomingRows].filter(x=>x?.source==='detected'&&x.date).map(x=>x.date));
+  for(const date of dates){
+    const re=remoteEntries?.[date],ie=incomingEntries?.[date];
+    const rs=String(re?.updatedAt||''),is=String(ie?.updatedAt||'');
+    let rows;
+    if(re||ie)rows=ie&&(!re||is>=rs)?incomingRows:remoteRows;
+    else rows=[...remoteRows,...incomingRows];
+    for(const row of rows){
+      if(row?.source!=='detected'||row.date!==date)continue;
+      const key=detectedOccurrenceKey(row);out.set(key,newer(out.get(key),row));
+    }
+  }
+  return [...out.values()];
+}
 export function mergeStates(remote,incoming){
   if(!remote)return {...incoming,updatedAt:new Date().toISOString()};
   if(!incoming)return remote;
@@ -36,12 +58,7 @@ export function mergeStates(remote,incoming){
   out.entries=mergeMapByTime(remote.entries,incoming.entries);
   out.monthlyReviews=mergeMapByTime(remote.monthlyReviews,incoming.monthlyReviews);
   out.yearlyReviews=mergeMapByTime(remote.yearlyReviews,incoming.yearlyReviews);
-  const occ=new Map();
-  for(const row of [...(remote.occurrences||[]),...(incoming.occurrences||[])]){
-    const key=row.id||`${row.trackerId}:${row.date}:${row.snippet}:${row.result||''}`;
-    occ.set(key,newer(occ.get(key),row));
-  }
-  out.occurrences=[...occ.values()];
+  out.occurrences=mergeOccurrences(remote.occurrences,incoming.occurrences,remote.entries,incoming.entries);
   out.trackerOverrides={...(remote.trackerOverrides||{}),...(incoming.trackerOverrides||{})};
   out.musicCache={...(remote.musicCache||{}),...(incoming.musicCache||{})};
   const imports=new Map();for(const x of [...(remote.rawImports||[]),...(incoming.rawImports||[])])imports.set(x.id||`${x.importedAt}:${x.characters}`,x);out.rawImports=[...imports.values()];
