@@ -75,6 +75,28 @@ function mergeCounters(local={},remote={}){
   out.authoritativeTrackerTotals=mergeMapByTime(remote.authoritativeTrackerTotals||{},local.authoritativeTrackerTotals||{});
   return out;
 }
+function normalOccurrenceKey(x){return x.id||`${x.trackerId}:${x.date}:${x.snippet}:${x.result||''}:${x.value??''}`;}
+function detectedOccurrenceKey(x){return `detected:${x.trackerId}:${x.date}:${x.snippet||''}:${x.result||''}:${x.value??''}`;}
+function mergeOccurrences(localRows=[],remoteRows=[],localEntries={},remoteEntries={}){
+  const out=new Map();
+  for(const x of [...remoteRows,...localRows]){
+    if(x?.source==='detected')continue;
+    const key=normalOccurrenceKey(x);out.set(key,newer(out.get(key),x));
+  }
+  const dates=new Set([...remoteRows,...localRows].filter(x=>x?.source==='detected'&&x.date).map(x=>x.date));
+  for(const date of dates){
+    const le=localEntries?.[date],re=remoteEntries?.[date];
+    const ls=String(le?.updatedAt||''),rs=String(re?.updatedAt||'');
+    let rows;
+    if(le||re)rows=re&&(!le||rs>ls)?remoteRows:localRows;
+    else rows=[...remoteRows,...localRows];
+    for(const x of rows){
+      if(x?.source!=='detected'||x.date!==date)continue;
+      const key=detectedOccurrenceKey(x);out.set(key,newer(out.get(key),x));
+    }
+  }
+  return [...out.values()];
+}
 export function mergeStates(local,remote){
   if(!remote)return migrate(local);
   if(!local)return migrate(remote);
@@ -82,12 +104,7 @@ export function mergeStates(local,remote){
   out.entries=mergeMapByTime(l.entries,r.entries);
   out.monthlyReviews=mergeMapByTime(l.monthlyReviews,r.monthlyReviews);
   out.yearlyReviews=mergeMapByTime(l.yearlyReviews,r.yearlyReviews);
-  const occ=new Map();
-  for(const x of [...(r.occurrences||[]),...(l.occurrences||[])]){
-    const key=x.id||`${x.trackerId}:${x.date}:${x.snippet}:${x.result||''}`;
-    occ.set(key,newer(occ.get(key),x));
-  }
-  out.occurrences=[...occ.values()];
+  out.occurrences=mergeOccurrences(l.occurrences,r.occurrences,l.entries,r.entries);
   out.trackerOverrides={...(r.trackerOverrides||{}),...(l.trackerOverrides||{})};
   out.musicCache={...(r.musicCache||{}),...(l.musicCache||{})};
   const imports=new Map();for(const x of [...(r.rawImports||[]),...(l.rawImports||[])])imports.set(x.id||`${x.importedAt}:${x.characters}`,x);out.rawImports=[...imports.values()];
