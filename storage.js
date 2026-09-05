@@ -9,13 +9,24 @@ const nativeRemoveItem=typeof Storage!=='undefined'?Storage.prototype.removeItem
 let syncTimer=null;
 let syncPromise=null;
 
+function rowStamp(row){return String(row?.updatedAt||row?.createdAt||'');}
+function detectedOccurrenceKey(x){return `detected:${x.trackerId}:${x.date}:${x.snippet||''}:${x.result||''}:${x.value??''}`;}
+function normalOccurrenceKey(x){return x.id||`${x.trackerId}:${x.date}:${x.snippet}:${x.result||''}:${x.value??''}`;}
+function normalizeOccurrences(rows=[]){
+  const out=new Map();
+  for(const row of rows){
+    const key=row?.source==='detected'?detectedOccurrenceKey(row):normalOccurrenceKey(row),old=out.get(key);
+    if(!old||rowStamp(row)>=rowStamp(old))out.set(key,row);
+  }
+  return [...out.values()];
+}
 function migrate(input){
   const base=freshState();
   const s=input&&typeof input==='object'?input:{};
   return {
     ...base,...s,
     entries:s.entries||{},monthlyReviews:s.monthlyReviews||{},yearlyReviews:s.yearlyReviews||{},
-    occurrences:Array.isArray(s.occurrences)?s.occurrences:[],trackerOverrides:s.trackerOverrides||{},
+    occurrences:normalizeOccurrences(Array.isArray(s.occurrences)?s.occurrences:[]),trackerOverrides:s.trackerOverrides||{},
     musicCache:s.musicCache||{},rawImports:Array.isArray(s.rawImports)?s.rawImports:[],tideCounters:s.tideCounters||{},
     yearRankings:s.yearRankings||null,
     settings:{...base.settings,...(s.settings||{}),migrations:{...(base.settings?.migrations||{}),...(s.settings?.migrations||{})}},
@@ -56,8 +67,7 @@ function clearEnvelope(id){
 
 function newer(a,b){
   if(!a)return b;if(!b)return a;
-  const at=String(a.updatedAt||a.createdAt||''),bt=String(b.updatedAt||b.createdAt||'');
-  return bt>at?b:a;
+  return rowStamp(b)>rowStamp(a)?b:a;
 }
 function mergeMapByTime(local={},remote={}){
   const out={...local};
@@ -75,8 +85,6 @@ function mergeCounters(local={},remote={}){
   out.authoritativeTrackerTotals=mergeMapByTime(remote.authoritativeTrackerTotals||{},local.authoritativeTrackerTotals||{});
   return out;
 }
-function normalOccurrenceKey(x){return x.id||`${x.trackerId}:${x.date}:${x.snippet}:${x.result||''}:${x.value??''}`;}
-function detectedOccurrenceKey(x){return `detected:${x.trackerId}:${x.date}:${x.snippet||''}:${x.result||''}:${x.value??''}`;}
 function mergeOccurrences(localRows=[],remoteRows=[],localEntries={},remoteEntries={}){
   const out=new Map();
   for(const x of [...remoteRows,...localRows]){
