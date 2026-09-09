@@ -6,6 +6,7 @@ let keepListening=false;
 let insertBefore='';
 let insertAfter='';
 let finalTranscript='';
+let lastFinalAt=0;
 
 const TERM_RULES=[
   {canonical:'ChatGPT',aliases:[/\bchat\s*g\s*p\s*t\b/gi,/\bchat\s*gbt\b/gi,/\bchat\s*gtp\b/gi,/\bchibis\b/gi,/\bchibi(?:'s)?\b/gi,/\bchat jee pee tee\b/gi]},
@@ -45,8 +46,35 @@ function normalizeDomainTerms(text){
   return out;
 }
 
+function normalizePunctuationCommands(text){
+  let out=String(text||'');
+  const commands=[
+    [/\bnew\s+paragraph\b/gi,'\n\n'],
+    [/\bnew\s+line\b/gi,'\n'],
+    [/\bquestion\s+mark\b/gi,'?'],
+    [/\bexclamation\s+(?:point|mark)\b/gi,'!'],
+    [/\bfull\s+stop\b/gi,'.'],
+    [/\bsemi\s*colon\b/gi,';'],
+    [/\bcolon\b/gi,':'],
+    [/\bcomma\b/gi,','],
+    [/\bperiod\b/gi,'.']
+  ];
+  for(const [pattern,replacement] of commands)out=out.replace(pattern,replacement);
+  out=out.replace(/[ \t]+([,.;:!?])/g,'$1');
+  out=out.replace(/([,;:])(?=\S)/g,'$1 ');
+  out=out.replace(/([.!?])(?=[A-Za-z0-9])/g,'$1 ');
+  out=out.replace(/[ \t]*\n[ \t]*/g,'\n');
+  out=out.replace(/\bi\b/g,'I');
+  out=out.replace(/(^|[.!?]\s+|\n+)([a-z])/g,(m,prefix,letter)=>prefix+letter.toUpperCase());
+  return out;
+}
+
+function polishTranscript(text){
+  return normalizePunctuationCommands(normalizeDomainTerms(text));
+}
+
 function transcriptScore(text,confidence=0){
-  const normalized=normalizeDomainTerms(text);
+  const normalized=polishTranscript(text);
   let score=Number(confidence)||0;
   const lower=normalized.toLowerCase();
   for(const term of ['chatgpt','codex','t.i.d.e.','geoguessr','playstation','cloudflare','premiere pro','openai']){
@@ -64,7 +92,24 @@ function bestAlternative(result){
   }
   if(!options.length)return '';
   options.sort((a,b)=>transcriptScore(b.text,b.confidence)-transcriptScore(a.text,a.confidence));
-  return normalizeDomainTerms(options[0].text);
+  return polishTranscript(options[0].text);
+}
+
+function addFinalPiece(current,next,gapMs=0){
+  let piece=polishTranscript(next).trim();
+  if(!piece)return polishTranscript(current);
+  let base=polishTranscript(current).trimEnd();
+  if(!base)return piece;
+
+  if(!/[.!?,;:\n]$/.test(base)&&!/^[,.;:!?]/.test(piece)){
+    if(gapMs>=1800)base+='.';
+    else if(gapMs>=850)base+=',';
+  }
+
+  if(/[.!?]$/.test(base)||/\n\s*$/.test(base)){
+    piece=piece.replace(/^([a-z])/,m=>m.toUpperCase());
+  }
+  return polishTranscript(`${base} ${piece}`);
 }
 
 function composeDictation(before,spoken,after){
@@ -77,7 +122,7 @@ function composeDictation(before,spoken,after){
 
 function updateEditor(interim=''){
   if(!activeEditor?.isConnected)return;
-  const spoken=normalizeDomainTerms(addPiece(finalTranscript,interim));
+  const spoken=polishTranscript(addPiece(finalTranscript,interim));
   activeEditor.value=composeDictation(insertBefore,spoken,insertAfter);
   activeEditor.dispatchEvent(new Event('input',{bubbles:true}));
   const leftSpace=insertBefore&&!/[\s\n]$/.test(insertBefore)&&spoken&&!/^[,.;!?]/.test(spoken)?1:0;
@@ -101,6 +146,7 @@ function finishDictation(message='Dictation stopped.'){
   activeEditor=null;
   activeButton=null;
   finalTranscript='';
+  lastFinalAt=0;
 }
 
 function stopDictation(message='Dictation added to today.'){
@@ -135,6 +181,7 @@ async function startDictation(editor,button){
   activeButton=button;
   keepListening=true;
   finalTranscript='';
+  lastFinalAt=0;
   const start=Number.isFinite(editor.selectionStart)?editor.selectionStart:editor.value.length;
   const end=Number.isFinite(editor.selectionEnd)?editor.selectionEnd:start;
   insertBefore=editor.value.slice(0,start);
@@ -155,13 +202,19 @@ async function startDictation(editor,button){
   };
   recognition.onresult=event=>{
     let interim='';
+    const now=Date.now();
     for(let i=event.resultIndex;i<event.results.length;i++){
       const result=event.results[i];
       const transcript=bestAlternative(result);
-      if(result.isFinal)finalTranscript=addPiece(finalTranscript,transcript);
-      else interim=addPiece(interim,transcript);
+      if(result.isFinal){
+        const gap=lastFinalAt?now-lastFinalAt:0;
+        finalTranscript=addFinalPiece(finalTranscript,transcript,gap);
+        lastFinalAt=now;
+      }else{
+        interim=addPiece(interim,transcript);
+      }
     }
-    finalTranscript=normalizeDomainTerms(finalTranscript);
+    finalTranscript=polishTranscript(finalTranscript);
     updateEditor(interim);
   };
   recognition.onerror=event=>{
@@ -207,7 +260,7 @@ function attachDictation(){
   button.textContent=Recognition?'🎤 Dictate':'🎤 Dictation unavailable';
   button.disabled=!Recognition;
   button.setAttribute('aria-pressed','false');
-  button.title=Recognition?'Speak into today’s entry using your browser/device speech recognition. No OpenAI API credits are used.':'This browser does not expose voice dictation to websites.';
+  button.title=Recognition?'Speak naturally. Say comma, period, question mark, exclamation point, new line, or new paragraph for punctuation. No OpenAI API credits are used.':'This browser does not expose voice dictation to websites.';
   button.addEventListener('click',()=>{
     if(active&&activeEditor===editor)stopDictation();
     else startDictation(editor,button);
