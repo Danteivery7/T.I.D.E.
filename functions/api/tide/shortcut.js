@@ -88,16 +88,6 @@ function saveEntry(state, date, text) {
   state.updatedAt = now;
 }
 
-function recentExamples(entries = {}, date, limit = 5) {
-  return Object.keys(entries)
-    .filter((key) => DATE_RE.test(key) && key < date)
-    .sort()
-    .reverse()
-    .slice(0, limit)
-    .map((key) => ({ date: key, text: entryText(entries[key]) }))
-    .filter((item) => item.text);
-}
-
 async function authorize(context) {
   if (await isAuthenticated(context.env, context.request)) return true;
   const code = context.request.headers.get('x-tide-access-code') || '';
@@ -109,10 +99,28 @@ export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const date = cleanText(url.searchParams.get('date'), 10);
   if (!DATE_RE.test(date)) return json({ error: 'Invalid date.' }, 400);
+
   try {
-    const current = await readCloud(context.env);
-    const entries = current.state?.entries || {};
-    return json({ date, today: entryText(entries[date]), recent: recentExamples(entries, date) });
+    const todayPath = `$.entries."${date}".text`;
+    const todayRow = await context.env.TIDE_DB
+      .prepare('SELECT json_extract(json, ?1) AS text FROM tide_state WHERE id = 1')
+      .bind(todayPath)
+      .first();
+
+    const recentResult = await context.env.TIDE_DB
+      .prepare(`SELECT e.key AS date, json_extract(e.value, '$.text') AS text
+                FROM tide_state, json_each(json, '$.entries') AS e
+                WHERE tide_state.id = 1 AND e.key < ?1
+                ORDER BY e.key DESC
+                LIMIT 5`)
+      .bind(date)
+      .all();
+
+    const recent = (recentResult?.results || [])
+      .map((row) => ({ date: cleanText(row?.date, 10), text: cleanText(row?.text, 12000) }))
+      .filter((row) => row.date && row.text);
+
+    return json({ date, today: cleanText(todayRow?.text, 12000), recent });
   } catch (error) {
     return json({ error: error?.message || 'Shared storage request failed.' }, 500);
   }
