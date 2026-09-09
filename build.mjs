@@ -1,7 +1,7 @@
 import { mkdir,rm,copyFile,cp } from 'node:fs/promises';
 
 const files=[
-  'index.html','styles.css','app.js','engine.js','engine-v2.js','engine-v3.js','engine-v4.js',
+  'index.html','styles.css','app.js','voice-dictation.js','engine.js','engine-v2.js','engine-v3.js','engine-v4.js',
   'enhancements.js','history-bootstrap.js','migraine-fix.js','tracker-upgrades.js','shared-save.js','year-rankings.js',
   'gaming.js','gaming-data.js','gaming-live.js','gaming-view.js','gaming-ask.js',
   'platform-copy.js','storage.js','spotify.js','sw.js','manifest.webmanifest','icon.svg'
