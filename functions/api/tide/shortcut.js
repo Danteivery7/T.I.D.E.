@@ -1,5 +1,6 @@
-import { isAuthenticated, json } from '../../_lib/auth.js';
+import { comparePassword, isAuthenticated, json } from '../../_lib/auth.js';
 import { readCloud, mergeAndWrite } from '../../_lib/state.js';
+import { saveEntry } from '../../../engine.js';
 
 const DATE_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
@@ -10,7 +11,7 @@ function cleanText(value, max = 4000) {
 function entryText(entry) {
   if (!entry) return '';
   if (typeof entry === 'string') return entry;
-  return cleanText(entry.text ?? entry.content ?? entry.body ?? entry.note ?? '', 12000);
+  return cleanText(entry.text ?? '', 12000);
 }
 
 function recentExamples(entries = {}, date, limit = 5) {
@@ -24,7 +25,9 @@ function recentExamples(entries = {}, date, limit = 5) {
 }
 
 async function authorize(context) {
-  return isAuthenticated(context.env, context.request);
+  if (await isAuthenticated(context.env, context.request)) return true;
+  const code = context.request.headers.get('x-tide-access-code') || '';
+  return comparePassword(context.env, code);
 }
 
 export async function onRequestGet(context) {
@@ -62,20 +65,9 @@ export async function onRequestPost(context) {
 
     const state = structuredClone(current.state);
     state.entries ||= {};
-    const existing = state.entries[date];
-    const previous = entryText(existing);
+    const previous = entryText(state.entries[date]);
     const combined = previous ? `${previous}, ${text}` : text;
-    const now = new Date().toISOString();
-
-    if (existing && typeof existing === 'object' && !Array.isArray(existing)) {
-      if ('text' in existing) state.entries[date] = { ...existing, text: combined, updatedAt: now };
-      else if ('content' in existing) state.entries[date] = { ...existing, content: combined, updatedAt: now };
-      else if ('body' in existing) state.entries[date] = { ...existing, body: combined, updatedAt: now };
-      else if ('note' in existing) state.entries[date] = { ...existing, note: combined, updatedAt: now };
-      else state.entries[date] = { ...existing, text: combined, updatedAt: now };
-    } else {
-      state.entries[date] = { text: combined, createdAt: now, updatedAt: now };
-    }
+    saveEntry(state, date, combined);
 
     const saved = await mergeAndWrite(context.env, state);
     return json({ ok: true, date, text: entryText(saved.state?.entries?.[date]) });
