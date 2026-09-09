@@ -5,6 +5,20 @@ import { entryText,saveEntry } from '../../_lib/diary.js';
 const DATE_RE=/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const clean=(value,max=12000)=>String(value??'').trim().slice(0,max);
 
+function easternDate(value){
+  const raw=clean(value,160);
+  if(DATE_RE.test(raw))return raw;
+
+  const parsed=raw?new Date(raw):new Date();
+  const date=Number.isNaN(parsed.getTime())?new Date():parsed;
+  const parts=new Intl.DateTimeFormat('en-US',{
+    timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'
+  }).formatToParts(date);
+  const get=type=>parts.find(part=>part.type===type)?.value||'';
+  const normalized=`${get('year')}-${get('month')}-${get('day')}`;
+  return DATE_RE.test(normalized)?normalized:'';
+}
+
 async function normalAuthorize(context){return isAuthenticated(context.env,context.request)}
 async function shortcutAuthorize(context,body={}){
   if(await isAuthenticated(context.env,context.request))return true;
@@ -90,8 +104,8 @@ export async function onRequestPost(context){
 
   if(shortcut){
     if(!await shortcutAuthorize(context,body))return json({error:'Unauthorized.'},401);
-    const date=clean(body?.date,10),text=clean(body?.text,4000);
-    if(!DATE_RE.test(date))return json({error:'Invalid date.'},400);
+    const date=easternDate(body?.date),text=clean(body?.text,4000);
+    if(!date)return json({error:'Invalid date.'},400);
     if(!text)return json({error:'Text is required.'},400);
     try{return json(await queueShortcutEntry(context,date,text))}
     catch(error){return json({error:error?.message||'Shortcut queue request failed.'},500)}
