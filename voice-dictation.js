@@ -7,6 +7,17 @@ let insertBefore='';
 let insertAfter='';
 let finalTranscript='';
 
+const TERM_RULES=[
+  {canonical:'ChatGPT',aliases:[/\bchat\s*g\s*p\s*t\b/gi,/\bchat\s*gbt\b/gi,/\bchat\s*gtp\b/gi,/\bchibis\b/gi,/\bchibi(?:'s)?\b/gi,/\bchat jee pee tee\b/gi]},
+  {canonical:'Codex',aliases:[/\bcode\s*x\b/gi,/\bcod\s*x\b/gi]},
+  {canonical:'T.I.D.E.',aliases:[/\btide\b/gi,/\bt\.i\.d\.e\.?\b/gi]},
+  {canonical:'GeoGuessr',aliases:[/\bgeo\s*guesser\b/gi,/\bgeoguesser\b/gi,/\bgeo guesser\b/gi]},
+  {canonical:'PlayStation',aliases:[/\bplay\s*station\b/gi]},
+  {canonical:'Cloudflare',aliases:[/\bcloud\s*flare\b/gi]},
+  {canonical:'Premiere Pro',aliases:[/\bpremier pro\b/gi,/\bpremiere pro\b/gi]},
+  {canonical:'OpenAI',aliases:[/\bopen\s*a\s*i\b/gi]}
+];
+
 function notify(message,type='good'){
   const region=document.querySelector('#toast-region');
   if(!region)return;
@@ -24,6 +35,38 @@ function addPiece(current,next){
   return `${current}${/\s$/.test(current)?'':' '}${piece}`;
 }
 
+function normalizeDomainTerms(text){
+  let out=String(text||'');
+  for(const rule of TERM_RULES){
+    for(const alias of rule.aliases)out=out.replace(alias,rule.canonical);
+  }
+  out=out.replace(/\b((?:worked|working|work|used|using|use|opened|opening|open|typed|typing|wrote|writing|coded|coding|ran|run)\s+(?:in|on|with|using)\s+(?:the\s+)?)kodak\b/gi,'$1Codex');
+  out=out.replace(/\b((?:in|on|with|using)\s+(?:the\s+)?)kodak\b/gi,'$1Codex');
+  return out;
+}
+
+function transcriptScore(text,confidence=0){
+  const normalized=normalizeDomainTerms(text);
+  let score=Number(confidence)||0;
+  const lower=normalized.toLowerCase();
+  for(const term of ['chatgpt','codex','t.i.d.e.','geoguessr','playstation','cloudflare','premiere pro','openai']){
+    if(lower.includes(term))score+=3;
+  }
+  if(/\b(?:kodak|chibis|chibi's|chat gbt|chat gtp|geo guesser|cloud flare|premier pro)\b/i.test(text))score+=1.5;
+  return score;
+}
+
+function bestAlternative(result){
+  const options=[];
+  for(let i=0;i<result.length;i++){
+    const alt=result[i];
+    options.push({text:alt?.transcript||'',confidence:alt?.confidence||0});
+  }
+  if(!options.length)return '';
+  options.sort((a,b)=>transcriptScore(b.text,b.confidence)-transcriptScore(a.text,a.confidence));
+  return normalizeDomainTerms(options[0].text);
+}
+
 function composeDictation(before,spoken,after){
   const text=String(spoken||'').trim();
   if(!text)return `${before}${after}`;
@@ -34,7 +77,7 @@ function composeDictation(before,spoken,after){
 
 function updateEditor(interim=''){
   if(!activeEditor?.isConnected)return;
-  const spoken=addPiece(finalTranscript,interim);
+  const spoken=normalizeDomainTerms(addPiece(finalTranscript,interim));
   activeEditor.value=composeDictation(insertBefore,spoken,insertAfter);
   activeEditor.dispatchEvent(new Event('input',{bubbles:true}));
   const leftSpace=insertBefore&&!/[\s\n]$/.test(insertBefore)&&spoken&&!/^[,.;!?]/.test(spoken)?1:0;
@@ -102,7 +145,7 @@ async function startDictation(editor,button){
   recognition.lang='en-US';
   recognition.continuous=true;
   recognition.interimResults=true;
-  recognition.maxAlternatives=1;
+  recognition.maxAlternatives=5;
   const local=await preferLocalDictation(recognition);
 
   let announced=false;
@@ -113,10 +156,12 @@ async function startDictation(editor,button){
   recognition.onresult=event=>{
     let interim='';
     for(let i=event.resultIndex;i<event.results.length;i++){
-      const transcript=event.results[i]?.[0]?.transcript||'';
-      if(event.results[i].isFinal)finalTranscript=addPiece(finalTranscript,transcript);
+      const result=event.results[i];
+      const transcript=bestAlternative(result);
+      if(result.isFinal)finalTranscript=addPiece(finalTranscript,transcript);
       else interim=addPiece(interim,transcript);
     }
+    finalTranscript=normalizeDomainTerms(finalTranscript);
     updateEditor(interim);
   };
   recognition.onerror=event=>{
