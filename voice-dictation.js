@@ -81,13 +81,6 @@ async function preferLocalDictation(recognition){
   return false;
 }
 
-function applyContextHints(recognition){
-  if(!('phrases' in recognition)||typeof window.SpeechRecognitionPhrase!=='function')return;
-  try{
-    recognition.phrases=['T.I.D.E.','GeoGuessr','PlayStation','Xbox','Spotify','Premiere Pro','Cloudflare'].map(phrase=>new window.SpeechRecognitionPhrase(phrase,5));
-  }catch{}
-}
-
 async function startDictation(editor,button){
   if(!Recognition){
     notify('Voice dictation is not supported by this browser.','bad');
@@ -110,7 +103,6 @@ async function startDictation(editor,button){
   recognition.continuous=true;
   recognition.interimResults=true;
   recognition.maxAlternatives=1;
-  applyContextHints(recognition);
   const local=await preferLocalDictation(recognition);
 
   let announced=false;
@@ -132,7 +124,9 @@ async function startDictation(editor,button){
     const messages={
       'not-allowed':'Microphone permission was blocked. Allow microphone access for T.I.D.E. and try again.',
       'audio-capture':'T.I.D.E. could not access a microphone.',
-      'network':'Voice recognition temporarily lost its connection.'
+      'network':'Voice recognition temporarily lost its connection.',
+      'language-not-supported':'English voice recognition is not available in this browser.',
+      'phrases-not-supported':'This browser does not support optional phrase hints.'
     };
     notify(messages[event.error]||`Voice dictation error: ${event.error}`,'bad');
     keepListening=false;
