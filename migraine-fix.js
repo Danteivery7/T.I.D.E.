@@ -20,7 +20,7 @@ function otherYears(state){
 function sameRecord(a,b){
   if(!a)return false;
   return Number(a.allTime)===Number(b.allTime)&&
-    Number(a.years?.[2024])===130&&Number(a.years?.[2025])===50&&
+    Number(a.years?.[2024])===29&&Number(a.years?.[2025])===23&&
     Number(a.months?.['2024-10'])===20&&Number(a.months?.['2024-11'])===20&&
     Number(a.months?.['2025-09'])===15;
 }
@@ -34,9 +34,9 @@ function applyMigraineHistory(){
   const next={
     ...previous,
     allTime,
-    years:{...(previous.years||{}),2024:130,2025:50},
+    years:{...(previous.years||{}),2024:29,2025:23},
     months:{...(previous.months||{}),'2024-10':20,'2024-11':20,'2025-09':15},
-    note:'Authoritative migraine history: 2024=130 (Oct 20, Nov 20); 2025=50 (Sep 15). Other years remain live from recorded data.'
+    note:'Authoritative migraine history: 2024=29 estimated from the documented 2024 log and seasonal pattern; 2025=23 documented migraine/headache days. Other years remain live from recorded data.'
   };
   if(sameRecord(previous,next))return;
   next.updatedAt=new Date().toISOString();
