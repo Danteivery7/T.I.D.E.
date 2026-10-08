@@ -25,7 +25,7 @@ function canonicalTitle(title){
 export function keyTitle(title){return clean(canonicalTitle(title));}
 export function displayTitle(title){return canonicalTitle(title);}
 export const maxDate=(a,b)=>!a?(b||''):!b?a:(String(b)>String(a)?b:a);
-export const platformLabel=p=>({ps4:'PS4',ps5:'PS5',playstation:'PlayStation',xbox:'Xbox',nintendo:'Nintendo Switch 2',unattributed:'Unverified Platform',steam:'Steam',ubisoft:'Ubisoft PC',ea:'EA PC',gog:'GOG',epic:'Epic',windows:'Windows PC',pc:'PC'})[p]||String(p||'Other').toUpperCase();
+export const platformLabel=p=>({ps4:'PS4',ps5:'PS5',playstation:'PlayStation',xbox:'Xbox',nintendo:'Nintendo',unattributed:'Unverified Platform',steam:'Steam',ubisoft:'Ubisoft PC',ea:'EA PC',gog:'GOG',epic:'Epic',windows:'Windows PC',pc:'PC'})[p]||String(p||'Other').toUpperCase();
 export const isPcPlatform=p=>['steam','ubisoft','ea','gog','epic','windows','pc'].includes(p);
 export function filterAllows(p,filter='all'){if(filter==='all')return true;if(filter==='pc')return isPcPlatform(p);if(filter==='console')return ['ps4','ps5','playstation','xbox','nintendo'].includes(p);if(filter==='playstation')return ['ps4','ps5','playstation'].includes(p);return p===filter;}
 function ignoreGamePlatform(title,platform){return String(platform||'').toLowerCase()==='xbox'&&clean(title)==='forza horizon 6';}
