@@ -1,9 +1,11 @@
 import {displayTitle,gaming,keyTitle,maxDate,now,saveGaming,toast} from './gaming-data.js';
 
-const PC_SOURCE_VERSION='pc-monthly-v13';
+const PC_SOURCE_VERSION='pc-monthly-v14';
 const RECOVERY_VERSION='baseline-month-recovery-v2';
 const UBISOFT_CORRECTION_VERSION='motorfest-total-minus-console-v3';
 const MOTORFEST_PC_SOURCE_KEY='ubisoft:derived:motorfest:pc';
+const MOTORFEST_UNATTRIBUTED_SOURCE_KEY='ubisoft:derived:motorfest:unattributed';
+const MOTORFEST_SWITCH_LAUNCH='2026-10-08';
 const MOTORFEST_PENDING_GRACE_MS=24*60*60*1000;
 function localToday(){const d=new Date(),y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 
@@ -101,11 +103,11 @@ function maxMotorfestMinutes(games,platforms){
 }
 function motorfestDerived(data,exoGames,previous){
   if(!data.exophase?.ok||!data.ubisoftMotorfest?.ok)return{ok:false,error:data.ubisoftMotorfest?.error||'Motorfest sources unavailable',source:previous||null};
-  const total=Math.max(0,Number(data.ubisoftMotorfest.totalMinutes)||0),ps5=maxMotorfestMinutes(exoGames,['ps5','playstation']),xbox=maxMotorfestMinutes(exoGames,['xbox']),pc=total-ps5-xbox;
+  const total=Math.max(0,Number(data.ubisoftMotorfest.totalMinutes)||0),ps5=maxMotorfestMinutes(exoGames,['ps5','playstation']),xbox=maxMotorfestMinutes(exoGames,['xbox']),nintendo=maxMotorfestMinutes(exoGames,['nintendo']),pc=total-ps5-xbox-nintendo;
   if(total<=0)return{ok:false,error:'Ubisoft Motorfest returned no playtime',source:previous||null};
-  if(pc<0)return{ok:false,error:'Motorfest console totals exceed Ubisoft total',source:previous||null,total,ps5,xbox};
+  if(pc<0)return{ok:false,error:'Motorfest platform totals exceed Ubisoft total; verify whether Switch hours are included in Ubisoft Playtime',source:previous||null,total,ps5,xbox,nintendo};
   const modified=String(data.ubisoftMotorfest.lastModified||''),lastPlayed=/^\d{4}-\d{2}-\d{2}/.test(modified)?modified.slice(0,10):'';
-  return{ok:true,total,ps5,xbox,pc,source:{sourceKey:MOTORFEST_PC_SOURCE_KEY,sourceFamily:'ubisoft-derived',title:'The Crew Motorfest',minutes:pc,firstPlayed:'',lastPlayed,platform:'ubisoft',environment:'ubisoft-derived',image:'',countMinutes:true,derived:true,derivedFrom:{ubisoftTotalMinutes:total,ps5Minutes:ps5,xboxMinutes:xbox}}};
+  return{ok:true,total,ps5,xbox,nintendo,pc,source:{sourceKey:MOTORFEST_PC_SOURCE_KEY,sourceFamily:'ubisoft-derived',title:'The Crew Motorfest',minutes:pc,firstPlayed:'',lastPlayed,platform:'ubisoft',environment:'ubisoft-derived',image:'',countMinutes:true,derived:true,derivedFrom:{ubisoftTotalMinutes:total,ps5Minutes:ps5,xboxMinutes:xbox,nintendoMinutes:nintendo}}};
 }
 function addDeltaGame(deltaGames,title,platform,minutes,lastPlayed='',image=''){
   minutes=Math.max(0,Number(minutes)||0);if(!minutes)return;
@@ -119,18 +121,29 @@ function consumePending(pending,minutes){
 }
 function reconcileMotorfestActivity(g,mf,date,deltaGames){
   if(!mf?.ok)return;
-  const current={version:'total-minus-console-v1',total:mf.total,ps5:mf.ps5,xbox:mf.xbox,pc:mf.pc,capturedAt:now()},previous=g.motorfestSnapshot;
+  const current={version:'total-minus-console-v2',total:mf.total,ps5:mf.ps5,xbox:mf.xbox,nintendo:mf.nintendo,pc:mf.pc,capturedAt:now()},previous=g.motorfestSnapshot;
   let pending=Array.isArray(g.motorfestPendingPc)?g.motorfestPendingPc.filter(x=>(Number(x.minutes)||0)>0):[];
-  if(previous?.version===current.version){
-    const dTotal=current.total-(Number(previous.total)||0),dPs5=current.ps5-(Number(previous.ps5)||0),dXbox=current.xbox-(Number(previous.xbox)||0),unexplained=dTotal-dPs5-dXbox;
+  // The previous snapshot used the same Ubisoft global total, but had no Nintendo component.
+  if(previous?.version===current.version||previous?.version==='total-minus-console-v1'){
+    const dTotal=current.total-(Number(previous.total)||0),dPs5=current.ps5-(Number(previous.ps5)||0),dXbox=current.xbox-(Number(previous.xbox)||0),dNintendo=current.nintendo-(Number(previous.nintendo)||0),unexplained=dTotal-dPs5-dXbox-dNintendo;
     if(unexplained>0)pending.push({minutes:unexplained,date,createdAt:now()});
     else if(unexplained<0)pending=consumePending(pending,-unexplained);
-    const cutoff=Date.now()-MOTORFEST_PENDING_GRACE_MS,keep=[];
-    for(const chunk of pending){const t=Date.parse(chunk.createdAt||'');if(Number.isFinite(t)&&t<=cutoff)addDeltaGame(deltaGames,'The Crew Motorfest','ubisoft',chunk.minutes,mf.source?.lastPlayed||'');else keep.push(chunk);}
-    pending=keep;
   }
+  const cutoff=Date.now()-MOTORFEST_PENDING_GRACE_MS,keep=[];
+  for(const chunk of pending){
+    const t=Date.parse(chunk.createdAt||'');
+    // Since Switch 2 launched, unexplained Ubisoft hours could belong to Nintendo.
+    // Never silently relabel them PC, even if the Nintendo/Exophase feed is delayed.
+    if(chunk.date<MOTORFEST_SWITCH_LAUNCH&&Number.isFinite(t)&&t<=cutoff)addDeltaGame(deltaGames,'The Crew Motorfest','ubisoft',chunk.minutes,mf.source?.lastPlayed||'');
+    else keep.push(chunk);
+  }
+  pending=keep;
+  const unverified=pending.reduce((n,x)=>n+(Number(x.minutes)||0),0);
+  // Keep unverified time separate from PC so the site never claims Switch activity as PC activity.
+  mf.source.minutes=Math.max(0,mf.pc-unverified);
+  mf.unverifiedMinutes=unverified;
   g.motorfestSnapshot=current;g.motorfestPendingPc=pending;
-  g.ubisoftMotorfestDiagnostics={totalMinutes:mf.total,ps5Minutes:mf.ps5,xboxMinutes:mf.xbox,pcMinutes:mf.pc,pendingPcMinutes:pending.reduce((n,x)=>n+(Number(x.minutes)||0),0),formula:'Ubisoft total - PS5 - Xbox',updatedAt:now()};
+  g.ubisoftMotorfestDiagnostics={totalMinutes:mf.total,ps5Minutes:mf.ps5,xboxMinutes:mf.xbox,nintendoMinutes:mf.nintendo,pcResidualMinutes:mf.pc,verifiedPcMinutes:mf.source.minutes,unverifiedMinutes:unverified,formula:'Ubisoft total - PS5 - Xbox - Nintendo - unverified (PC only)',updatedAt:now()};
 }
 function process(data){
   const g=gaming();cleanInvalidMotorfestInference(g);
@@ -167,7 +180,11 @@ function process(data){
   if(!first){
     for(const cur of next){
       if(cur.sourceKey===MOTORFEST_PC_SOURCE_KEY)continue;
-      const old=previous.get(cur.sourceKey);if(!old)continue;const delta=(Number(cur.minutes)||0)-(Number(old.minutes)||0);if(delta<=0)continue;addDeltaGame(deltaGames,cur.title,cur.platform,delta,cur.lastPlayed,cur.image);
+      const old=previous.get(cur.sourceKey);if(!old){
+         // Motorfest did not exist on Nintendo before 2026-10-08, so its first Nintendo reading is entirely new time.
+         if(cur.platform==='nintendo'&&isMotorfest(cur)&&!g.motorfestNintendoInitialized)addDeltaGame(deltaGames,cur.title,cur.platform,Number(cur.minutes)||0,cur.lastPlayed,cur.image);
+         continue;
+       }const delta=(Number(cur.minutes)||0)-(Number(old.minutes)||0);if(delta<=0)continue;addDeltaGame(deltaGames,cur.title,cur.platform,delta,cur.lastPlayed,cur.image);
     }
     reconcileMotorfestActivity(g,mf,date,deltaGames);
   }else if(mf?.ok){
@@ -179,6 +196,13 @@ function process(data){
     for(const [k,item] of Object.entries(deltaGames)){const old=rec.games[k]||{key:k,title:item.title,platformMinutes:{},lastPlayed:'',image:item.image};for(const [p,v] of Object.entries(item.platformMinutes))old.platformMinutes[p]=(old.platformMinutes[p]||0)+v;old.lastPlayed=maxDate(old.lastPlayed,item.lastPlayed);rec.games[k]=old;}
     rec.updatedAt=now();g.activity[date]=rec;
   }
+  if(mf?.ok&&mf.unverifiedMinutes>0){
+    next.push({sourceKey:MOTORFEST_UNATTRIBUTED_SOURCE_KEY,sourceFamily:'ubisoft-derived',title:'The Crew Motorfest',minutes:mf.unverifiedMinutes,firstPlayed:'',lastPlayed:mf.source?.lastPlayed||'',platform:'unattributed',environment:'ubisoft-derived',image:'',countMinutes:true,derived:true});
+  }else if(!mf?.ok){
+    const lastUnverified=(g.latestSources||[]).find(x=>x.sourceKey===MOTORFEST_UNATTRIBUTED_SOURCE_KEY);
+    if(lastUnverified)next.push(lastUnverified);
+  }
+  if(next.some(x=>x.platform==='nintendo'&&isMotorfest(x)))g.motorfestNintendoInitialized=true;
   recoverBaselineMonth(g,next,date,data);
   g.latestSources=next;g.lastRefreshAt=data.capturedAt||now();g.lastRefreshLocalDate=date;g.liveSourceVersion=PC_SOURCE_VERSION;g.liveStatus={exophase:data.exophase||{},steam:data.steam||{},ubisoftMotorfest:data.ubisoftMotorfest||{}};saveGaming(g);
   return{first,ubiIdentity,keptUbisoft,motorfest:mf,added:Object.values(deltaGames).reduce((n,x)=>n+Object.values(x.platformMinutes).reduce((a,b)=>a+b,0),0)};
