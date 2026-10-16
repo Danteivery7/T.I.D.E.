@@ -57,7 +57,8 @@ export function mergeGaming(a={},b={}){
 export async function pullGaming(){try{const r=await fetch('/api/gaming/state',{credentials:'same-origin'});if(!r.ok)return cache;const body=await r.json();cache=mergeGaming(cache,body.gaming||{});localStorage.setItem(KEY,JSON.stringify(cache));return cache;}catch{return cache;}}
 export function saveGaming(g,{sync=true}={}){g=shape(g);g.updatedAt=now();cache=g;localStorage.setItem(KEY,JSON.stringify(g));if(sync)fetch('/api/gaming/state',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({gaming:g})}).catch(()=>{});return g;}
 
-export function currentSources(){return[...LEGACY_GAMES,...gaming().latestSources].filter(s=>!ignoreGamePlatform(s.title,s.platform));}
+function shownPlatform(title,platform){return keyTitle(title)==='the crew motorfest'&&platform==='unattributed'?'nintendo':platform;}
+export function currentSources(){return[...LEGACY_GAMES,...gaming().latestSources].filter(s=>!ignoreGamePlatform(s.title,s.platform)).map(s=>shownPlatform(s.title,s.platform)===s.platform?s:{...s,platform:'nintendo'});}
 function addAggregate(map,title,platform,minutes,lastPlayed='',image='',source=null){
   minutes=Math.max(0,Number(minutes)||0);if(!minutes)return;
   const k=keyTitle(title),g=map.get(k)||{key:k,title:displayTitle(title),minutes:0,lastPlayed:'',platformMinutes:{},sources:[],image:''};
@@ -79,9 +80,9 @@ export function activityRange(start,end,filter='all'){
     if(!monthKeyInRange(month,start,end))continue;
     for(const item of Object.values(rec.games||{})){
       const title=item.title||item.key;let mins=0;
-      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(p,filter))mins+=Number(v)||0;
+      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(shownPlatform(title,p),filter))mins+=Number(v)||0;
       if(!mins)continue;
-      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(p,filter))addAggregate(map,title,p,v,item.lastPlayed,item.image);
+      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(shownPlatform(title,p),filter))addAggregate(map,title,shownPlatform(title,p),v,item.lastPlayed,item.image);
       recoveredMinutes+=mins;total+=mins;
     }
   }
@@ -89,9 +90,9 @@ export function activityRange(start,end,filter='all'){
     if(date<start||date>end)continue;
     for(const item of Object.values(rec.games||{})){
       const title=item.title||item.key;let mins=0;
-      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(p,filter))mins+=Number(v)||0;
+      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(shownPlatform(title,p),filter))mins+=Number(v)||0;
       if(!mins)continue;
-      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(p,filter))addAggregate(map,title,p,v,item.lastPlayed,item.image);
+      for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(shownPlatform(title,p),filter))addAggregate(map,title,shownPlatform(title,p),v,item.lastPlayed,item.image);
       trackedMinutes+=mins;total+=mins;
     }
   }
