@@ -3,6 +3,8 @@ export * from './engine-v3.js';
 
 const CANONICAL_COLLISIONS='apartment-collisions';
 const DUPLICATE_COLLISIONS='collision-count';
+const GTA_ONLINE_END='2026-11-19';
+const GTA_ONLINE_IDS=new Set(['mors-mutual','google-car']);
 
 const num=value=>Number.isFinite(Number(value))?Math.max(0,Number(value)):null;
 const canonical=id=>id===DUPLICATE_COLLISIONS?CANONICAL_COLLISIONS:id;
@@ -26,13 +28,19 @@ export function trackerDefinition(state,id){
     return {...base,id:CANONICAL_COLLISIONS,name:'Collisions',kind:'event',status:'active',
       aliases:[...(base.aliases||[]),'collision','collisions','collision count','walked into an object','walked into something']};
   }
+  if(GTA_ONLINE_IDS.has(key))return {...base,retiredOn:GTA_ONLINE_END,status:v3.isoToday()>=GTA_ONLINE_END?'retired':base.status};
   return base;
 }
 
 export function allTrackerDefinitions(state){
-  return v3.allTrackerDefinitions(state)
-    .filter(t=>t.id!==DUPLICATE_COLLISIONS)
-    .map(t=>t.id===CANONICAL_COLLISIONS?trackerDefinition(state,t.id):t);
+  return v3.allTrackerDefinitions(state).filter(t=>t.id!==DUPLICATE_COLLISIONS).map(t=>trackerDefinition(state,t.id));
+}
+
+// Preserve all historic totals, but never automatically count post-retirement GTA Online diary text.
+export function saveEntry(state,date,text){
+  const saved=v3.saveEntry(state,date,text);
+  if(date>=GTA_ONLINE_END)state.occurrences=(state.occurrences||[]).filter(r=>!(r.date===date&&r.source==='detected'&&GTA_ONLINE_IDS.has(r.trackerId)));
+  return saved;
 }
 
 export function trackerTotal(state,id,scope={}){

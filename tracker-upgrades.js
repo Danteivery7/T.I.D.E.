@@ -89,23 +89,64 @@ function hideDuplicateRows(){
   });
 }
 
+function showcaseCell(label,value){return '<div class="tracker-spotlight-cell"><div class="stat-label">'+esc(label)+'</div><b>'+esc(value)+'</b></div>'}
+function showcaseRow(name,subtitle,columns,key){return '<div class="tracker-row tracker-spotlight-row"><div class="tracker-name"><b>'+esc(name)+'</b><span class="tracker-status">'+esc(subtitle)+'</span></div>'+columns.map(c=>showcaseCell(c[0],c[1])).join('')+'<button type="button" class="button" data-special-edit="'+key+'">View / Add</button></div>'}
+function editNumber(id,label,val){return '<label class="label">'+esc(label)+'<input id="'+id+'" class="input" type="number" min="0" step="1" value="'+Math.max(0,Number(val)||0)+'"></label>'}
+function openShowcaseEditor(key){
+  const s=ensureState(),month=isoToday().slice(0,7),dc=s.tideCounters?.dailyChallenge||{};
+  const mo=s.monthlyReviews?.[month]?.versusTotals?.['monty-dc']||{},all=s.tideCounters?.montyOverall||{};
+  const labels={dc:'Daily Challenge',monty:'Daily Challenge vs Monty',tenk:'GeoGuessr 10K Streak',hk:'Hong Kong Spawns',collisions:'Collisions'};
+  if(!labels[key])return;
+  const dialog=document.querySelector('#modal'),body=dialog?.querySelector('#modal-body');if(!body)return;
+  document.querySelector('#modal-title').textContent=labels[key];document.querySelector('#modal-eyebrow').textContent='TRACKER · VIEW / ADD';
+  let content='';
+  if(key==='dc'){
+    content='<p class="small muted">Correct your streak here. The main Trackers page remains read-only.</p>'+editNumber('edit-dc','Current streak',dc.current)+'<div class="tracker-edit-actions"><button class="button primary" id="save-dc">Set Current Streak</button><button class="button ghost" id="reset-dc">Streak Lost / Reset</button></div>';
+  }else if(key==='monty'){
+    content='<p class="small muted">Edit this month and all-time separately. The quick Win and Loss buttons remain on the Trackers page.</p><div class="section-title">THIS MONTH</div><div class="grid grid-2">'+editNumber('edit-mw','Wins',mo.wins)+editNumber('edit-ml','Losses',mo.losses)+'</div><button class="button primary tracker-modal-save" id="save-month">Set This Month</button><div class="section-title">ALL TIME</div><div class="grid grid-2">'+editNumber('edit-aw','Wins',all.wins)+editNumber('edit-al','Losses',all.losses)+'</div><button class="button primary tracker-modal-save" id="save-all">Set All-Time</button>';
+  }else{
+    const total=key==='tenk'?current10k(s):trackerTotal(s,key==='hk'?HK:COLLISIONS);
+    content='<p class="small muted">Use the number arrows or type a total. Save applies the change.</p>'+editNumber('edit-total','Current '+(key==='tenk'?'streak':'all-time total'),total)+'<div class="tracker-edit-actions"><button class="button" id="minus-total">−1</button><button class="button" id="plus-total">+1</button><button class="button primary" id="save-total">Save number</button></div>';
+  }
+  body.innerHTML='<div class="tracker-quick-modal">'+content+'</div>';
+  if(!dialog.open)dialog.showModal();
+  const input=id=>body.querySelector('#'+id)?.value;
+  const forward=(button,fields)=>{for(const [id,v] of Object.entries(fields)){const el=root.querySelector('#'+id);if(el)el.value=v;}root.querySelector('#'+button)?.click();};
+  if(key==='dc'){
+    body.querySelector('#save-dc').onclick=()=>forward('gc-dc-set',{'gc-dc':input('edit-dc')});
+    body.querySelector('#reset-dc').onclick=()=>forward('gc-reset',{});
+  }else if(key==='monty'){
+    body.querySelector('#save-month').onclick=()=>forward('gc-ms',{'gc-mw':input('edit-mw'),'gc-ml':input('edit-ml')});
+    body.querySelector('#save-all').onclick=()=>forward('gc-as',{'gc-aw':input('edit-aw'),'gc-al':input('edit-al')});
+  }else{
+    const el=body.querySelector('#edit-total');
+    body.querySelector('#minus-total').onclick=()=>{el.value=String(Math.max(0,(Number(el.value)||0)-1))};
+    body.querySelector('#plus-total').onclick=()=>{el.value=String(Math.max(0,(Number(el.value)||0)+1))};
+    body.querySelector('#save-total').onclick=()=>{if(key==='tenk')set10k(el.value);else setTrackerTotal(key==='hk'?HK:COLLISIONS,el.value,key==='hk'?'Hong Kong Spawns':'Collisions')};
+  }
+}
 function decorateTrackers(){
   if((root?.querySelector('.page-head h1')?.textContent||'')!=='Trackers')return;
-  const box=root.querySelector('#geo-controls');if(!box||box.querySelector('#authoritative-tracker-controls'))return;
-  const s=ensureState(),hk=trackerTotal(s,HK),collisions=trackerTotal(s,COLLISIONS),tenk=current10k(s);
-  const section=document.createElement('div');section.id='authoritative-tracker-controls';
-  section.innerHTML=`
-    <div class="section-title">GEOGUESSR 10K STREAK</div>
-    <div class="filter-row"><input id="authoritative-10k" class="input" type="number" min="0" value="${tenk}" style="max-width:180px"><button id="authoritative-10k-set" class="button primary">Set 10K Streak</button><span class="small muted">Replace the number whenever the streak changes.</span></div>
-    <div class="section-title">HONG KONG SPAWNS</div>
-    <div class="filter-row"><input id="authoritative-hk" class="input" type="number" min="0" value="${hk}" style="max-width:180px"><button id="authoritative-hk-set" class="button primary">Set Hong Kong Total</button><span class="small muted">Authoritative total. Current all-time baseline: 11.</span></div>
-    <div class="section-title">COLLISIONS</div>
-    <div class="filter-row"><input id="authoritative-collisions" class="input" type="number" min="0" value="${collisions}" style="max-width:180px"><button id="authoritative-collisions-set" class="button primary">Set Collision Total</button><span class="small muted">109 all time · 32 in 2026. Includes +12 from July/August.</span></div>`;
-  box.append(section);
-  section.querySelector('#authoritative-10k-set').onclick=()=>set10k(section.querySelector('#authoritative-10k').value);
-  section.querySelector('#authoritative-hk-set').onclick=()=>setTrackerTotal(HK,section.querySelector('#authoritative-hk').value,'Hong Kong Spawns');
-  section.querySelector('#authoritative-collisions-set').onclick=()=>setTrackerTotal(COLLISIONS,section.querySelector('#authoritative-collisions').value,'Collisions');
-  hideDuplicateRows();
+  const geo=root.querySelector('#geo-controls'),table=root.querySelector('.tracker-table');if(!geo||!table||root.querySelector('#tracker-showcase'))return;
+  const s=ensureState(),date=isoToday(),month=date.slice(0,7),year=Number(date.slice(0,4));
+  const dc=s.tideCounters?.dailyChallenge||{},mo=s.monthlyReviews?.[month]?.versusTotals?.['monty-dc']||{},yr=s.tideCounters?.montyYears?.[year]||{},all=s.tideCounters?.montyOverall||{};
+  const wl=r=>String(Math.max(0,Number(r?.wins)||0))+'–'+String(Math.max(0,Number(r?.losses)||0));
+  const ids=new Set(['daily-challenge','monty-dc','geoguessr-10k','hong-kong','apartment-collisions','collision-count']);
+  table.querySelectorAll('.tracker-row').forEach(row=>{if(ids.has(row.querySelector('[data-tracker]')?.dataset.tracker)){row.dataset.tideSpecialHidden='true';row.style.display='none'}});
+  const rows=[
+    showcaseRow('Daily Challenge','streak · manually updated',[['Current',Math.max(0,Number(dc.current)||0)],['Longest',Math.max(0,Number(dc.longest)||0)],['Status',(Number(dc.current)||0)>0?'Active':'Inactive']],'dc'),
+    showcaseRow('Daily Challenge vs Monty','wins–losses',[['This Month',wl(mo)],[String(year),wl(yr)],['All Time',wl(all)]],'monty'),
+    showcaseRow('GeoGuessr 10K Streak','current consecutive total',[['Current',fmt(current10k(s))],['Last Updated',short(s.tideCounters?.geoguessr10k?.lastUpdated)],['Measure','Streak']],'tenk'),
+    showcaseRow('Hong Kong Spawns','event totals',[['This Month',fmt(trackerTotal(s,HK,{month}))],[String(year),fmt(trackerTotal(s,HK,{year}))],['All Time',fmt(trackerTotal(s,HK))]],'hk'),
+    showcaseRow('Collisions','event totals',[['This Month',fmt(trackerTotal(s,COLLISIONS,{month}))],[String(year),fmt(trackerTotal(s,COLLISIONS,{year}))],['All Time',fmt(trackerTotal(s,COLLISIONS))]],'collisions')
+  ];
+  const section=document.createElement('section');section.id='tracker-showcase';section.className='card';
+  section.innerHTML='<div class="card-header"><div><h2>GeoGuessr & Performance</h2><div class="small muted">Totals stay on display. Select View / Add to make changes.</div></div><span class="chip accent">LIVE TOTALS</span></div>'+
+    '<div class="tracker-quick-actions"><button type="button" class="button primary" data-quick="gc-plus">↑ +1 Daily Challenge</button><button type="button" class="button primary" data-quick="gc-win">WIN vs Monty</button><button type="button" class="button" data-quick="gc-loss">LOSS vs Monty</button></div>'+
+    '<div class="tracker-table tracker-spotlight-table">'+rows.join('')+'</div>';
+  table.closest('section.card').before(section);
+  section.querySelectorAll('[data-special-edit]').forEach(b=>b.onclick=()=>openShowcaseEditor(b.dataset.specialEdit));
+  section.querySelectorAll('[data-quick]').forEach(b=>b.onclick=()=>root.querySelector('#'+b.dataset.quick)?.click());
 }
 
 function decorateRecords(){

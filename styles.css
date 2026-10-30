@@ -96,3 +96,21 @@
 }
 #view-root.vice-city-nov19 .hero-day .right-stack .otd-year{color:#ff9edc}
 #view-root.vice-city-nov19 .hero-day .right-stack .otd-summary{color:#f1def5}
+
+
+/* Read-only performance showcase: native input controls open only inside View / Add. */
+#view-root:has(#tracker-showcase) > #geo-controls{display:none}
+#view-root:has(#tracker-showcase) .tracker-row[data-tide-special-hidden]{display:none!important}
+#tracker-showcase{margin-bottom:16px}
+#tracker-showcase .tracker-spotlight-table{margin-top:14px}
+#tracker-showcase .tracker-spotlight-row{background:linear-gradient(110deg,rgba(124,156,255,.065),rgba(255,255,255,.018));border-color:rgba(161,182,255,.14)}
+#tracker-showcase .tracker-spotlight-cell b{font-size:17px;font-variant-numeric:tabular-nums}
+#tracker-showcase .tracker-spotlight-cell .stat-label{margin-bottom:5px}
+#tracker-showcase .tracker-spotlight-row .button{white-space:nowrap}
+#tracker-showcase .tracker-quick-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+#tracker-showcase .tracker-quick-actions .button{min-height:40px}
+.tracker-quick-modal .label{display:block;max-width:100%}
+.tracker-quick-modal .input{display:block;width:100%;margin-top:7px}
+.tracker-edit-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px}
+.tracker-modal-save{margin-top:12px}
+@media(max-width:820px){#tracker-showcase .tracker-quick-actions{display:grid;grid-template-columns:1fr 1fr}#tracker-showcase .tracker-quick-actions .button:first-child{grid-column:1/-1}#tracker-showcase .tracker-spotlight-row .button{grid-column:1/-1;justify-self:stretch}}
