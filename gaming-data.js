@@ -101,7 +101,7 @@ export function activityRange(start,end,filter='all'){
 // Records are derived from actual snapshot deltas and recovered monthly totals.
 // Daily deltas represent changes seen on that date, not necessarily a single session.
 export function gamingRecordHighlights(){
-  const g=gaming(),byDay=[],daysByGame=[];
+  const g=gaming(),byDay=[],daysByGame=[],breakdownByDate=new Map();
   for(const [date,record] of Object.entries(g.activity||{})){
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
     let minutes=0;const perGame=new Map();
@@ -114,11 +114,21 @@ export function gamingRecordHighlights(){
       }
       if(!sum)continue;
       minutes+=sum;
-      const old=perGame.get(key)||{title:displayTitle(title),minutes:0};
-      old.minutes+=sum;perGame.set(key,old);
+      const old=perGame.get(key)||{title:displayTitle(title),minutes:0,platformMinutes:{}};
+      old.minutes+=sum;
+      for(const [platform,value] of Object.entries(item.platformMinutes||{})){
+        if(ignoreGamePlatform(title,platform)||!filterAllows(shownPlatform(title,platform),'all'))continue;
+        const n=Number(value);if(!Number.isFinite(n)||n<=0)continue;
+        const mapped=shownPlatform(title,platform);
+        old.platformMinutes[mapped]=(old.platformMinutes[mapped]||0)+n;
+      }
+      perGame.set(key,old);
     }
-    if(minutes>0)byDay.push({date,minutes});
-    for(const value of perGame.values())daysByGame.push({date,...value});
+    if(minutes>0){
+      byDay.push({date,minutes});
+      breakdownByDate.set(date,[...perGame.values()].sort((a,b)=>b.minutes-a.minutes||a.title.localeCompare(b.title)));
+    }
+    for(const value of perGame.values())daysByGame.push({date,title:value.title,minutes:value.minutes});
   }
   const byMinutes=(a,b)=>b.minutes-a.minutes||String(a.date||a.month||a.year||'').localeCompare(String(b.date||b.month||b.year||''));
   byDay.sort(byMinutes);daysByGame.sort(byMinutes);
@@ -140,6 +150,7 @@ export function gamingRecordHighlights(){
   const lifetimeGames=aggregateAllTime('all').sort(byMinutes);
   return{
     bestDay:byDay[0]||null,bestMonth:monthRows[0]||null,
+    bestDayGames:byDay[0]?breakdownByDate.get(byDay[0].date)||[]:[],
     bestGameDay:daysByGame[0]||null,bestGameMonth:monthsByGame[0]||null,
     bestYear:yearRows[0]||null,
     topMonths:monthRows.slice(0,3),trackedDays:byDay.length,trackedMonths:monthRows.length,
