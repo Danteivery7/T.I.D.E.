@@ -478,7 +478,6 @@ function recordsView(){
   const top=activityStats(state).counts[0],editing=mostActivityDay(state,"Editing");
   const streak=loggingStreak(state),daily=dailyChallengeStreaks(state),monty=montyRecord(state);
   const geo=geoguessr10kRecord(state);
-  const activityMonths=Object.entries(state.monthlyReviews||{}).filter(([month])=>/^\\d{4}-\\d{2}$/.test(month));
   const monthTop=gamingRecords.topMonths;
   const maxMonthlyMinutes=monthTop[0]?.minutes||1;
   const dateHint=bestDay?shortDate(bestDay.date):"No dated playtime recorded yet";
