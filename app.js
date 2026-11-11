@@ -9,7 +9,7 @@ import {
   loadDraft, loadLocal, mergeStates, saveDraft, saveLocal
 } from './storage.js';
 import { fetchPeriodMusic } from './spotify.js';
-import { activityRange, gamingRecordHighlights, hours as gamingHours } from './gaming-data.js';
+import { activityRange, gamingRecordHighlights, hours as gamingHours, platformLabel } from './gaming-data.js';
 
 const root=document.querySelector('#view-root');
 const nav=document.querySelector('#primary-nav');
@@ -487,14 +487,21 @@ function recordsView(){
       <div class="record-hall-hero"><div><div class="record-hall-eyebrow">✦ THE HALL OF FAME ✦</div><h2>Every high score tells a story<span>.</span></h2><p>Actual recorded milestones, meaningful personal bests, and the moments that stand out.</p></div><div class="record-hall-hero-art">${recordHallIcon("trophy")}</div></div>
       <div class="section-title">THE HEADLINERS · GAMING RECORDS</div>
       <div class="record-hall-feature-grid">
-        ${recordHallFeature("day","gamepad","Most gaming recorded in one day",bestDay?gamingHours(bestDay.minutes):"—",dateHint,"Measured from dated playtime changes, not a single timed session",bestDay?.date||"")}
+        ${recordHallFeature("day","gamepad","Largest dated gaming increase",bestDay?gamingHours(bestDay.minutes):"—",dateHint,"Playtime detected between snapshots · not necessarily played on that date",bestDay?.date||"")}
         ${recordHallFeature("month","calendar","Most gaming in one month",bestMonth?gamingHours(bestMonth.minutes):"—",monthHint,bestMonth?.recoveredMinutes>0?"Includes recoverable historic monthly playtime":"Summed from tracked monthly playtime")}
       </div>
+      ${bestDay? `<details class="record-hall-day-breakdown">
+        <summary><span class="record-hall-breakdown-icon">${recordHallIcon("gamepad")}</span><span class="record-hall-breakdown-title"><b>Which games contributed to ${esc(gamingHours(bestDay.minutes))}?</b><small>${esc(shortDate(bestDay.date))} · ${gamingRecords.bestDayGames.length} game${gamingRecords.bestDayGames.length===1?"":"s"} recorded</small></span><span class="record-hall-breakdown-toggle">See breakdown <span aria-hidden="true">⌄</span></span></summary>
+        <div class="record-hall-breakdown-body">
+        ${gamingRecords.bestDayGames.length?gamingRecords.bestDayGames.map((game,i)=>`<div class="record-hall-breakdown-game"><span class="record-hall-breakdown-rank">${String(i+1).padStart(2,"0")}</span><div class="record-hall-breakdown-game-name"><strong>${esc(game.title)}</strong><small>${esc(Object.keys(game.platformMinutes||{}).map(platformLabel).join(" + ")||"Recorded gaming")}</small></div><span class="record-hall-breakdown-game-minutes">${esc(gamingHours(game.minutes))}</span></div>`).join(""):'<p class="muted small">No per-game breakdown available for this date.</p>'}
+        <p class="record-hall-breakdown-caveat">These are positive changes in platform playtime detected on this date. An account that reported several days of playtime at once can make the number look larger than the hours actually played on ${esc(shortDate(bestDay.date))}.</p>
+        </div>
+      </details>`:""}
       <div class="section-title">GAMING · MORE PERSONAL BESTS</div>
       <div class="record-hall-card-grid">
         ${recordHallCard("total","clock","Total gaming time",totalTime,gamingRecords.lifetimeMinutes>0?"Lifetime known playtime across connected and legacy sources":"Connect gaming accounts to build this record")}
         ${recordHallCard("favorite","trophy","Most played game ever",gamingRecords.favoriteGame?.title||"—",gamingRecords.favoriteGame?`${gamingHours(gamingRecords.favoriteGame.minutes)} known playtime`:"No lifetime game hours available yet")}
-        ${recordHallCard("single","gamepad","Biggest one-game day",bestGameDay?gamingHours(bestGameDay.minutes):"—",bestGameDay?`${bestGameDay.title} · ${shortDate(bestGameDay.date)}`:"Dated game minutes not available yet")}
+        ${recordHallCard("single","gamepad","Biggest one-game daily increase",bestGameDay?gamingHours(bestGameDay.minutes):"—",bestGameDay?`${bestGameDay.title} · ${shortDate(bestGameDay.date)}`:"Dated game minutes not available yet")}
         ${recordHallCard("single-month","calendar","Biggest game in a month",bestGameMonth?gamingHours(bestGameMonth.minutes):"—",bestGameMonth?`${bestGameMonth.title} · ${monthLabel(bestGameMonth.month)}`:"Monthly game playtime not available yet")}
         ${recordHallCard("year","bars","Biggest recorded gaming year",gamingRecords.bestYear?gamingHours(gamingRecords.bestYear.minutes):"—",gamingRecords.bestYear?`${gamingRecords.bestYear.year} · Known monthly playtime`:"Waiting for monthly gaming records")}
       </div>
