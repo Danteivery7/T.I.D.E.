@@ -22,6 +22,8 @@ let view='today';
 let selectedDate=isoToday();
 let selectedMonth=selectedDate.slice(0,7);
 let selectedYear=Number(selectedDate.slice(0,4));
+let musicPeriod='month',musicCategory='songs',musicMonth=selectedMonth,musicYear=selectedYear;
+let musicCustomStart=shiftDay(isoToday(),-29),musicCustomEnd=isoToday(),musicRequestId=0;
 let cloud={configured:false,authenticated:false,etag:null,checked:false};
 let askAnswer=null;
 let draftTimer=null;
@@ -288,7 +290,149 @@ function musicCached(start,end){for(const category of ['songs','artists','albums
 function renderMusicList(items){return `<div class="music-grid">${items?.length?items.map(x=>`<div class="music-item"><div class="music-rank">${x.rank===5&&items.filter(y=>y.rank===5).length>1?'T-':''}${x.rank}</div>${x.image?`<img class="music-cover" src="${esc(x.image)}" alt="">`:'<div class="music-cover"></div>'}<div><div class="music-title">${esc(x.name)}</div><div class="music-meta">${esc(x.artist||x.album||'')}</div></div><div class="music-count">${fmt(x.streams)}<div class="tiny subtle">STREAMS</div></div></div>`).join(''):'<div class="muted small">No listening data returned.</div>'}</div>`}
 function renderMusicSections(data){return `<div class="grid grid-3"><div><div class="section-title" style="margin-top:0">SONGS</div>${renderMusicList(data.songs)}</div><div><div class="section-title" style="margin-top:0">ARTISTS</div>${renderMusicList(data.artists)}</div><div><div class="section-title" style="margin-top:0">ALBUMS</div>${renderMusicList(data.albums)}</div></div>`}
 async function loadMusicFor(start,end,force,target){const el=root.querySelector(target);if(!el)return;el.innerHTML='<div class="muted small">Loading from stats.fm…</div>';try{const data=await fetchPeriodMusic(start,end,state,{force});persist();if(root.querySelector(target))root.querySelector(target).innerHTML=renderMusicSections(data)}catch(e){if(root.querySelector(target))root.querySelector(target).innerHTML=`<div class="callout danger-callout">Could not load stats.fm data: ${esc(e.message)}</div>`}}
-function musicView(){const month=selectedMonth;const {start,end}=monthBounds(month);const cached=musicCached(start,end);root.innerHTML=`${pageHead('Music','Actual stats.fm stream counts with album art and tie-aware Top 5 rankings.',`<select id="music-month" class="select">${monthOptions(month)}</select>`)}<section class="card"><div class="card-header"><div><h2>${monthLabel(month)}</h2><div class="small muted">This traffic goes directly to stats.fm, not through Netlify.</div></div>${button('Refresh stats.fm','music-refresh','primary')}</div><div id="music-content">${cached?renderMusicSections(cached):'<div class="muted">Loading…</div>'}</div></section>`;root.querySelector('#music-month').onchange=e=>{selectedMonth=e.target.value;selectedYear=Number(selectedMonth.slice(0,4));render()};root.querySelector('#music-refresh').onclick=()=>loadMusicFor(start,end,true,'#music-content');if(!cached)loadMusicFor(start,end,false,'#music-content')}
+function musicExplorerRange(){
+  const today=isoToday(),first="2020-11-01";
+  if(musicPeriod==="all")return{start:first,end:today,label:"All Time",note:`November 1, 2020 – ${shortDate(today)}`};
+  if(musicPeriod==="year"){
+    if(!Number.isInteger(musicYear)||musicYear<2020||musicYear>Number(today.slice(0,4)))return{error:"Choose a valid year."};
+    const start=musicYear===2020?first:`${musicYear}-01-01`,end=String(musicYear)===today.slice(0,4)?today:`${musicYear}-12-31`;
+    return{start,end,label:`${musicYear}`,note:musicYear===2020?"November 1 – December 31, 2020":`${shortDate(start)} – ${shortDate(end)}`};
+  }
+  if(musicPeriod==="custom"){
+    const start=musicCustomStart,end=musicCustomEnd,date=/^\d{4}-\d{2}-\d{2}$/;
+    if(!date.test(start)||!date.test(end)||Number.isNaN(Date.parse(start))||Number.isNaN(Date.parse(end)))return{error:"Choose a valid start and end date."};
+    if(start>end)return{error:"The start date must be before or equal to the end date."};
+    if(start<first||end>today)return{error:`Choose dates between November 1, 2020 and ${shortDate(today)}.`};
+    return{start,end,label:"Custom Range",note:`${shortDate(start)} – ${shortDate(end)}`};
+  }
+  const parts=musicMonth.split("-");
+  if(parts.length!==2||!monthOptions(musicMonth))return{error:"Choose a valid month."};
+  const {start,end}=monthBounds(musicMonth);
+  if(start>today||start<first)return{error:"Choose a month between November 2020 and today."};
+  return{start,end:end>today?today:end,label:monthLabel(musicMonth),note:`${shortDate(start)} – ${shortDate(end>today?today:end)}`};
+}
+
+function musicExplorerFresh(start,end){
+  return["songs","artists","albums"].every(category=>{
+    const rec=state.musicCache?.[`${category}:${start}:${end}`];
+    return rec?.items&&rec?.fetchedAt&&Number.isFinite(new Date(rec.fetchedAt).getTime())&&Date.now()-new Date(rec.fetchedAt).getTime()<6*60*60*1000;
+  });
+}
+
+function musicExplorerArtwork(item,category,extra=""){
+  const src=item?.image;
+  return /^https?:\/\//i.test(String(src||""))?`<img class="music-explorer-art ${extra} ${category==="artists"?"music-explorer-artist-art":""}" src="${esc(src)}" alt="Artwork for ${esc(item.name)}" loading="lazy" decoding="async">`:`<div class="music-explorer-art music-explorer-art-fallback ${extra}" aria-hidden="true">${category==="artists"?"◉":category==="albums"?"▣":"♫"}</div>`;
+}
+
+function musicExplorerCard(item,category){
+  return `<article class="music-explorer-runner"><span class="music-explorer-runner-rank">#${fmt(item.rank)}</span>${musicExplorerArtwork(item,category,"music-explorer-runner-image")}<div class="music-explorer-runner-info"><div class="music-explorer-runner-title">${esc(item.name)}</div><div class="music-explorer-runner-sub">${esc(item.artist||item.album||(category==="artists"?"Artist":""))}</div></div><div class="music-explorer-runner-streams">${fmt(item.streams)}<span>STREAMS</span></div></article>`;
+}
+
+function musicExplorerContent(data){
+  const choices=[["songs","Songs","♫"],["artists","Artists","◉"],["albums","Albums","▣"]];
+  const entries=data?.[musicCategory]||[],winner=entries[0],remaining=entries.slice(1);
+  const categoryLabel=musicCategory==="songs"?"Song":musicCategory==="artists"?"Artist":"Album";
+  const overview=choices.map(([id,label,symbol])=>{
+    const top=data?.[id]?.[0];
+    return `<button type="button" class="music-explorer-category ${id===musicCategory?"is-selected":""}" data-music-category="${id}" aria-pressed="${id===musicCategory}">
+      <span class="music-explorer-category-overline"><span aria-hidden="true">${symbol}</span> ${label.toUpperCase()}</span>
+      <span class="music-explorer-category-art">${top?musicExplorerArtwork(top,id):`<span class="music-explorer-empty-icon" aria-hidden="true">${symbol}</span>`}</span>
+      <span class="music-explorer-category-copy"><strong>${esc(top?.name||"No results yet")}</strong><small>${top?`${fmt(top.streams)} streams`:"Select to explore"}</small></span>
+    </button>`;
+  }).join("");
+  return `<div class="music-explorer-category-grid">${overview}</div>
+    <div class="music-explorer-list-header"><div><div class="music-explorer-section-eyebrow">THE LEADERBOARD</div><h2>Top ${musicCategory}</h2><p>Ranked by actual plays, with tied ranks preserved.</p></div><span class="music-explorer-top-tag">TOP 5 + TIES</span></div>
+    ${winner?`<section class="music-explorer-winner music-explorer-winner--${musicCategory}">
+      <div class="music-explorer-winner-rank"><span>YOUR #1 ${categoryLabel.toUpperCase()}</span><span aria-hidden="true">✦</span></div>
+      <div class="music-explorer-winner-layout">${musicExplorerArtwork(winner,musicCategory,"music-explorer-winner-art")}
+        <div class="music-explorer-winner-body"><span class="music-explorer-winner-number">#${fmt(winner.rank)} · ${esc(categoryLabel)} of the period</span>
+          <h3>${esc(winner.name)}</h3>
+          ${winner.artist||winner.album?`<p>${esc(winner.artist||winner.album)}</p>`:""}
+          <div class="music-explorer-winner-count"><b>${fmt(winner.streams)}</b><span>ACTUAL STREAMS</span></div>
+        </div>
+      </div>
+    </section>
+    ${remaining.length?`<div class="music-explorer-runners">${remaining.map(item=>musicExplorerCard(item,musicCategory)).join("")}</div>`:""}`:`<section class="music-explorer-empty"><span aria-hidden="true">♫</span><h3>No ${musicCategory} returned</h3><p>There are no recorded streams for this category during the selected period.</p></section>`}`;
+}
+
+function musicExplorerRenderData(data){
+  const container=root.querySelector("#music-explorer-content");
+  if(!container)return;
+  container.innerHTML=musicExplorerContent(data);
+  container.querySelectorAll("[data-music-category]").forEach(el=>el.onclick=()=>{
+    musicCategory=el.dataset.musicCategory;
+    musicExplorerRenderData(data);
+  });
+}
+
+async function musicExplorerLoad(start,end,force=false){
+  const id=++musicRequestId;
+  const status=root.querySelector("#music-explorer-status"),refresh=root.querySelector("#music-explorer-refresh");
+  const previous=musicCached(start,end);
+  if(refresh){refresh.disabled=true;refresh.textContent=force?"Refreshing…":"Loading…";}
+  if(status)status.textContent=force?"Refreshing listening data…":"Getting real stream counts from stats.fm…";
+  try{
+    const data=await fetchPeriodMusic(start,end,state,{force});
+    persist();
+    if(id!==musicRequestId||view!=="music")return;
+    musicExplorerRenderData(data);
+    const note=root.querySelector("#music-explorer-status");
+    if(note)note.textContent=`Updated ${new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})} · Powered by stats.fm`;
+  }catch(error){
+    if(id!==musicRequestId||view!=="music")return;
+    const note=root.querySelector("#music-explorer-status");
+    if(note)note.textContent="Unable to refresh music rankings.";
+    if(!previous){const holder=root.querySelector("#music-explorer-content");if(holder)holder.innerHTML=`<section class="callout danger-callout">Could not load stats.fm rankings: ${esc(error.message)}</section>`;}
+    else musicExplorerRenderData(previous);
+  }finally{
+    if(id===musicRequestId&&view==="music"){
+      const btn=root.querySelector("#music-explorer-refresh");
+      if(btn){btn.disabled=false;btn.textContent="Refresh rankings";}
+    }
+  }
+}
+
+function musicExplorerView(){
+  ++musicRequestId;
+  const today=isoToday(),range=musicExplorerRange(),first="2020-11-01",currentYear=Number(today.slice(0,4));
+  const opts=[["month","Monthly"],["year","Yearly"],["all","All Time"],["custom","Custom Range"]];
+  const controls=musicPeriod==="month"?`<label class="music-explorer-picker"><span>Choose month</span><select id="music-explorer-month" class="select" aria-label="Choose month">${Array.from({length:(currentYear-2020)*12+Number(today.slice(5,7))-10},(_,i)=>{const d=new Date(2020,10+i,1),key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;return `<option value="${key}" ${musicMonth===key?"selected":""}>${MONTHS[d.getMonth()]} ${d.getFullYear()}</option>`}).reverse().join("")}</select></label>`:
+    musicPeriod==="year"?`<label class="music-explorer-picker"><span>Choose year</span><select id="music-explorer-year" class="select" aria-label="Choose year">${Array.from({length:currentYear-2019},(_,i)=>currentYear-i).map(y=>`<option value="${y}" ${y===musicYear?"selected":""}>${y}${y===2020?" (Nov–Dec)":""}</option>`).join("")}</select></label>`:
+    musicPeriod==="custom"?`<div class="music-explorer-custom"><label class="music-explorer-picker"><span>From</span><input id="music-explorer-start" class="input" type="date" min="${first}" max="${today}" value="${esc(musicCustomStart)}"></label><label class="music-explorer-picker"><span>To (inclusive)</span><input id="music-explorer-end" class="input" type="date" min="${first}" max="${today}" value="${esc(musicCustomEnd)}"></label><button id="music-explorer-apply" type="button" class="button primary">Apply dates</button></div>`:
+    `<div class="music-explorer-alltime"><b>Lifetime listening window</b><span>Nov 1, 2020 → today</span></div>`;
+  const cached=!range.error?musicCached(range.start,range.end):null;
+  root.innerHTML=`${pageHead("Music","Your listening history, turned into personal charts and standout winners.")}
+  <div class="music-explorer">
+    <div class="music-explorer-hero"><div class="music-explorer-hero-content"><span class="music-explorer-hero-eyebrow">✦ YOUR MUSIC UNIVERSE</span><h2>Power Rankings<span>.</span></h2><p>Explore your top songs, artists, and albums across any period of your listening history.</p></div><span class="music-explorer-hero-graphic" aria-hidden="true">♫</span></div>
+    <div class="music-explorer-toolbar"><div class="music-explorer-period-tabs" role="group" aria-label="Music ranking time period">${opts.map(([id,label])=>`<button type="button" data-music-period="${id}" class="music-explorer-period ${musicPeriod===id?"is-current":""}" aria-pressed="${musicPeriod===id}">${label}</button>`).join("")}</div>
+      <div class="music-explorer-controls">${controls}</div>
+    </div>
+    <div class="music-explorer-meta"><div><span class="music-explorer-section-eyebrow">CURRENT CHART</span><h3>${esc(range.label||"Choose a period")}</h3><p>${esc(range.note||range.error||"Choose dates to see rankings")}</p></div>${button("Refresh rankings","music-explorer-refresh","primary")}</div>
+    <div id="music-explorer-status" class="music-explorer-status" role="status" aria-live="polite">${range.error?esc(range.error):cached?"Loaded from your saved music rankings.":"Getting listening data…"}</div>
+    <div id="music-explorer-content">${range.error?"":cached?musicExplorerContent(cached):'<div class="music-explorer-loading"><div class="music-explorer-spinner"></div><span>Building your music charts…</span></div>'}</div>
+  </div>`;
+  root.querySelectorAll("[data-music-period]").forEach(btn=>btn.onclick=()=>{
+    const next=btn.dataset.musicPeriod;
+    if(next===musicPeriod)return;
+    musicPeriod=next;musicExplorerView();
+  });
+  const mo=root.querySelector("#music-explorer-month");
+  if(mo)mo.onchange=e=>{musicMonth=e.target.value;musicExplorerView()};
+  const yr=root.querySelector("#music-explorer-year");
+  if(yr)yr.onchange=e=>{musicYear=Number(e.target.value);musicExplorerView()};
+  const apply=root.querySelector("#music-explorer-apply");
+  if(apply)apply.onclick=()=>{
+    const from=root.querySelector("#music-explorer-start").value,to=root.querySelector("#music-explorer-end").value;
+    const note=root.querySelector("#music-explorer-status");
+    if(!from||!to||from>to||from<first||to>today){if(note)note.textContent=`Choose a valid range between Nov 1, 2020 and ${shortDate(today)} (start before end).`;return;}
+    musicCustomStart=from;musicCustomEnd=to;musicExplorerView();
+  };
+  const refresh=root.querySelector("#music-explorer-refresh");
+  if(range.error){refresh.disabled=true;return;}
+  refresh.onclick=()=>musicExplorerLoad(range.start,range.end,true);
+  if(cached)musicExplorerRenderData(cached);
+  if(!cached||!musicExplorerFresh(range.start,range.end))musicExplorerLoad(range.start,range.end,false);
+}
 
 function recordsView(){const log=loggingStreak(state),dc=dailyChallengeStreaks(state),geo=geoguessr10kRecord(state),top=activityStats(state).counts[0],edit=mostActivityDay(state,'Editing');const totalDays=Object.values(state.entries||{}).filter(e=>e.text?.trim()).length;const records=[['Diary Days',totalDays,'Total saved days'],['Longest Diary Streak',`${log.longest} days`,log.last?`Last entry ${shortDate(log.last)}`:''],['Most Common Activity',top?.[0]||'—',top?`${top[1]} recognized events`:''],['Most Editing in One Day',edit?`${edit.count} events`:'—',edit?shortDate(edit.date):''],['Longest Daily Challenge',`${dc.longest} days`,dc.longestStart?`${shortDate(dc.longestStart)} → ${shortDate(dc.longestEnd)}`:''],['Hong Kong Spawns',trackerTotal(state,'hong-kong'),'All time'],['Mors Mutual Calls',trackerTotal(state,'mors-mutual'),'All time'],['Geoguessr 10K',geo?fmt(geo.value):'—',geo?shortDate(geo.date):'']];root.innerHTML=`${pageHead('Personal Records','A living reference page built from dated diary events and tracker history.')}<div class="records-grid">${records.map(([a,v,d])=>`<div class="record-card"><div class="stat-label">${esc(a)}</div><div class="record-value">${esc(v)}</div><div class="record-detail">${esc(d)}</div></div>`).join('')}</div>`}
 
@@ -310,6 +454,6 @@ async function syncCloud(){if(!cloud.authenticated)return toast('Connect cloud s
 async function pullCloud(silent=false){try{const r=await cloudPull();state=mergeStates(state,r.state);cloud.etag=r.etag;persist();if(!silent)toast('Cloud data loaded.')}catch(e){if(!silent)toast(e.message,'bad')}}
 async function bootstrapCloud(){const status=await cloudStatus();cloud={...cloud,...status,checked:true};if(status.authenticated){cloud.authenticated=true;await pullCloud(true)}updateSyncPill();render()}
 function updateSyncPill(){const pill=document.querySelector('#sync-pill');pill.innerHTML=`<span class="sync-dot"></span><span>${cloud.authenticated?'Cloud ready · local-first':cloud.configured?'Cloud available · locked':'Local-first'}</span>`}
-function render(){const viceCityActive=selectedDate>='2026-11-19'&&selectedDate<='2026-12-31';root.classList.toggle('vice-city-nov19',viceCityActive);document.body.classList.toggle('vice-city-season',viceCityActive);updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'music':musicView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}document.dispatchEvent(new Event('tide:view-rendered'))}
+function render(){const viceCityActive=selectedDate>='2026-11-19'&&selectedDate<='2026-12-31';root.classList.toggle('vice-city-nov19',viceCityActive);document.body.classList.toggle('vice-city-season',viceCityActive);updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'music':musicExplorerView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}document.dispatchEvent(new Event('tide:view-rendered'))}
 render();bootstrapCloud();
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
