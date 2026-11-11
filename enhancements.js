@@ -199,7 +199,7 @@ function injectRecords(s){
   grid.prepend(x);
 }
 function injectMonthly(s){
-  if(!root?.querySelector('#month-select')||root.querySelector('#geo-month'))return;
+  if(!root?.querySelector('#month-select')||root.querySelector('#geo-month')||root.querySelector('.month-challenge-section'))return;
   const month=root.querySelector('#month-select').value,r=monthRecord(s,month),x=document.createElement('section');
   x.id='geo-month';x.className='card';x.style.marginTop='16px';
   x.innerHTML=`<div class="card-header"><div><h2>Daily Challenge vs Monty</h2><div class="small muted">Win-loss only.</div></div><span class="chip accent">${r.wins}-${r.losses}</span></div><div class="grid grid-2">${card('Wins',r.wins)}${card('Losses',r.losses)}</div>`;
