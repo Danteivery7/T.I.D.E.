@@ -10,6 +10,7 @@ import {
 } from './storage.js';
 import { fetchPeriodMusic } from './spotify.js';
 import { activityRange, gamingRecordHighlights, hours as gamingHours, platformLabel } from './gaming-data.js';
+import { diarySignals } from './diary-insights.js';
 
 const root=document.querySelector('#view-root');
 const nav=document.querySelector('#primary-nav');
@@ -40,6 +41,7 @@ function openModal(title,body,eyebrow='T.I.D.E.'){document.querySelector('#modal
 function closeModal(){modal.close()}
 function persist(){saveLocal(state)}
 
+root.addEventListener('click',event=>{const button=event.target.closest('[data-insight-day]');if(button)openDay(button.dataset.insightDay)});
 nav.addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 document.querySelector('.sidebar-bottom').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 document.querySelector('#mobile-menu').onclick=openSidebar;document.querySelector('#mobile-close').onclick=closeSidebar;scrim.onclick=closeSidebar;
@@ -141,6 +143,8 @@ function monthlyView(){
       </section>
       <div class="section-title">TOP ACTIVITIES · ${esc(period.toUpperCase())}</div>
       <section class="card month-activities-section">${activities.length?activities.map(([a,n],i)=>`<div class="month-activity-row"><span class="month-activity-rank">${String(i+1).padStart(2,"0")}</span><div class="month-activity-info"><b>${esc(a)}</b><div class="month-activity-bar"><div style="width:${Math.max(4,Math.round(n/activities[0][1]*100))}%"></div></div></div><span class="month-activity-count">${fmt(n)}</span></div>`).join(""):'<div class="muted small">Once diary entries are saved for this month, the most common activities will appear here.</div>'}</section>
+      <div class="section-title">DIARY INTELLIGENCE · THIS MONTH</div>
+      ${diaryInsightPanel({month},"A fuller picture of this month")}
       <div class="section-title">MONTHLY TRACKERS</div>
       <div class="month-trackers-grid">${trackers.length?trackers.map(t=>{const v=trackerTotal(state,t.id,{month});return`<div class="month-tracker-card"><div class="stat-label">${esc(t.name)}</div><div class="month-tracker-value">${fmt(v)}</div><div class="month-tracker-detail">${legacyTrackerTotal(state,t.id,month)!=null?"Includes your imported monthly total.":"Dated occurrences"}</div></div>`}).join(""):'<div class="card muted small">No tracked events have been recorded for this month.</div>'}</div>
     </div>`;
@@ -259,6 +263,8 @@ function yearlyView(){
     </div>
     <div class="section-title">TOP FIVE ACTIVITIES</div>
     <section class="card year-detail-list">${acts.length?acts.map(([a,n],i)=>`<div class="detected-item"><span><span class="year-rank-num">${String(i+1).padStart(2,"0")}</span> ${esc(a)}</span><b>${fmt(n)}</b></div>`).join(""):'<div class="muted">Import or save diary days to build activity stats.</div>'}</section>
+    <div class="section-title">DIARY INTELLIGENCE · THIS YEAR</div>
+    ${diaryInsightPanel({year:y},"More than just a year of gaming")}
     <div class="section-title">YOUR YEAR IN MUSIC</div>
     <section class="card year-music-detail"><div class="card-header"><div><h2>Top Songs, Artists & Albums</h2><div class="small muted">Real stats.fm streams and original artwork. Your award winners appear above.</div></div>${button("Refresh music","refresh-year-music")}</div><div id="year-music">${cached?renderMusicSections(cached):'<div class="muted small">Loading music…</div>'}</div></section>`;
   root.querySelector("#year-select").onchange=e=>{selectedYear=Number(e.target.value);render()};
@@ -434,6 +440,57 @@ function musicExplorerView(){
   if(!cached||!musicExplorerFresh(range.start,range.end))musicExplorerLoad(range.start,range.end,false);
 }
 
+function diaryInsightPanel(scope={},title="LIFE BEYOND THE NUMBERS"){
+  const data=diarySignals(state,scope),featured=data.ranked.filter(x=>x.days>0).slice(0,6);
+  const milestoneText=data.milestoneCount?`${fmt(data.milestoneCount)} possible milestone${data.milestoneCount===1?"":"s"} noted`:"No major milestones identified";
+  const card=c=>`<article class="diary-signal-card diary-signal--${c.id}">
+    <div class="diary-signal-symbol" aria-hidden="true">${c.symbol}</div><div class="diary-signal-count">${fmt(c.days)}</div>
+    <div class="diary-signal-label">${esc(c.label)}</div>
+    <div class="diary-signal-hint">${c.peakMonth?`Peak: ${esc(monthLabel(c.peakMonth.month))} · ${fmt(c.peakMonth.days)} days`:"No dated notes yet"}</div></article>`;
+  const focus=data.mostVaried,sports=data.topSports;
+  return `<section class="diary-insights-panel">
+    <div class="diary-insights-heading"><div><div class="diary-insights-eyebrow">✦ YOUR LIFE IN THE DETAILS</div><h3>${esc(title)}</h3><p>Patterns from the words you saved, counting distinct diary days once per subject.</p></div><span class="diary-insights-total">${fmt(data.loggedDays)} DIARY DAYS</span></div>
+    ${featured.length?`<div class="diary-insights-grid">${featured.map(card).join("")}</div>`:'<div class="diary-insights-empty">Add diary entries with recognizable subjects to build these highlights.</div>'}
+    <div class="diary-insights-highlights">
+      <div><span>Most varied diary day</span><b>${focus?`${fmt(focus.count)} subjects · ${esc(shortDate(focus.date))}`:"—"}</b>${focus?`<button type="button" data-insight-day="${esc(focus.date)}">Open day ↗</button>`:""}</div>
+      <div><span>Most-mentioned sports interest</span><b>${sports?`${esc(sports.name)} · ${fmt(sports.days)} days`:"—"}</b><small>Mentions, not confirmed games watched</small></div>
+      <div><span>Noteworthy moments</span><b>${milestoneText}</b><small>Potential milestones found in your writing</small></div>
+    </div>
+    <details class="diary-insights-details">
+      <summary><span>Explore every subject and notable moments</span><span class="diary-insights-chevron" aria-hidden="true">⌄</span></summary>
+      <div class="diary-insights-detail-body">
+        <div class="diary-insights-detail-title">ALL SUBJECTS · DISTINCT DAYS MENTIONED</div>
+        <div class="diary-insights-full-grid">${data.categories.map(c=>`<div class="diary-insights-detail-item"><span>${c.symbol} ${esc(c.short)}</span><b>${fmt(c.days)}</b>${c.streak?.days>1?`<small>${fmt(c.streak.days)}-day mention streak</small>`:""}</div>`).join("")}</div>
+        ${data.milestones.length?`<div class="diary-insights-detail-title">POSSIBLE LIFE MILESTONES</div><div class="diary-insights-milestones">${data.milestones.slice(0,8).map(item=>`<button type="button" data-insight-day="${esc(item.date)}" class="diary-insights-milestone"><span>${esc(shortDate(item.date))}</span><b>${esc(item.snippet)}</b><span aria-hidden="true">↗</span></button>`).join("")}</div>`:""}
+        <p class="diary-insights-disclaimer">Keyword-based clues, not proof of attendance, productivity, exercise, health events, or financial transactions. Money notes count mentions only; they do not calculate balances, spending, winnings, or income.</p>
+      </div>
+    </details>
+  </section>`;
+}
+
+function recordMusicWinners(data){
+  const records=[["songs","Top Song"],["artists","Top Artist"],["albums","Top Album"]];
+  if(!data)return '<div class="muted small">Loading actual all-time stats.fm leaders…</div>';
+  return `<div class="record-music-winners">${records.map(([category,label])=>{
+    const item=data?.[category]?.[0],image=item?.image;
+    return `<div class="record-music-winner record-music-winner--${category}"><div class="record-music-label">${esc(label)}</div>
+      <div class="record-music-art">${/^https?:\/\//i.test(String(image||""))?`<img loading="lazy" src="${esc(image)}" alt="${esc(item.name)} artwork">`:'<span aria-hidden="true">♫</span>'}</div>
+      <div class="record-music-name">${esc(item?.name||"No stats available")}</div><div class="record-music-streams">${item?`${fmt(item.streams)} actual streams`:"—"}</div></div>`}).join("")}</div>`;
+}
+
+async function loadRecordsMusic(){
+  const target=root.querySelector("#record-music-winners");if(!target)return;
+  const start="2020-11-01",end=isoToday(),cached=musicCached(start,end);
+  if(cached){target.innerHTML=recordMusicWinners(cached);return}
+  try{
+    const data=await fetchPeriodMusic(start,end,state,{force:false});persist();
+    if(view==="records"&&root.querySelector("#record-music-winners"))root.querySelector("#record-music-winners").innerHTML=recordMusicWinners(data);
+  }catch(error){
+    const el=root.querySelector("#record-music-winners");
+    if(view==="records"&&el)el.innerHTML=`<div class="muted small">Could not load stats.fm leaders: ${esc(error.message)}. Visit Music to retry.</div>`;
+  }
+}
+
 function recordHallIcon(name){
   const shapes={
     gamepad:'<path d="M6 12h12a4 4 0 0 1 3.9 3.1l.9 4a2.5 2.5 0 0 1-3.9 2.6L16 19H8l-2.9 2.7a2.5 2.5 0 0 1-3.9-2.6l.9-4A4 4 0 0 1 6 12Z"/><path d="M8 14v5M5.5 16.5h5"/><circle cx="16.5" cy="15.5" r=".7" fill="currentColor"/><circle cx="19" cy="18" r=".7" fill="currentColor"/>',
@@ -520,6 +577,10 @@ function recordsView(){
         ${recordHallCard("streak","fire","Longest diary streak",`${fmt(streak.longest)} days`,streak.last?`Last saved ${shortDate(streak.last)}`:"No diary streak data yet")}
         ${recordHallCard("edit","edit","Most editing in a day",editing?`${fmt(editing.count)} events`:"—",editing?shortDate(editing.date):"No editing events recognized yet")}
       </div>
+      <div class="section-title">PERSONAL MILESTONES · THE LIFE YOU LOGGED</div>
+      ${diaryInsightPanel({},"Your lifetime diary highlights")}
+      <div class="section-title">MUSIC · ALL-TIME FAVORITES</div>
+      <section class="record-music-panel"><div class="record-music-heading"><div><h3>Your lifetime music podium</h3><p>Real stats.fm streams from November 1, 2020 to today. Rankings update as you listen.</p></div><button type="button" class="button" id="record-open-music">Explore Music</button></div><div id="record-music-winners">${recordMusicWinners(musicCached("2020-11-01",isoToday()))}</div></section>
       <div class="section-title">GEOGUESSR · CHALLENGE RECORDS</div>
       <div class="record-hall-card-grid record-hall-geoguessr">
         ${recordHallCard("challenge","flag","Longest Daily Challenge streak",`${fmt(daily.longest)} days`,"Your personal best streak")}
@@ -540,6 +601,8 @@ function recordsView(){
       </details>
     </div>`;
   root.querySelectorAll("[data-record-day]").forEach(button=>button.onclick=()=>openDay(button.dataset.recordDay));
+  root.querySelector("#record-open-music").onclick=()=>setView("music");
+  loadRecordsMusic();
 }
 
 function askView(){root.innerHTML=`${pageHead('Ask T.I.D.E.','Ask for exactly what you want. T.I.D.E. returns the smallest useful answer and lets you drill into dates only when you choose.')}<div class="ask-box"><div class="ask-input-wrap"><input id="ask-input" class="ask-input" placeholder="What days did I spawn in Hong Kong in 2026?" autocomplete="off">${button('Ask','ask-go','primary')}</div><div class="ask-suggestions"><button class="chip" data-q="What months did I spawn in Hong Kong in 2026?">Hong Kong months</button><button class="chip" data-q="What day did I edit the most in 2026?">Most editing</button><button class="chip" data-q="How many Mors Mutual calls did I have in 2026?">Mors Mutual</button><button class="chip" data-q="Why was my best day the best?">WHYY?</button></div><div class="ask-results" id="ask-results">${askAnswer?renderAnswer(askAnswer):'<div class="callout">Ask T.I.D.E. works locally against your saved database. Simple research does not call Netlify or an external AI service.</div>'}</div></div>`;const input=root.querySelector('#ask-input');const run=()=>{askAnswer=askTide(state,input.value);root.querySelector('#ask-results').innerHTML=renderAnswer(askAnswer);wireAnswerDates()};root.querySelector('#ask-go').onclick=run;input.onkeydown=e=>{if(e.key==='Enter')run()};root.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{input.value=b.dataset.q;run()});wireAnswerDates()}
