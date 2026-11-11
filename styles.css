@@ -418,3 +418,155 @@ body.vice-city-season .toast{
 @media(max-width:420px){
   .year-award--game .year-award-image[src="/awards/crew-motorfest.jpg"]{width:104px;height:99px}
 }
+
+
+/* Monthly Review: featured picks, music, gaming and challenge highlights. */
+.month-review{min-width:0}
+.month-review-hero{
+  position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:24px;
+  overflow:hidden;border:1px solid rgba(183,135,242,.34);border-radius:23px;
+  padding:26px 28px;margin:0 0 21px;
+  background:radial-gradient(circle at 91% 13%,rgba(230,124,255,.21),transparent 39%),
+             radial-gradient(circle at 5% 99%,rgba(84,188,242,.19),transparent 40%),
+             linear-gradient(115deg,#3a2159,#282754 50%,#173d62);
+  box-shadow:0 16px 42px rgba(8,15,40,.23);
+}
+.month-review-hero:before{
+  content:"";position:absolute;inset:0 0 auto;height:3px;
+  background:linear-gradient(90deg,#ffb5db,#aa91ff 57%,#64d9fd);
+}
+.month-hero-kicker{font-size:10px;font-weight:900;letter-spacing:.18em;color:#f7b5ec}
+.month-review-hero h2{font-size:clamp(28px,3.7vw,43px);font-weight:900;letter-spacing:-.045em;color:#fff5ff;margin:8px 0 7px}
+.month-review-hero p{max-width:500px;color:#e9d8f6;font-size:13px;line-height:1.55;margin:0}
+.month-hero-art{position:relative;align-self:stretch;min-width:125px;display:grid;place-items:center}
+.month-hero-art span:first-child{font-size:105px;line-height:1;color:rgba(250,212,255,.74);text-shadow:0 0 40px rgba(255,171,235,.35)}
+.month-hero-art span:last-child{position:absolute;top:2px;right:6px;color:#8ae6ff;font-size:30px}
+.month-pick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:12px}
+.month-pick-card{
+  position:relative;overflow:hidden;display:flex;flex-direction:column;min-width:0;
+  padding:20px 21px;border-radius:21px;min-height:237px;
+  border:1px solid rgba(255,255,255,.17);
+  box-shadow:0 13px 34px rgba(9,14,40,.2);
+}
+.month-pick--best{
+  background:radial-gradient(circle at 92% 3%,rgba(255,163,193,.23),transparent 45%),
+             linear-gradient(137deg,#482342,#40254e 57%,#28375c);
+  border-color:rgba(255,162,204,.3);
+}
+.month-pick--worst{
+  background:radial-gradient(circle at 91% 4%,rgba(121,190,255,.25),transparent 48%),
+             linear-gradient(137deg,#183e5f,#2d315b 63%,#382e55);
+  border-color:rgba(118,189,251,.28);
+}
+.month-pick-card:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:#ff9dc6}
+.month-pick--worst:before{background:#83d2ff}
+.month-pick-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px}
+.month-pick-kicker{font-size:10px;letter-spacing:.13em;font-weight:900;color:#ffc6df}
+.month-pick--worst .month-pick-kicker{color:#b4e6ff}
+.month-pick-pill{font-size:9px;letter-spacing:.08em;font-weight:900;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 9px;color:#e9dff6}
+.month-pick-main{display:flex;gap:18px;align-items:center;min-width:0;flex:1}
+.month-pick-calendar{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;
+  width:92px;height:103px;flex:none;border-radius:14px;background:#fceffc;color:#44294f;
+  box-shadow:0 13px 27px rgba(12,10,35,.26);
+}
+.month-pick-calendar span{
+  display:block;width:100%;background:linear-gradient(90deg,#fd9ccf,#f5b3c6);
+  color:#562b51;text-align:center;padding:7px 0;font-size:11px;font-weight:900;letter-spacing:.12em;
+}
+.month-pick--worst .month-pick-calendar span{background:linear-gradient(90deg,#83c7ff,#b3b4ff);color:#213b67}
+.month-pick-calendar b{flex:1;display:grid;place-items:center;font-size:44px;line-height:1;font-weight:900;letter-spacing:-.07em}
+.month-pick-content{min-width:0}
+.month-pick-label{color:#f3b5d6;font-size:11px;font-weight:800}
+.month-pick--worst .month-pick-label{color:#aee0ff}
+.month-pick-content h3{margin:5px 0 9px;color:#fff8ff;font-size:clamp(20px,2.2vw,26px);line-height:1.17;overflow-wrap:anywhere}
+.month-pick-content p{font-size:11px;line-height:1.6;color:#e9dcf1;margin:0;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
+.month-pick-bottom{
+  margin-top:19px;padding-top:12px;border-top:1px solid rgba(255,255,255,.15);
+  display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+  font-size:10px;color:#dfd3e9;font-weight:700;
+}
+.month-open-day{
+  border:0;background:rgba(255,255,255,.09);border-radius:9px;padding:7px 10px;
+  font-size:10px;font-weight:900;color:#fff1fc;cursor:pointer;
+}
+.month-open-day:hover,.month-open-day:focus-visible{background:rgba(255,255,255,.2)}
+.month-picks-editor{
+  margin:0 0 24px;overflow:hidden;border:1px solid rgba(172,152,242,.27);
+  border-radius:16px;background:linear-gradient(120deg,rgba(163,105,208,.08),rgba(66,167,241,.06));
+}
+.month-picks-editor summary{
+  list-style:none;cursor:pointer;padding:16px 20px;
+  display:flex;justify-content:space-between;align-items:center;gap:15px;
+  font-size:12px;font-weight:900;
+}
+.month-picks-editor summary::-webkit-details-marker{display:none}
+.month-picks-editor summary:hover{background:rgba(197,153,240,.08)}
+.month-picks-editor summary:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+.month-editor-hint{font-size:11px;font-weight:600;color:var(--muted)}
+.month-picks-form{
+  border-top:1px solid rgba(190,154,245,.19);padding:19px;
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;
+}
+.month-picks-form .input{width:100%}
+.month-pick-save{grid-column:1/-1;display:flex;justify-content:flex-end}
+.month-pick-save .button{min-width:176px}
+.month-pulse-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin-bottom:23px}
+.month-pulse-card{position:relative;min-width:0;border:1px solid rgba(188,158,235,.22);border-radius:17px;padding:18px;background:linear-gradient(145deg,rgba(111,88,172,.18),rgba(77,136,199,.07))}
+.month-pulse--activity{border-color:rgba(230,153,232,.29)}
+.month-pulse--diary{border-color:rgba(138,190,250,.29)}
+.month-pulse--busiest{border-color:rgba(138,229,216,.25)}
+.month-pulse-icon{position:absolute;right:15px;top:13px;font-size:21px;color:var(--accent);opacity:.75}
+.month-pulse-value{font-size:clamp(19px,2.2vw,27px);font-weight:900;line-height:1.2;letter-spacing:-.03em;margin:12px 0 7px;overflow-wrap:anywhere}
+.month-pulse-note{font-size:11px;color:var(--muted);line-height:1.5}
+#gaming-month-review{margin:0 0 6px}
+#gaming-month-review .card{border-color:rgba(108,180,248,.25);background:linear-gradient(142deg,rgba(80,143,221,.1),rgba(121,77,187,.07))}
+.month-music-section{margin-bottom:18px}
+.month-challenge-section{margin-bottom:21px;border-color:rgba(119,192,253,.22)}
+.month-challenge-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:15px}
+.month-challenge-stat{
+  padding:17px 15px;min-width:0;border:1px solid rgba(167,163,236,.17);
+  border-radius:14px;background:linear-gradient(140deg,rgba(89,114,207,.11),rgba(160,94,194,.06));
+}
+.month-challenge-stat span{display:block;color:var(--muted);font-size:10px;line-height:1.4;font-weight:800}
+.month-challenge-stat b{display:block;font-weight:900;font-size:clamp(24px,2.8vw,33px);margin:7px 0 3px}
+.month-challenge-stat small{color:var(--subtle);font-size:10px}
+.month-activities-section{margin-bottom:20px}
+.month-activity-row{display:flex;align-items:center;gap:15px;padding:12px 3px;min-width:0}
+.month-activity-row+.month-activity-row{border-top:1px solid rgba(255,255,255,.07)}
+.month-activity-rank{flex:none;width:30px;color:var(--accent);font-size:12px;font-weight:900}
+.month-activity-info{flex:1;min-width:0;font-size:13px}
+.month-activity-info b{font-size:13px;overflow-wrap:anywhere}
+.month-activity-bar{height:5px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.07);margin-top:10px}
+.month-activity-bar div{height:100%;border-radius:7px;background:linear-gradient(90deg,#b985fa,#6ad9f2)}
+.month-activity-count{font-weight:900;font-size:18px;font-variant-numeric:tabular-nums}
+.month-trackers-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:18px}
+.month-tracker-card{border:1px solid rgba(192,159,236,.19);border-radius:15px;background:rgba(131,98,183,.065);padding:17px;min-width:0}
+.month-tracker-value{font-size:26px;font-weight:900;line-height:1.2;margin:9px 0 7px}
+.month-tracker-detail{font-size:10px;color:var(--muted);line-height:1.45}
+@media(max-width:1100px){
+  .month-pulse-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .month-challenge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:820px){
+  .month-pick-grid{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  .month-review-hero{padding:21px 18px}
+  .month-hero-art{min-width:62px}
+  .month-hero-art span:first-child{font-size:61px}
+  .month-pulse-grid{grid-template-columns:1fr}
+  .month-pick-card{padding:17px;min-height:212px}
+  .month-pick-main{gap:13px}
+  .month-pick-calendar{width:77px;height:89px}
+  .month-pick-calendar b{font-size:38px}
+  .month-pick-content h3{font-size:21px}
+  .month-editor-hint{display:none}
+}
+@media(max-width:440px){
+  .month-picks-form{grid-template-columns:1fr}
+  .month-challenge-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .month-challenge-stat{padding:12px}
+  .month-challenge-stat b{font-size:25px}
+  .month-pick-save .button{width:100%}
+}
