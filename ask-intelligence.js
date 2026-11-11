@@ -111,6 +111,11 @@ function askGameAnswer(state,question,scope,{selectedDate}={}){
   const wantsDates=/\b(what|which|show|list|when|did i)\b.*\b(days?|dates?|play(?:ed)?)\b/.test(q)||!!scope.date;
   const asksHours=/(hours?|minutes?|playtime|how long|time spent)/.test(q);
   const topN=Math.min(25,Math.max(1,Number(q.match(/\btop\s+(\d+)/)?.[1]||5)));
+  if(game&&/\b(diary|mention(?:ed)?|wrote|which days|what days)\b/.test(q)){
+    const entries=askGameDiaryMatches(state,scope,games).filter(row=>row.titles.some(t=>keyTitle(t)===game.key));
+    const recent=entries[0],wantsLast=/\b(last|latest|most recent)\b/.test(q);
+    return{kind:'game',heading:`Diary mentions · ${game.title}`,primary:wantsLast?(recent?.date||'No dated diary mention'):`${entries.length} day${entries.length===1?'':'s'} found`,detail:'These are diary passages explicitly mentioning playing this game. They are not independently verified sessions.',items:entries.slice(0,70).map(e=>askRow(e.date,e.snippet,'Diary mention')),date:wantsLast?recent?.date:'',source:'Your diary',followups:[`When did I last play ${game.title}?`]};
+  }
   if(game&&wantsWhen){
     const matches=games.find(g=>g.key===game.key);
     const last=matches?.lastPlayed||'';
@@ -124,10 +129,6 @@ function askGameAnswer(state,question,scope,{selectedDate}={}){
     const items=[...tracked.map(g=>({date,label:g.title,meta:`${hours(g.minutes)} · detected playtime change`,source:'Gaming snapshot'}))];
     for(const d of diary)for(const title of d.titles)if(!items.some(x=>x.label===title))items.push({date,label:title,meta:d.snippet||'Mentioned in diary',source:'Diary mention'});
     return{kind:'game',heading:`Gaming on ${date}`,primary:items.length?`${items.length} game${items.length===1?'':'s'} found`:'No dated gaming record found',detail:items.length?'T.I.D.E. combines gaming snapshot changes with explicit “played” notes from your diary. Snapshot minutes may include delayed reporting, not hours actually played that calendar day.':'That date has no matching recorded gaming changes or recognizable played-game mentions. This is not proof no gaming happened.',items,source:'Gaming snapshots + diary',followups:[`What happened on ${date}?`,'What is my most played game of all time?']};
-  }
-  if(game&&/when.*diary|mention|wrote|which days|what days/.test(q)){
-    const entries=askGameDiaryMatches(state,scope,games).filter(row=>row.titles.some(t=>keyTitle(t)===game.key));
-    return{kind:'game',heading:`Diary mentions · ${game.title}`,primary:`${entries.length} day${entries.length===1?'':'s'} found`,detail:'These are explicit diary mentions of playing the game, not independently verified play sessions.',items:entries.slice(0,60).map(e=>askRow(e.date,e.snippet,'Diary mention')),source:'Your diary',followups:[`When did I last play ${game.title}?`]};
   }
   if(game){
     const mins=scope.all?game.minutes:(activity?.games||[]).find(g=>g.key===game.key)?.minutes||0;
@@ -159,6 +160,41 @@ function askDiaryTopic(state,topic,question,scope){
   const countDays=matches.length,meta=`${countDays} distinct diary day${countDays===1?'':'s'} mentioning ${category.short.toLowerCase()} in ${scope.label}.`;
   if(pick)return{kind:'diary',heading:`${wantFirst?'Earliest':'Most recent'} ${category.short.toLowerCase()} mention`,primary:pick.date,detail:pick.meta,items:[pick],date:pick.date,source:'Your diary · word-pattern match',followups:[`Show all ${category.short.toLowerCase()} diary days in ${scope.label}`]};
   return{kind:'diary',heading:`${category.label} · ${scope.label}`,primary:`${countDays} day${countDays===1?'':'s'}`,detail:countDays?meta+' Results below show the matching diary passage; counts do not prove activities happened exactly as phrased.':`No recognizable ${category.short.toLowerCase()} mentions in your saved diary for this period.`,items:matches.slice(0,90),source:'Your saved diary',followups:[`What was my most active diary day in ${scope.label}?`]};
+}
+
+function askPeopleAnswer(state,question,scope){
+  const text=String(question||''),lower=text.toLowerCase(),dates=askDateRows(state,scope);
+  const patterns=[
+    /\b(?:spoke (?:to|with)|talked (?:to|with)|called|facetimed|face timed|texted|hung out with|played with|went with|visited with|chatted with|on (?:a )?call with|with)\s+([A-Z][a-z]{2,})(?:\s+(?:and|&)\s+([A-Z][a-z]{2,}))?/g
+  ];
+  const reject=new Set(['The','And','My','His','Her','Our','Mom','Dad','Family','Friends','Everyone','Someone','World','Xbox','Playstation','Nintendo','Steam','Discord','Tide','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Today','Yesterday','Youtube','Yankees','Knicks','Giants','Nfl','Nba','MlB','GeoGuessr','Geo','Man','City','Game','Month','Year','September','October','November','December','January','February','March','April','May','June','July','August','Walmart','Costco','Publix','Home','Work']);
+  const perName=new Map();
+  for(const [date,entry] of dates){
+    const seen=new Set();
+    for(const snippet of splitEvents(entry.text)){
+      for(const p of patterns){p.lastIndex=0;let found;while((found=p.exec(snippet))!==null){
+        for(const name of [found[1],found[2]].filter(Boolean)){
+          if(reject.has(name)||name.length<3)continue;
+          const key=name.toLowerCase();
+          if(seen.has(key))continue;seen.add(key);
+          const row=perName.get(key)||{name,days:[],example:''};
+          row.days.push({date,snippet});row.example=snippet;perName.set(key,row);
+        }
+      }}
+    }
+  }
+  const ranking=[...perName.values()].sort((a,b)=>b.days.length-a.days.length||a.name.localeCompare(b.name));
+  if(!ranking.length)return null;
+  const focused=ranking.find(row=>new RegExp(`(?:^|[^a-z])${row.name.toLowerCase()}(?:$|[^a-z])`).test(lower));
+  const asksWho=/\b(who|which (?:friend|person|people)|most (?:social|spoken|talked|called))\b/.test(lower);
+  if(!focused&&!asksWho)return null;
+  const last=/\b(last|latest|most recent)\b/.test(lower),first=/\b(first|earliest)\b/.test(lower);
+  if(focused){
+    const timeline=focused.days.slice().sort((a,b)=>last?b.date.localeCompare(a.date):first?a.date.localeCompare(b.date):b.date.localeCompare(a.date));
+    const row=timeline[0];
+    return{kind:'social',heading:`Diary mentions · ${focused.name}`,primary:(last||first)?row?.date:`${focused.days.length} days mentioned`,detail:`T.I.D.E. found diary entries with ${focused.name} next to social language. This is a count of recorded mentions, not verified time spent together.`,items:timeline.slice(0,80).map(item=>askRow(item.date,item.snippet,'Diary mention')),date:last||first?row?.date:'',source:'Your diary · name matches',followups:[`When did I last mention ${focused.name}?`]};
+  }
+  return{kind:'social',heading:'People in your diary',primary:ranking[0]?ranking[0].name:'No matching names',detail:'Names found near social verbs such as “with,” “called,” or “FaceTimed.” Counts are distinct diary days with matching language, not a complete record of relationships.',items:ranking.slice(0,30).map(row=>({label:row.name,meta:`${row.days.length} diary day${row.days.length===1?'':'s'} · Latest ${row.days.map(x=>x.date).sort().at(-1)}`,source:'Diary text'})),source:'Diary · detected names',followups:['What did I do with friends this month?']};
 }
 
 function askDiarySearch(state,question,scope){
@@ -222,7 +258,8 @@ function answerAsk(state,question,{today,selectedDate,musicData=null}={}){
   const gameList=aggregateAllTime('all'),game=askGameMatch(q,gameList);
   const gameIntent=!!game||/\b(games?|gaming|playtime|ps4|ps5|nintendo|switch|steam|xbox|console|played)\b/i.test(q)&&!/played.*(?:sports|basketball|volleyball|football|baseball)/i.test(q);
   const money=ASK_TOPIC_ALIASES.money.test(q);
-  if(money&&(/\b(how much|budget|balance|afford|account|income|spent|spending|payment|subscription|money)\b/i.test(q)||!/game/.test(q)))return askMoneyNotice(state,scope,q);
+  const moneyTimeQuestion=/\b(spend|spent)\s+(?:time|hours?|minutes?)\s+(?:play|gaming)|\btime\s+spent\s+(?:gaming|play)/i.test(q);
+  if(money&&!moneyTimeQuestion&&(/\b(how much|budget|balance|afford|account|income|spent|spending|payment|subscription|money)\b/i.test(q)||!/game/.test(q)))return askMoneyNotice(state,scope,q);
   const summary=/\b(about my life|summari[sz]e|overview|recap|highlights?|what.*(?:did i do|happened|been doing)|how was my|tell me about my|my life|my year|my month)\b/i.test(q);
   if(gameIntent && (!scope.date||/\b(gam(?:e|ing)|play(?:ed)?|console)\b/i.test(q)))return askGameAnswer(state,q,scope,{selectedDate});
   if(scope.date&&/what (?:did|happened|was)|tell me about|describe|how was|on this day|my day|that day/.test(lower))return askDateStory(state,scope,q);
@@ -235,6 +272,8 @@ function answerAsk(state,question,{today,selectedDate,musicData=null}={}){
     const a=askTide(state,q);
     return{...a,kind:'diary',heading:'Your saved personal picks',source:'Your diary and review picks',items:a?.items||[]};
   }
+  const people=askPeopleAnswer(state,q,scope);
+  if(people)return people;
   const topic=Object.keys(ASK_TOPIC_ALIASES).find(id=>id!=='money'&&ASK_TOPIC_ALIASES[id].test(q));
   if(topic)return askDiaryTopic(state,topic,q,scope);
   if(summary||!askTokens(q).length)return scope.date?askDateStory(state,scope,q):askLifeOverview(state,scope);
