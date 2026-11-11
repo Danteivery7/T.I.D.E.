@@ -11,6 +11,7 @@ import {
 import { fetchPeriodMusic } from './spotify.js';
 import { activityRange, gamingRecordHighlights, hours as gamingHours, platformLabel } from './gaming-data.js';
 import { diarySignals } from './diary-insights.js';
+import { answerAsk, askScope, askMusicIntent } from './ask-intelligence.js';
 
 const root=document.querySelector('#view-root');
 const nav=document.querySelector('#primary-nav');
@@ -27,6 +28,8 @@ let musicPeriod='month',musicCategory='songs',musicMonth=selectedMonth,musicYear
 let musicCustomStart=shiftDay(isoToday(),-29),musicCustomEnd=isoToday(),musicRequestId=0;
 let cloud={configured:false,authenticated:false,etag:null,checked:false};
 let askAnswer=null;
+let askLastQuestion='';
+let askRequestToken=0;
 let draftTimer=null;
 
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
@@ -618,9 +621,105 @@ function recordsView(){
   loadRecordsMusic();
 }
 
-function askView(){root.innerHTML=`${pageHead('Ask T.I.D.E.','Ask for exactly what you want. T.I.D.E. returns the smallest useful answer and lets you drill into dates only when you choose.')}<div class="ask-box"><div class="ask-input-wrap"><input id="ask-input" class="ask-input" placeholder="What days did I spawn in Hong Kong in 2026?" autocomplete="off">${button('Ask','ask-go','primary')}</div><div class="ask-suggestions"><button class="chip" data-q="What months did I spawn in Hong Kong in 2026?">Hong Kong months</button><button class="chip" data-q="What day did I edit the most in 2026?">Most editing</button><button class="chip" data-q="How many Mors Mutual calls did I have in 2026?">Mors Mutual</button><button class="chip" data-q="Why was my best day the best?">WHYY?</button></div><div class="ask-results" id="ask-results">${askAnswer?renderAnswer(askAnswer):'<div class="callout">Ask T.I.D.E. works locally against your saved database. Simple research does not call Netlify or an external AI service.</div>'}</div></div>`;const input=root.querySelector('#ask-input');const run=()=>{askAnswer=askTide(state,input.value);root.querySelector('#ask-results').innerHTML=renderAnswer(askAnswer);wireAnswerDates()};root.querySelector('#ask-go').onclick=run;input.onkeydown=e=>{if(e.key==='Enter')run()};root.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{input.value=b.dataset.q;run()});wireAnswerDates()}
-function renderAnswer(a){if(!a)return'';const items=Array.isArray(a.items)?a.items:[];return `<div class="answer-card"><div class="eyebrow">ANSWER</div><div class="answer-primary">${esc(a.primary)}</div>${a.detail?`<div class="answer-explain">${esc(a.detail)}</div>`:''}${items.length?`<div class="history-list" style="margin-top:16px">${items.map(x=>typeof x==='string'?`<div class="result-row">${esc(x)}</div>`:`<div class="result-row" ${x.date?`data-answer-date="${x.date}"`:''}><b>${esc(x.label||x.date||'')}</b>${x.meta?`<div class="small muted" style="margin-top:5px">${esc(x.meta)}</div>`:''}</div>`).join('')}</div>`:''}${a.date?`<button class="button" data-answer-date="${a.date}" style="margin-top:15px">Open full day</button>`:''}</div>`}
-function wireAnswerDates(){root.querySelectorAll('[data-answer-date]').forEach(x=>x.onclick=()=>openDay(x.dataset.answerDate))}
+function askLoading(query){
+  return `<div class="ask-loading" role="status" aria-live="polite"><div class="ask-loading-orb"><div class="ask-loading-orb-inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="10.7" cy="10.7" r="6.5"/><path d="m15.5 15.5 5.5 5.5"/></svg></div></div>
+    <div class="ask-loading-label">Searching your T.I.D.E. records</div><div class="ask-loading-query">${esc(query)}</div>
+    <div class="ask-loading-phases"><span>Understanding your question</span><span>Checking your saved history</span><span>Building your answer</span></div>
+    <div class="ask-loading-skeleton"><i></i><i></i><i></i></div></div>`;
+}
+
+function renderAnswer(a){
+  if(!a)return'';
+  const kind=String(a.kind||a.type||'diary').replace(/[^a-z0-9-]/gi,'').toLowerCase(),source=a.source||'T.I.D.E. saved history';
+  const items=Array.isArray(a.items)?a.items:[],limit=10;
+  const row=(item,i)=>{
+    const obj=typeof item==='string'?{label:item}:item||{};
+    const date=String(obj.date||''),hasDate=/^\d{4}-\d{2}-\d{2}$/.test(date);
+    const img=/^https?:\/\//i.test(String(obj.image||''))?`<img class="ask-answer-row-image" src="${esc(obj.image)}" alt="" loading="lazy">`:'';
+    return `<div class="ask-answer-row${hasDate?' ask-answer-row--clickable':''}" ${hasDate?`data-answer-date="${esc(date)}" role="button" tabindex="0" aria-label="Open diary for ${esc(date)}"`:''}>
+      <span class="ask-answer-row-number">${String(i+1).padStart(2,'0')}</span>${img}
+      <div class="ask-answer-row-body"><b>${esc(obj.label||date||'Recorded result')}</b>${obj.meta?`<p>${esc(obj.meta)}</p>`:''}${obj.source?`<span class="ask-answer-row-source">${esc(obj.source)}</span>`:''}</div>${hasDate?'<span class="ask-answer-row-arrow" aria-hidden="true">↗</span>':''}</div>`;
+  };
+  const visible=items.slice(0,limit),hidden=items.slice(limit,75);
+  const suggestions=(a.followups||[]).filter(Boolean).slice(0,3);
+  return `<article class="ask-answer ask-answer--${kind}">
+    <div class="ask-answer-top"><span class="ask-answer-status"><span class="ask-answer-status-dot"></span> SEARCH COMPLETE</span><span class="ask-answer-origin">${esc(source)}</span></div>
+    <div class="ask-answer-intro"><div class="ask-answer-eyebrow">${esc(a.heading||'YOUR ANSWER')}</div>
+      <h2>${esc(a.primary??'No matching records')}</h2>${a.detail?`<p>${esc(a.detail)}</p>`:''}</div>
+    ${items.length?`<div class="ask-answer-results-head"><b>FOUND IN YOUR RECORDS</b><span>${fmt(items.length)} RESULT${items.length===1?'':'S'}${items.length>75?' · FIRST 75 SHOWN':''}</span></div>
+      <div class="ask-answer-rows">${visible.map(row).join('')}</div>
+      ${hidden.length?`<details class="ask-answer-more"><summary>Show ${hidden.length} more results <span aria-hidden="true">⌄</span></summary><div class="ask-answer-rows">${hidden.map((x,i)=>row(x,i+limit)).join('')}</div></details>`:''}`:kind==='money'||kind==='help'||kind==='none'?'':`<div class="ask-answer-no-results">No individual entries to show for this answer.</div>`}
+    ${a.date&&/^\d{4}-\d{2}-\d{2}$/.test(a.date)?`<button type="button" class="ask-answer-open" data-answer-date="${esc(a.date)}">Open ${esc(shortDate(a.date))} in your diary ↗</button>`:''}
+    ${suggestions.length?`<div class="ask-answer-next"><span>KEEP EXPLORING</span><div>${suggestions.map(q=>`<button type="button" data-ask-query="${esc(q)}">${esc(q)} <span aria-hidden="true">↗</span></button>`).join('')}</div></div>`:''}
+    <div class="ask-answer-footer"><span>Grounded in saved T.I.D.E. information. Missing data stays missing.</span><span>${fmt(items.length)} matching records</span></div>
+  </article>`;
+}
+
+function askView(){
+  const groups=[
+    {icon:'🎮',name:'Gaming',accent:'gaming',examples:[["What games did I play on September 5, 2026?","Games on a date"],["When did I last play The Crew Motorfest?","Last-played date"]]},
+    {icon:'📓',name:'My life',accent:'life',examples:[["What happened on October 6, 2024?","Replay a day"],["Tell me about my life in October 2026","Month in review"]]},
+    {icon:'🎧',name:'Music',accent:'music',examples:[["What was my top song in 2026?","Top song"],["Who was my top artist all time?","Lifetime artist"]]},
+    {icon:'💬',name:'Anything else',accent:'explore',examples:[["When did I last edit a video?","Creative history"],["What did I write about money this month?","Money diary notes"]]}
+  ];
+  const groupMarkup=groups.map(g=>`<div class="ask-suggestion-group ask-suggestion--${g.accent}"><div class="ask-suggestion-header"><span aria-hidden="true">${g.icon}</span><b>${g.name}</b></div><div class="ask-suggestion-items">${g.examples.map(([q,label])=>`<button type="button" class="ask-suggestion-button" data-ask-query="${esc(q)}"><span>${label}</span><span aria-hidden="true">↗</span></button>`).join('')}</div></div>`).join('');
+  root.innerHTML=`${pageHead('Ask T.I.D.E.','Search the life you have recorded, from specific dates to big-picture patterns.')}
+  <div class="ask-explorer">
+    <div class="ask-explorer-hero"><div class="ask-explorer-hero-content"><div class="ask-explorer-eyebrow">✦ YOUR PERSONAL HISTORY, SEARCHABLE</div><h2>Curious about <em>your life?</em></h2><p>Ask naturally. Explore gaming, memories, music, achievements, people, places, and more using what T.I.D.E. actually knows.</p></div>
+      <div class="ask-explorer-art" aria-hidden="true"><div class="ask-explorer-orbit orbit-one"></div><div class="ask-explorer-orbit orbit-two"></div><div class="ask-explorer-core"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 21a13 13 0 1 1 26 0c0 5.5-3 8-7 11v5H18v-5c-4-3-7-5.5-7-11Z"/><path d="M19 42h10M20 37h8M21 27l3 3 4-6"/></svg></div></div></div>
+    <div class="ask-explorer-search">
+      <div class="ask-explorer-search-tag"><span class="ask-explorer-live-dot"></span> T.I.D.E. INTELLIGENCE <span class="ask-explorer-local-tag">PRIVATE · SAVED HISTORY</span></div>
+      <form id="ask-explorer-form" class="ask-explorer-form"><label for="ask-input" class="ask-explorer-label">What's on your mind?</label>
+        <div class="ask-explorer-form-row"><textarea id="ask-input" rows="2" maxlength="600" placeholder="Example: What games did I play on September 5, 2026?">${esc(askLastQuestion)}</textarea><button type="submit" id="ask-go" class="ask-explorer-submit"><span>Search my history</span><span aria-hidden="true">↗</span></button></div>
+      </form>
+      <div class="ask-explorer-input-foot"><span><span class="ask-explorer-key">↵</span> Enter to search · Shift+Enter for a new line</span><span>Diary · Gaming · Music · Trackers</span></div>
+    </div>
+    <div class="ask-explorer-section-bar"><div><span>NEED SOME INSPIRATION?</span><h3>Explore your world</h3></div><span>Try a question below</span></div>
+    <div class="ask-explorer-suggestions">${groupMarkup}</div>
+    <div id="ask-results" class="ask-explorer-results" aria-live="polite">${askAnswer?renderAnswer(askAnswer):`<div class="ask-explorer-welcome"><span aria-hidden="true">✦</span><b>Your memories are one question away.</b><p>Choose an example or ask in your own words. Answers show their sources, and you can open matching diary dates.</p></div>`}</div>
+    <div class="ask-explorer-trust"><span>●</span> No outside AI is reading your diary. Search runs with on-device rules and only uses your saved sources. stats.fm rankings may be fetched when you ask about music. Money questions search diary mentions, not your bank accounts or Budget Tracker.</div>
+  </div>`;
+  const input=root.querySelector('#ask-input'),form=root.querySelector('#ask-explorer-form'),results=root.querySelector('#ask-results');
+  const run=async raw=>{
+    const query=String(raw??input.value).trim();if(!query){input.focus();return;}
+    input.value=query;askLastQuestion=query;
+    const id=++askRequestToken,submit=root.querySelector('#ask-go'),started=Date.now();
+    submit.disabled=true;results.innerHTML=askLoading(query);
+    let answer;
+    try{
+      const context={today:isoToday(),selectedDate};
+      if(askMusicIntent(query)){
+        const scope=askScope(query,context),start=scope.all?'2020-11-01':scope.start,end=scope.all?isoToday():scope.end;
+        if(start<'2020-11-01'||start>isoToday())answer={kind:'music',heading:'Listening data unavailable for this period',primary:'Outside stats.fm history',detail:'The connected listening history starts November 1, 2020. Choose a date on or after then.',source:'stats.fm'};
+        else{
+          const finalEnd=end>isoToday()?isoToday():end;
+          const cached=musicCached(start,finalEnd);
+          const music=cached||await fetchPeriodMusic(start,finalEnd,state,{force:false});
+          if(!cached)persist();
+          answer=answerAsk(state,query,{...context,musicData:music});
+        }
+      }else answer=answerAsk(state,query,context);
+      const remaining=Math.max(0,580-(Date.now()-started));if(remaining)await new Promise(resolve=>setTimeout(resolve,remaining));
+    }catch(error){answer={kind:'none',heading:'Could not complete the search',primary:'Your records are safe',detail:`${error?.message||'This search failed.'} Try again or choose another question.`,source:'T.I.D.E. search'};}
+    if(id!==askRequestToken||view!=='ask')return;
+    askAnswer=answer;results.innerHTML=renderAnswer(answer);submit.disabled=false;
+    results.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'});
+  };
+  form.addEventListener('submit',e=>{e.preventDefault();run()});
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();run()}});
+  root.querySelector('.ask-explorer').addEventListener('click',e=>{
+    const q=e.target.closest('[data-ask-query]');
+    if(q){input.value=q.dataset.askQuery;run(input.value);return;}
+    const dateEl=e.target.closest('[data-answer-date]');
+    if(dateEl){const day=dateEl.dataset.answerDate;if(/^\d{4}-\d{2}-\d{2}$/.test(day))openDay(day);}
+  });
+  root.querySelector('.ask-explorer').addEventListener('keydown',e=>{
+    const target=e.target.closest('.ask-answer-row[data-answer-date]');
+    if(target&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openDay(target.dataset.answerDate)}
+  });
+}
+
+function wireAnswerDates(){/* Answer date controls are delegated by the Ask explorer. */}
 
 function historyView(){const rows=Object.entries(state.entries||{}).filter(([,e])=>e.text?.trim()).sort((a,b)=>b[0].localeCompare(a[0]));root.innerHTML=`${pageHead('History','A compact archive. Search results show only the relevant day until you open it.')}<section class="card"><div class="filter-row"><input id="history-search" class="input" style="flex:1" placeholder="Search entries…"><select id="history-year" class="select"><option value="">All years</option>${[...new Set(rows.map(([d])=>d.slice(0,4)))].map(y=>`<option>${y}</option>`).join('')}</select></div><div class="history-list" id="history-list" style="margin-top:15px">${renderHistoryRows(rows)}</div></section>`;const update=()=>{const term=root.querySelector('#history-search').value.toLowerCase(),yr=root.querySelector('#history-year').value;const filtered=rows.filter(([d,e])=>(!yr||d.startsWith(yr))&&(!term||e.text.toLowerCase().includes(term)));root.querySelector('#history-list').innerHTML=renderHistoryRows(filtered);root.querySelectorAll('[data-hdate]').forEach(x=>x.onclick=()=>openDay(x.dataset.hdate))};root.querySelector('#history-search').oninput=update;root.querySelector('#history-year').onchange=update;update()}
 function renderHistoryRows(rows){return rows.length?rows.slice(0,500).map(([d,e])=>`<div class="history-row" data-hdate="${d}"><div class="history-date">${shortDate(d)}</div><div class="history-text">${esc(e.text)}</div><span class="chip">${splitEvents(e.text).length} events</span></div>`).join(''):'<div class="muted">No matching days.</div>'}
