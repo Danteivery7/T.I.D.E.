@@ -75,9 +75,15 @@ function mini(label,start,end,all=false){
 }
 export function decorateGamingReviews(){
   const title=root?.querySelector('.page-head h1')?.textContent||'';
-  if(title==='Monthly Review'&&!root.querySelector('#gaming-month-review')){
-    const m=root.querySelector('#month-select')?.value||month,[y,mo]=m.split('-').map(Number),last=new Date(y,mo,0).getDate(),w=document.createElement('div');
-    w.id='gaming-month-review';w.innerHTML=mini(new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(new Date(y,mo-1,1)),`${m}-01`,`${m}-${String(last).padStart(2,'0')}`);root.append(w);
+  if(title==='Monthly Review'){
+    const m=root.querySelector('#month-select')?.value||month,[y,mo]=m.split('-').map(Number),last=new Date(y,mo,0).getDate();
+    const w=root.querySelector('#gaming-month-review')||document.createElement('div'),version=gaming().updatedAt||'';
+    if(w.dataset.month!==m||w.dataset.gamingVersion!==version||!w.querySelector('.card .grid')){
+      w.id='gaming-month-review';
+      w.innerHTML=mini(new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(new Date(y,mo-1,1)),`${m}-01`,`${m}-${String(last).padStart(2,'0')}`);
+      w.dataset.month=m;w.dataset.gamingVersion=version;
+      if(!w.isConnected)root.append(w);
+    }
   }else if(/^\d{4}\s*·\s*Year in Review$/.test(title)&&!root.querySelector('#gaming-year-review')){
     const y=Number(title.slice(0,4)),w=document.createElement('div');w.id='gaming-year-review';w.innerHTML=mini(String(y),`${y}-01-01`,`${y}-12-31`);root.append(w);
   }else if(/^ALL TIME\s*·\s*Year in Review$/.test(title)&&!root.querySelector('#gaming-all-review')){
@@ -85,6 +91,7 @@ export function decorateGamingReviews(){
   }
 }
 export function wireGamingView(){
+  document.addEventListener('tide:view-rendered',decorateGamingReviews);
   document.addEventListener('click',e=>{if(e.target.closest('[data-view="gaming"]'))setTimeout(renderGaming,0);if(e.target.closest('[data-view="monthly"],[data-view="yearly"]'))setTimeout(decorateGamingReviews,0);});
   document.addEventListener('change',e=>{if(e.target.matches('#month-select,#year-select'))setTimeout(decorateGamingReviews,0);});
   setTimeout(decorateGamingReviews,0);
