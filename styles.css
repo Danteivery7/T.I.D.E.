@@ -402,3 +402,7 @@ body.vice-city-season .toast{
   .year-award-winner{font-size:21px}
   .year-picks-save .button{width:100%}
 }
+
+/* Inline SVG award illustrations survive static builds and offline navigation. */
+.year-award-vector{padding:0;overflow:hidden;background:none}
+.year-award-vector svg{display:block;width:100%;height:100%;flex:none}
