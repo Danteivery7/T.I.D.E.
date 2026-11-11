@@ -9,7 +9,7 @@ import {
   loadDraft, loadLocal, mergeStates, saveDraft, saveLocal
 } from './storage.js';
 import { fetchPeriodMusic } from './spotify.js';
-import { activityRange } from './gaming-data.js';
+import { activityRange, gamingRecordHighlights, hours as gamingHours } from './gaming-data.js';
 
 const root=document.querySelector('#view-root');
 const nav=document.querySelector('#primary-nav');
@@ -434,7 +434,107 @@ function musicExplorerView(){
   if(!cached||!musicExplorerFresh(range.start,range.end))musicExplorerLoad(range.start,range.end,false);
 }
 
-function recordsView(){const log=loggingStreak(state),dc=dailyChallengeStreaks(state),geo=geoguessr10kRecord(state),top=activityStats(state).counts[0],edit=mostActivityDay(state,'Editing');const totalDays=Object.values(state.entries||{}).filter(e=>e.text?.trim()).length;const records=[['Diary Days',totalDays,'Total saved days'],['Longest Diary Streak',`${log.longest} days`,log.last?`Last entry ${shortDate(log.last)}`:''],['Most Common Activity',top?.[0]||'—',top?`${top[1]} recognized events`:''],['Most Editing in One Day',edit?`${edit.count} events`:'—',edit?shortDate(edit.date):''],['Longest Daily Challenge',`${dc.longest} days`,dc.longestStart?`${shortDate(dc.longestStart)} → ${shortDate(dc.longestEnd)}`:''],['Hong Kong Spawns',trackerTotal(state,'hong-kong'),'All time'],['Mors Mutual Calls',trackerTotal(state,'mors-mutual'),'All time'],['Geoguessr 10K',geo?fmt(geo.value):'—',geo?shortDate(geo.date):'']];root.innerHTML=`${pageHead('Personal Records','A living reference page built from dated diary events and tracker history.')}<div class="records-grid">${records.map(([a,v,d])=>`<div class="record-card"><div class="stat-label">${esc(a)}</div><div class="record-value">${esc(v)}</div><div class="record-detail">${esc(d)}</div></div>`).join('')}</div>`}
+function recordHallIcon(name){
+  const shapes={
+    gamepad:'<path d="M6 12h12a4 4 0 0 1 3.9 3.1l.9 4a2.5 2.5 0 0 1-3.9 2.6L16 19H8l-2.9 2.7a2.5 2.5 0 0 1-3.9-2.6l.9-4A4 4 0 0 1 6 12Z"/><path d="M8 14v5M5.5 16.5h5"/><circle cx="16.5" cy="15.5" r=".7" fill="currentColor"/><circle cx="19" cy="18" r=".7" fill="currentColor"/>',
+    calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18M8 15l2.5 2.5L16 13"/>',
+    clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    trophy:'<path d="M8 3h8v9a4 4 0 0 1-8 0V3ZM8 5H4v3a5 5 0 0 0 5 5M16 5h4v3a5 5 0 0 1-5 5M12 16v4M8 21h8"/>',
+    sparkle:'<path d="m12 2 2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6L12 2Z"/>',
+    diary:'<rect x="5" y="3" width="15" height="18" rx="2"/><path d="M9 3v18M12 8h5m-5 4h5m-5 4h3"/>',
+    target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    flag:'<path d="M4 22V3m0 1c6-4 10 4 16 0v11c-6 4-10-4-16 0"/>',
+    bars:'<path d="M4 20v-7h4v7M10 20V6h4v14M16 20v-10h4v10"/>',
+    fire:'<path d="M12 22a8 8 0 0 0 8-8c0-4.5-3-7.5-5-9-1 4-4 5-4 5 0-4-1-5-3-7-.3 4-4 7-4 11a8 8 0 0 0 8 8Z"/><path d="M12 22a3.5 3.5 0 0 0 3.5-3.5C15.5 16 13 15 12 13c-1 3-3.5 3-3.5 5.5A3.5 3.5 0 0 0 12 22Z"/>',
+    edit:'<path d="M4 18v3h3l12-12-3-3L4 18ZM14.5 7.5l3 3M14 4l3-3 4 4-3 3M4 4h7"/>',
+    lightning:'<path d="m13 2-9 11h7l-1 9 10-12h-7V2Z"/>'
+  };
+  return `<svg class="record-hall-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${shapes[name]||shapes.sparkle}</svg>`;
+}
+
+function recordHallFeature(tone,icon,label,value,subtitle,detail,date=""){
+  const action=date?`<button type="button" class="record-hall-visit" data-record-day="${esc(date)}">Open day <span aria-hidden="true">↗</span></button>`:"";
+  return `<article class="record-hall-feature record-hall-feature--${tone}">
+    <div class="record-hall-feature-top"><span class="record-hall-feature-icon">${recordHallIcon(icon)}</span><span class="record-hall-feature-tag">PERSONAL BEST</span></div>
+    <div class="record-hall-feature-label">${esc(label)}</div><div class="record-hall-feature-value">${esc(value)}</div>
+    <div class="record-hall-feature-subtitle">${esc(subtitle)}</div>
+    <div class="record-hall-feature-footer"><span>${esc(detail)}</span>${action}</div>
+  </article>`;
+}
+
+function recordHallCard(tone,icon,label,value,meta){
+  return `<article class="record-hall-card record-hall-card--${tone}">
+    <div class="record-hall-card-top"><span class="record-hall-card-icon">${recordHallIcon(icon)}</span><span class="record-hall-card-accent" aria-hidden="true">✦</span></div>
+    <div class="record-hall-card-label">${esc(label)}</div><div class="record-hall-card-value">${esc(value)}</div><div class="record-hall-card-detail">${esc(meta)}</div>
+  </article>`;
+}
+
+function recordsView(){
+  const gamingRecords=gamingRecordHighlights();
+  const totalTime=gamingRecords.lifetimeMinutes>0?gamingHours(gamingRecords.lifetimeMinutes):"—";
+  const bestDay=gamingRecords.bestDay,bestMonth=gamingRecords.bestMonth,bestGameDay=gamingRecords.bestGameDay,bestGameMonth=gamingRecords.bestGameMonth;
+  const dates=Object.entries(state.entries||{}).filter(([,entry])=>entry?.text?.trim());
+  const busiest=dates.map(([date,entry])=>({date,events:splitEvents(entry.text).length})).sort((a,b)=>b.events-a.events||a.date.localeCompare(b.date))[0];
+  const top=activityStats(state).counts[0],editing=mostActivityDay(state,"Editing");
+  const streak=loggingStreak(state),daily=dailyChallengeStreaks(state),monty=montyRecord(state);
+  const geo=geoguessr10kRecord(state);
+  const activityMonths=Object.entries(state.monthlyReviews||{}).filter(([month])=>/^\\d{4}-\\d{2}$/.test(month));
+  const monthTop=gamingRecords.topMonths;
+  const maxMonthlyMinutes=monthTop[0]?.minutes||1;
+  const dateHint=bestDay?shortDate(bestDay.date):"No dated playtime recorded yet";
+  const monthHint=bestMonth?monthLabel(bestMonth.month):"No monthly playtime recorded yet";
+  root.innerHTML=`${pageHead("Personal Records","Your hall of fame, built from real gaming minutes, daily challenges and diary highlights.")}
+    <div id="personal-records-showcase" class="record-hall">
+      <div class="record-hall-hero"><div><div class="record-hall-eyebrow">✦ THE HALL OF FAME ✦</div><h2>Every high score tells a story<span>.</span></h2><p>Actual recorded milestones, meaningful personal bests, and the moments that stand out.</p></div><div class="record-hall-hero-art">${recordHallIcon("trophy")}</div></div>
+      <div class="section-title">THE HEADLINERS · GAMING RECORDS</div>
+      <div class="record-hall-feature-grid">
+        ${recordHallFeature("day","gamepad","Most gaming recorded in one day",bestDay?gamingHours(bestDay.minutes):"—",dateHint,"Measured from dated playtime changes, not a single timed session",bestDay?.date||"")}
+        ${recordHallFeature("month","calendar","Most gaming in one month",bestMonth?gamingHours(bestMonth.minutes):"—",monthHint,bestMonth?.recoveredMinutes>0?"Includes recoverable historic monthly playtime":"Summed from tracked monthly playtime")}
+      </div>
+      <div class="section-title">GAMING · MORE PERSONAL BESTS</div>
+      <div class="record-hall-card-grid">
+        ${recordHallCard("total","clock","Total gaming time",totalTime,gamingRecords.lifetimeMinutes>0?"Lifetime known playtime across connected and legacy sources":"Connect gaming accounts to build this record")}
+        ${recordHallCard("favorite","trophy","Most played game ever",gamingRecords.favoriteGame?.title||"—",gamingRecords.favoriteGame?`${gamingHours(gamingRecords.favoriteGame.minutes)} known playtime`:"No lifetime game hours available yet")}
+        ${recordHallCard("single","gamepad","Biggest one-game day",bestGameDay?gamingHours(bestGameDay.minutes):"—",bestGameDay?`${bestGameDay.title} · ${shortDate(bestGameDay.date)}`:"Dated game minutes not available yet")}
+        ${recordHallCard("single-month","calendar","Biggest game in a month",bestGameMonth?gamingHours(bestGameMonth.minutes):"—",bestGameMonth?`${bestGameMonth.title} · ${monthLabel(bestGameMonth.month)}`:"Monthly game playtime not available yet")}
+        ${recordHallCard("year","bars","Biggest recorded gaming year",gamingRecords.bestYear?gamingHours(gamingRecords.bestYear.minutes):"—",gamingRecords.bestYear?`${gamingRecords.bestYear.year} · Known monthly playtime`:"Waiting for monthly gaming records")}
+      </div>
+      <div class="record-hall-months">
+        <div class="record-hall-months-header"><div><div class="record-hall-subheading">YOUR BIGGEST GAMING MONTHS</div><h3>Top 3 on record</h3></div><span class="record-hall-label-chip">${gamingRecords.trackedMonths} MONTH${gamingRecords.trackedMonths===1?"":"S"} RECORDED</span></div>
+        ${monthTop.length?monthTop.map((item,i)=>`<div class="record-hall-month-row">
+          <span class="record-hall-month-position">0${i+1}</span><div class="record-hall-month-name"><b>${esc(monthLabel(item.month))}</b><div class="record-hall-progress"><div style="width:${Math.max(4,Math.round(item.minutes/maxMonthlyMinutes*100))}%"></div></div></div>
+          <span class="record-hall-month-hours">${esc(gamingHours(item.minutes))}</span>
+        </div>`).join(""):'<p class="muted small">As gaming data is recorded, your biggest months will appear here.</p>'}
+      </div>
+      <div class="record-hall-source-note">${recordHallIcon("target")}<span>Gaming day records come from changes detected between account snapshots; they are <b>not exact session timers</b>. Monthly records can also include recovered historical playtime. Older lifetime playtime without date evidence is never assigned to a specific day or month.</span></div>
+      <div class="section-title">YOUR LIFE · DIARY MILESTONES</div>
+      <div class="record-hall-card-grid record-hall-diary">
+        ${recordHallCard("activity","sparkle","Most common activity",top?.[0]||"—",top?`${fmt(top[1])} recognized diary events`:"No activities recognized yet")}
+        ${recordHallCard("writing","diary","Most events in one day",busiest?`${fmt(busiest.events)} events`:"—",busiest?shortDate(busiest.date):"No saved diary entries yet")}
+        ${recordHallCard("streak","fire","Longest diary streak",`${fmt(streak.longest)} days`,streak.last?`Last saved ${shortDate(streak.last)}`:"No diary streak data yet")}
+        ${recordHallCard("edit","edit","Most editing in a day",editing?`${fmt(editing.count)} events`:"—",editing?shortDate(editing.date):"No editing events recognized yet")}
+      </div>
+      <div class="section-title">GEOGUESSR · CHALLENGE RECORDS</div>
+      <div class="record-hall-card-grid record-hall-geoguessr">
+        ${recordHallCard("challenge","flag","Longest Daily Challenge streak",`${fmt(daily.longest)} days`,"Your personal best streak")}
+        ${recordHallCard("challenge","lightning","Current Daily Challenge streak",`${fmt(daily.active?daily.current:0)} days`,daily.active?"Currently active":"Currently inactive")}
+        ${recordHallCard("challenge","trophy","Wins against Monty",fmt(monty.wins),`${fmt(monty.losses)} recorded losses · all time`)}
+        ${recordHallCard("geoguessr","target","GeoGuessr 10K record",geo?fmt(geo.value):"—",geo?`Recorded ${shortDate(geo.date)}`:"No dated record yet")}
+        ${recordHallCard("geoguessr","flag","Hong Kong spawns",fmt(trackerTotal(state,"hong-kong")),"Lifetime tracker total")}
+      </div>
+      <details class="record-hall-history">
+        <summary><span>${recordHallIcon("diary")} Other historical counters</span><span class="record-hall-history-hint">View less-used totals <span aria-hidden="true">⌄</span></span></summary>
+        <div class="record-hall-history-grid">
+          <div><span>Diary days saved</span><b>${fmt(dates.length)}</b></div>
+          <div><span>Mors Mutual calls</span><b>${fmt(trackerTotal(state,"mors-mutual"))}</b></div>
+          <div><span>Collisions</span><b>${fmt(trackerTotal(state,"apartment-collisions"))}</b></div>
+          <div><span>Migraines</span><b>${fmt(trackerTotal(state,"migraines"))}</b></div>
+        </div>
+        <div class="record-hall-history-foot">These totals are preserved rather than deleted, but they don't take space from your main records.</div>
+      </details>
+    </div>`;
+  root.querySelectorAll("[data-record-day]").forEach(button=>button.onclick=()=>openDay(button.dataset.recordDay));
+}
 
 function askView(){root.innerHTML=`${pageHead('Ask T.I.D.E.','Ask for exactly what you want. T.I.D.E. returns the smallest useful answer and lets you drill into dates only when you choose.')}<div class="ask-box"><div class="ask-input-wrap"><input id="ask-input" class="ask-input" placeholder="What days did I spawn in Hong Kong in 2026?" autocomplete="off">${button('Ask','ask-go','primary')}</div><div class="ask-suggestions"><button class="chip" data-q="What months did I spawn in Hong Kong in 2026?">Hong Kong months</button><button class="chip" data-q="What day did I edit the most in 2026?">Most editing</button><button class="chip" data-q="How many Mors Mutual calls did I have in 2026?">Mors Mutual</button><button class="chip" data-q="Why was my best day the best?">WHYY?</button></div><div class="ask-results" id="ask-results">${askAnswer?renderAnswer(askAnswer):'<div class="callout">Ask T.I.D.E. works locally against your saved database. Simple research does not call Netlify or an external AI service.</div>'}</div></div>`;const input=root.querySelector('#ask-input');const run=()=>{askAnswer=askTide(state,input.value);root.querySelector('#ask-results').innerHTML=renderAnswer(askAnswer);wireAnswerDates()};root.querySelector('#ask-go').onclick=run;input.onkeydown=e=>{if(e.key==='Enter')run()};root.querySelectorAll('[data-q]').forEach(b=>b.onclick=()=>{input.value=b.dataset.q;run()});wireAnswerDates()}
 function renderAnswer(a){if(!a)return'';const items=Array.isArray(a.items)?a.items:[];return `<div class="answer-card"><div class="eyebrow">ANSWER</div><div class="answer-primary">${esc(a.primary)}</div>${a.detail?`<div class="answer-explain">${esc(a.detail)}</div>`:''}${items.length?`<div class="history-list" style="margin-top:16px">${items.map(x=>typeof x==='string'?`<div class="result-row">${esc(x)}</div>`:`<div class="result-row" ${x.date?`data-answer-date="${x.date}"`:''}><b>${esc(x.label||x.date||'')}</b>${x.meta?`<div class="small muted" style="margin-top:5px">${esc(x.meta)}</div>`:''}</div>`).join('')}</div>`:''}${a.date?`<button class="button" data-answer-date="${a.date}" style="margin-top:15px">Open full day</button>`:''}</div>`}
