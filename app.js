@@ -97,7 +97,7 @@ const YEAR_AWARD_VECTORS={
 
 function yearAwardCard(theme,label,name,details,image,glyph,footnote=""){
   const vector=YEAR_AWARD_VECTORS[image];
-  const picture=vector?`<div class="year-award-glyph year-award-vector">${vector}</div>`:/^https?:\/\//i.test(String(image||""))?`<img class="year-award-image" src="${esc(image)}" alt="${esc(label)} artwork" loading="lazy" referrerpolicy="no-referrer">`:`<div class="year-award-glyph" aria-hidden="true">${esc(glyph)}</div>`;
+  const picture=vector?`<div class="year-award-glyph year-award-vector">${vector}</div>`:/^(https?:\/\/|\/awards\/crew-motorfest\.jpg$)/i.test(String(image||""))?`<img class="year-award-image" src="${esc(image)}" alt="${esc(label)} artwork" loading="lazy" referrerpolicy="no-referrer">`:`<div class="year-award-glyph" aria-hidden="true">${esc(glyph)}</div>`;
   return `<article class="year-award year-award--${theme}"><div class="year-award-top"><span class="year-award-category">${esc(label)}</span><span class="year-award-sparkle" aria-hidden="true">✦</span></div><div class="year-award-center">${picture}<div class="year-award-copy"><div class="year-award-winner">${esc(name)}</div><div class="year-award-detail">${esc(details)}</div></div></div>${footnote?`<div class="year-award-foot">${esc(footnote)}</div>`:""}</article>`;
 }
 
@@ -118,7 +118,7 @@ function yearAwardMarkup(y,music,failed=false){
     ${yearAwardCard("activity","Top activity",topActivity?.[0]||"No activity yet",topActivity?`${fmt(topActivity[1])} recognized events`:"Save diary entries to build rankings",topActivity?.[0]==="Gaming"?"/awards/gaming-controller.svg":"/awards/activity-trophy.svg","◇","From your diary")}
     ${yearAwardCard("song","Song of the year",song?.name||(failed?"Music unavailable":musicStatus),song?`${song.artist||"Artist unavailable"} · ${fmt(song.streams)} streams`:musicStatus,song?.image,"♫","stats.fm · actual streams")}
     ${yearAwardCard("artist","Artist of the year",artist?.name||(failed?"Music unavailable":musicStatus),artist?`${fmt(artist.streams)} streams`:musicStatus,artist?.image,"♬","stats.fm · actual streams")}
-    ${yearAwardCard("game","Video game of the year",game?.title||"No yearly leader yet",gameHours,game?.image,"🎮",gamePartial?"Known playtime · partial coverage":"Most played · yearly hours")}
+    ${yearAwardCard("game","Video game of the year",game?.title||"No yearly leader yet",gameHours,game?.title?.trim().toLowerCase()==="the crew motorfest"?"/awards/crew-motorfest.jpg":game?.image,"🎮",gamePartial?"Known playtime · partial coverage":"Most played · yearly hours")}
   </div>`;
 }
 
