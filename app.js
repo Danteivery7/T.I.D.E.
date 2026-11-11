@@ -183,7 +183,20 @@ function yearlyView(){
   root.querySelector("#year-select").onchange=e=>{selectedYear=Number(e.target.value);render()};
   root.querySelector("#save-year").onclick=()=>{
     saveYearlyReview(state,y,{bestDay:root.querySelector("#year-best-day").value,worstDay:root.querySelector("#year-worst-day").value,bestMonth:root.querySelector("#year-best-month").value,worstMonth:root.querySelector("#year-worst-month").value});
-    persist();toast("Year picks saved.");render();
+    persist();toast("Year picks saved.");
+    const updated=state.yearlyReviews?.[y]||{};
+    const bd=updated.bestDay||"",wd=updated.worstDay||"";
+    const bm=Number(updated.bestMonth)||0,wm=Number(updated.worstMonth)||0;
+    const personal=root.querySelector(".year-personal-grid");
+    if(personal)personal.innerHTML=[
+      yearPersonalPick("Best day",dateChoice(bd),dayNote(bd),"best"),
+      yearPersonalPick("Worst day",dateChoice(wd),dayNote(wd),"worst"),
+      yearPersonalPick("Best month",monthChoice(bm),monthNote(bm),"best"),
+      yearPersonalPick("Worst month",monthChoice(wm),monthNote(wm),"worst")
+    ].join("");
+    const awards=root.querySelector("#year-awards");
+    if(awards)awards.innerHTML=yearAwardMarkup(y,musicCached(start,end));
+    root.querySelector(".year-picks-editor").open=false;
   };
   root.querySelector("#refresh-year-music").onclick=()=>loadYearMusic(start,end,true,y);
   if(!cached)loadYearMusic(start,end,false,y);
