@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Gaming controller">
+<defs><linearGradient id="bg" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#133f59"/><stop offset="1" stop-color="#3d2863"/></linearGradient><linearGradient id="pad" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fdfaff"/><stop offset=".51" stop-color="#c6e7f8"/><stop offset="1" stop-color="#a995e4"/></linearGradient><linearGradient id="shine" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#8cf9e3"/><stop offset="1" stop-color="#ff9bdc"/></linearGradient></defs>
+<rect width="256" height="256" rx="43" fill="url(#bg)"/><circle cx="212" cy="45" r="80" fill="#ff83d3" opacity=".10"/><circle cx="46" cy="198" r="88" fill="#74dffe" opacity=".10"/>
+<path d="M68 94c18-12 102-12 120 0 20 14 32 59 29 83-2 16-15 25-29 19-10-4-21-19-35-28h-50c-14 9-25 24-35 28-14 6-27-3-29-19-3-24 9-69 29-83Z" fill="#112d4e" opacity=".35" transform="translate(0 8)"/>
+<path d="M68 94c18-12 102-12 120 0 20 14 32 59 29 83-2 16-15 25-29 19-10-4-21-19-35-28h-50c-14 9-25 24-35 28-14 6-27-3-29-19-3-24 9-69 29-83Z" fill="url(#pad)" stroke="#f9fdff" stroke-width="3.5"/>
+<path d="M73 99c27-9 83-9 110 0" stroke="url(#shine)" stroke-width="7" stroke-linecap="round" opacity=".85"/>
+<g fill="#394673"><rect x="73" y="120" width="14" height="45" rx="4"/><rect x="58" y="135" width="44" height="15" rx="4"/></g>
+<circle cx="119" cy="153" r="13" fill="#37446c" stroke="#8cc9f4" stroke-width="4"/><circle cx="151" cy="153" r="13" fill="#37446c" stroke="#8cc9f4" stroke-width="4"/>
+<g><circle cx="180" cy="119" r="9" fill="#ff8bc9"/><circle cx="198" cy="137" r="9" fill="#74d9ff"/><circle cx="162" cy="137" r="9" fill="#9e8cff"/><circle cx="180" cy="155" r="9" fill="#86efd1"/></g><path d="M118 111h18" stroke="#786f9f" stroke-width="5" stroke-linecap="round"/>
+<path d="m40 70 4 8 9 2-9 3-4 8-4-8-9-3 9-2Zm170 12 3 7 7 2-7 2-3 7-3-7-7-2 7-2Z" fill="#a3f3ec"/></svg>
