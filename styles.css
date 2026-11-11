@@ -1254,3 +1254,268 @@ body.vice-city-season .toast{
   .ask-loading-orb:before,.ask-loading-orb:after,.ask-loading-skeleton i{animation:none}
   .ask-explorer-art{transform:none}
 }
+
+
+
+/* T.I.D.E. Calendar & On This Day v2: seasonal identities, readable diary days, and year-by-year time capsules. */
+.tide-calendar-stage,.tide-otd-stage{--c-primary:#c3a9ff;--c-secondary:#85d9f8;--c-base1:#30214f;--c-base2:#193b58;--c-highlight:#f6c9ff;min-width:0}
+.tide-calendar-stage.theme-01,.tide-otd-stage.theme-01{--c-primary:#9bdcfa;--c-secondary:#c6b6fc;--c-base1:#153753;--c-base2:#242b52;--c-highlight:#d2f6ff}
+.tide-calendar-stage.theme-02,.tide-otd-stage.theme-02{--c-primary:#ffa5d2;--c-secondary:#c3a3fb;--c-base1:#512444;--c-base2:#302353;--c-highlight:#ffe2f0}
+.tide-calendar-stage.theme-03,.tide-otd-stage.theme-03{--c-primary:#91e4bc;--c-secondary:#9abffb;--c-base1:#16453e;--c-base2:#22345a;--c-highlight:#d2ffe6}
+.tide-calendar-stage.theme-04,.tide-otd-stage.theme-04{--c-primary:#c6a1fe;--c-secondary:#8ee7de;--c-base1:#392952;--c-base2:#20504f;--c-highlight:#f0dbff}
+.tide-calendar-stage.theme-05,.tide-otd-stage.theme-05{--c-primary:#93eab2;--c-secondary:#f8cc9f;--c-base1:#244a3b;--c-base2:#454056;--c-highlight:#e1ffdb}
+.tide-calendar-stage.theme-06,.tide-otd-stage.theme-06{--c-primary:#ffbd90;--c-secondary:#ff95c0;--c-base1:#603141;--c-base2:#34325d;--c-highlight:#ffebc8}
+.tide-calendar-stage.theme-07,.tide-otd-stage.theme-07{--c-primary:#ff91a7;--c-secondary:#86d8ff;--c-base1:#522847;--c-base2:#183f60;--c-highlight:#ffe2e9}
+.tide-calendar-stage.theme-08,.tide-otd-stage.theme-08{--c-primary:#ffc583;--c-secondary:#b5a0ff;--c-base1:#573d39;--c-base2:#30345d;--c-highlight:#fff0c3}
+.tide-calendar-stage.theme-09,.tide-otd-stage.theme-09{--c-primary:#8faeff;--c-secondary:#83e5dc;--c-base1:#243861;--c-base2:#23464d;--c-highlight:#d7e1ff}
+.tide-calendar-stage.theme-10,.tide-otd-stage.theme-10{--c-primary:#ffb17a;--c-secondary:#c39aff;--c-base1:#513040;--c-base2:#382653;--c-highlight:#ffedc5}
+.tide-calendar-stage.theme-11,.tide-otd-stage.theme-11{--c-primary:#d5adff;--c-secondary:#82cbff;--c-base1:#3c245e;--c-base2:#244260;--c-highlight:#f1d9ff}
+.tide-calendar-stage.theme-12,.tide-otd-stage.theme-12{--c-primary:#ff9cab;--c-secondary:#8ce0c4;--c-base1:#52243e;--c-base2:#184a4a;--c-highlight:#ffe3e8}
+.tide-cal-hero,.tide-otd-hero{position:relative;isolation:isolate;display:flex;justify-content:space-between;align-items:center;gap:25px;overflow:hidden;border:1px solid color-mix(in srgb,var(--c-primary),transparent 66%);border-radius:24px;background:radial-gradient(circle at 88% 7%,color-mix(in srgb,var(--c-primary),transparent 79%),transparent 41%),radial-gradient(circle at 3% 103%,color-mix(in srgb,var(--c-secondary),transparent 88%),transparent 44%),linear-gradient(112deg,var(--c-base1),var(--c-base2));box-shadow:0 20px 50px rgba(5,10,31,.23)}
+.tide-cal-hero:before,.tide-otd-hero:before{position:absolute;content:"";inset:0 0 auto;height:4px;background:linear-gradient(90deg,var(--c-primary),var(--c-secondary))}
+.tide-cal-hero{min-height:182px;padding:27px 34px;margin:0 0 18px}
+.tide-cal-hero-copy{z-index:1;position:relative}
+.tide-cal-kicker,.tide-cal-eyebrow,.tide-otd-kicker{display:block;color:var(--c-highlight);font-weight:900;font-size:10px;letter-spacing:.15em}
+.tide-cal-hero h2{margin:9px 0 7px;font-weight:950;font-size:clamp(36px,5vw,59px);line-height:1.05;letter-spacing:-.055em;color:#fff9ff}
+.tide-cal-hero h2 span{font-size:.43em;font-weight:850;letter-spacing:-.02em;vertical-align:middle;margin-left:14px;color:var(--c-primary)}
+.tide-cal-hero p{font-size:13px;line-height:1.55;color:#e8e0f3;margin:0}
+.tide-cal-hero-number{font-weight:950;font-size:clamp(100px,12vw,174px);line-height:.9;letter-spacing:-.1em;flex:none;color:color-mix(in srgb,var(--c-highlight),transparent 78%);transform:rotate(-7deg);margin-right:10px;user-select:none}
+.tide-cal-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:13px 15px;margin:0 0 13px;border:1px solid rgba(176,158,216,.22);border-radius:17px;background:linear-gradient(135deg,rgba(112,80,170,.13),rgba(59,117,173,.065))}
+.tide-cal-month-navigation,.tide-cal-controls,.tide-otd-navigation,.tide-otd-toolbar-actions{display:flex;align-items:center;gap:10px}
+.tide-cal-nav,.tide-otd-nav{display:grid;place-items:center;flex:none;width:40px;height:40px;padding:0;border:1px solid color-mix(in srgb,var(--c-primary),transparent 65%);border-radius:11px;background:color-mix(in srgb,var(--c-primary),transparent 91%);color:var(--c-primary);font-size:26px;line-height:1;cursor:pointer}
+.tide-cal-nav:hover,.tide-cal-nav:focus-visible,.tide-otd-nav:hover,.tide-otd-nav:focus-visible{background:color-mix(in srgb,var(--c-primary),transparent 77%);border-color:var(--c-primary);outline:none}
+.tide-cal-current{display:grid;gap:4px;min-width:170px;text-align:center}
+.tide-cal-current b{font-size:14px;font-weight:950}
+.tide-cal-current small{color:var(--muted);font-size:10px}
+.tide-cal-controls{gap:8px;flex-wrap:wrap}
+.tide-cal-month-chooser,.tide-otd-toolbar-actions label{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted);font-weight:800}
+.tide-cal-month-chooser input,.tide-otd-toolbar-actions input{min-width:145px;max-width:180px;min-height:39px;border:1px solid rgba(169,153,214,.28);border-radius:10px;background:#161d35;color:#f6f4ff;color-scheme:dark;padding:8px 9px;font-size:12px}
+.tide-cal-action,.tide-otd-toolbar-actions button{border:1px solid color-mix(in srgb,var(--c-primary),transparent 59%);border-radius:10px;min-height:39px;padding:9px 12px;font-size:11px;font-weight:850;background:color-mix(in srgb,var(--c-primary),transparent 87%);color:#f3e7ff;cursor:pointer}
+.tide-cal-action:hover,.tide-otd-toolbar-actions button:hover{background:color-mix(in srgb,var(--c-primary),transparent 74%)}
+.tide-cal-action--soft{color:var(--c-primary);background:transparent}
+.tide-cal-stat-strip{display:flex;flex-wrap:wrap;gap:13px;align-items:center;margin-bottom:15px;padding:0 3px}
+.tide-cal-stat-strip>div{display:flex;align-items:center;gap:8px;min-height:41px;padding:9px 12px;border-radius:11px;border:1px solid rgba(166,151,208,.16);background:rgba(82,84,138,.07)}
+.tide-cal-stat-number{color:var(--c-primary);font-size:18px;font-weight:950;font-variant-numeric:tabular-nums}
+.tide-cal-stat-strip>div>span:last-child{font-size:9px;letter-spacing:.06em;color:var(--muted);font-weight:850}
+.tide-cal-holidays-toggle{display:inline-flex;align-items:center;gap:7px;margin-left:auto;font-size:11px;color:#d7d5ec;font-weight:750;cursor:pointer}
+.tide-cal-holidays-toggle input{accent-color:var(--c-primary);width:15px;height:15px}
+.tide-cal-grid-wrap{border:1px solid rgba(166,155,211,.26);border-radius:20px;padding:13px;background:linear-gradient(150deg,rgba(28,34,62,.93),rgba(21,28,53,.94));box-shadow:0 13px 35px rgba(5,9,31,.21)}
+.tide-cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;min-width:0}
+.tide-cal-weekday{font-size:11px;font-weight:950;letter-spacing:.12em;color:#d8d3f2;text-align:center;padding:12px 4px 13px;border-radius:9px;background:rgba(142,138,204,.08)}
+.tide-cal-weekday.is-weekend{color:var(--c-primary);background:color-mix(in srgb,var(--c-primary),transparent 93%)}
+.tide-cal-weekday-full{display:none}
+.tide-cal-day{display:flex;flex-direction:column;justify-content:space-between;min-width:0;min-height:127px;text-align:left;position:relative;padding:11px 11px 9px;border:1px solid rgba(184,176,218,.20);border-radius:14px;background:linear-gradient(160deg,rgba(49,55,86,.85),rgba(28,38,70,.78));color:#fffafd;cursor:pointer;transition:transform .14s,border-color .14s,background .14s}
+.tide-cal-day:hover{z-index:2;transform:translateY(-2px);border-color:var(--c-primary);background:linear-gradient(160deg,color-mix(in srgb,var(--c-primary),#283354 85%),#202d53);box-shadow:0 10px 24px rgba(7,12,33,.29)}
+.tide-cal-day:focus-visible{outline:2px solid var(--c-primary);outline-offset:2px;z-index:3}
+.tide-cal-day.is-adjacent{opacity:.42;background:rgba(31,37,58,.53)}
+.tide-cal-day.is-adjacent:hover,.tide-cal-day.is-adjacent:focus-visible{opacity:1}
+.tide-cal-day.is-today{border:2px solid var(--c-primary);padding:10px 10px 8px;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c-primary),transparent 78%)}
+.tide-cal-day.is-best{border-color:rgba(131,236,179,.55);background:linear-gradient(145deg,rgba(48,110,102,.32),rgba(33,39,72,.88))}
+.tide-cal-day.is-worst{border-color:rgba(255,151,169,.51);background:linear-gradient(145deg,rgba(136,57,84,.30),rgba(33,39,72,.88))}
+.tide-cal-day.is-special{border-color:rgba(255,144,206,.64);background:linear-gradient(145deg,rgba(167,67,125,.26),rgba(66,63,131,.28)),#222641}
+.tide-cal-day-top,.tide-cal-day-bottom{display:flex;align-items:center;justify-content:space-between;gap:5px;min-width:0}
+.tide-cal-day-num{display:inline-grid;place-items:center;font-weight:950;font-size:24px;line-height:1.05;letter-spacing:-.045em;color:#fffaff;font-variant-numeric:tabular-nums}
+.tide-cal-today-label{font-size:9px;font-weight:950;letter-spacing:.08em;color:var(--c-highlight);background:color-mix(in srgb,var(--c-primary),transparent 83%);padding:5px 6px;border-radius:6px}
+.tide-cal-day-body{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1;justify-content:flex-start;padding-top:11px}
+.tide-cal-holiday{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:100%;align-self:start;color:#ffe6c4;background:rgba(238,166,92,.15);border:1px solid rgba(242,182,107,.25);font-size:10px;font-weight:900;line-height:1.35;padding:4px 6px;border-radius:7px;overflow-wrap:anywhere}
+.tide-cal-holiday--federal,.tide-cal-holiday--observed{color:#c8f7ee;background:rgba(74,174,147,.16);border-color:rgba(111,237,200,.27)}
+.tide-cal-holiday--special{color:#ffe0f6;background:rgba(235,91,173,.27);border-color:rgba(255,145,212,.50)}
+.tide-cal-note{color:#d8def3;font-size:11px;line-height:1.45;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.tide-cal-day-bottom{margin-top:7px;min-height:13px;justify-content:flex-start;flex-wrap:wrap}
+.tide-cal-diary-dot{width:6px;height:6px;border-radius:50%;background:#8ee4e8;box-shadow:0 0 0 2px rgba(85,213,215,.14);flex:none}
+.tide-cal-diary-label{color:#a0cad9;font-size:9px;font-weight:850;letter-spacing:.04em;white-space:nowrap}
+.tide-cal-pick-label{font-size:8px;font-weight:950;color:#abf6d1;letter-spacing:.02em}
+.tide-cal-day.is-worst .tide-cal-pick-label{color:#ffb6c7}
+.tide-cal-holiday-dot{width:6px;height:6px;border-radius:50%;background:#ffbc7c;margin-left:auto;flex:none}
+.tide-cal-day.is-special .tide-cal-holiday-dot{background:#ffa7e2}
+.tide-cal-legend{display:flex;flex-wrap:wrap;gap:15px;align-items:center;padding:16px 5px 22px;font-size:10px;font-weight:700;color:#bec8e2}
+.tide-cal-legend span{display:inline-flex;align-items:center;gap:7px}
+.tide-cal-legend i{width:9px;height:9px;display:inline-block;border-radius:50%;background:#9ad7fe}
+.tide-cal-legend .legend-today{background:transparent;border:2px solid var(--c-primary)}
+.tide-cal-legend .legend-diary{background:#8ee4e8}
+.tide-cal-legend .legend-holiday{background:#ffbc7c}
+.tide-cal-legend .legend-best{background:#97f6cc}
+.tide-cal-legend .legend-worst{background:#ff9faf}
+.tide-cal-agenda{border:1px solid rgba(183,159,215,.25);border-radius:20px;padding:22px;background:linear-gradient(150deg,rgba(114,80,168,.12),rgba(48,110,161,.065));margin-bottom:25px}
+.tide-cal-agenda-head{display:flex;align-items:end;justify-content:space-between;gap:15px;margin-bottom:15px}
+.tide-cal-agenda-head h3{font-size:21px;font-weight:950;letter-spacing:-.035em;margin:7px 0 0}
+.tide-cal-agenda-total{font-size:10px;font-weight:850;color:var(--c-primary);border:1px solid rgba(172,152,214,.28);padding:7px 10px;border-radius:999px}
+.tide-cal-agenda-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tide-cal-agenda-event{display:flex;align-items:center;gap:12px;text-align:left;min-width:0;min-height:75px;padding:11px;border:1px solid rgba(182,162,226,.19);border-radius:14px;background:rgba(26,33,61,.42);color:#f5f4ff;cursor:pointer}
+.tide-cal-agenda-event:hover,.tide-cal-agenda-event:focus-visible{border-color:var(--c-primary);background:rgba(95,79,141,.26);outline:none}
+.tide-cal-agenda-day{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:none;width:49px;height:52px;border:1px solid rgba(173,164,224,.2);border-radius:10px;background:color-mix(in srgb,var(--c-primary),transparent 90%)}
+.tide-cal-agenda-day>span{color:var(--c-primary);font-size:9px;font-weight:950;letter-spacing:.08em}
+.tide-cal-agenda-day>b{font-size:22px;font-weight:950;line-height:1.18}
+.tide-cal-agenda-info{flex:1;min-width:0;display:grid;gap:6px}
+.tide-cal-agenda-info b{font-size:12px;line-height:1.38;overflow-wrap:anywhere}
+.tide-cal-agenda-info span{font-size:10px;color:var(--muted)}
+.tide-cal-agenda-arrow{color:var(--c-primary);font-size:19px}
+.tide-cal-agenda--special .tide-cal-agenda-day{background:rgba(235,109,179,.18)}
+.tide-cal-agenda-empty{color:var(--muted);font-size:12px;line-height:1.6;padding:25px 10px}
+.tide-cal-disclaimer{color:#a1aac5;font-size:10px;line-height:1.65;margin:14px 0 0}
+
+/* On This Day · full-length, navigable life timeline. */
+.tide-otd-hero{padding:29px 34px;min-height:263px}
+.tide-otd-hero-copy{position:relative;z-index:1;min-width:0}
+.tide-otd-hero-month{font-size:12px;color:var(--c-primary);font-weight:900;letter-spacing:.19em;margin:14px 0 4px}
+.tide-otd-hero-month span{color:#d0c7e7;margin-left:8px;font-size:11px}
+.tide-otd-date-main{display:flex;align-items:center;gap:17px}
+.tide-otd-date-main>strong{font-size:clamp(85px,10vw,135px);font-weight:950;letter-spacing:-.095em;line-height:.93;color:#fff9ff;font-variant-numeric:tabular-nums}
+.tide-otd-date-main>span{display:grid;gap:7px}
+.tide-otd-date-main b{color:var(--c-highlight);font-size:clamp(29px,3.6vw,46px);line-height:1.03;letter-spacing:-.04em}
+.tide-otd-date-main small{max-width:250px;font-size:12px;line-height:1.45;color:#eee2f4;font-weight:650}
+.tide-otd-hero-copy>p:last-of-type{color:#ece0f3;font-size:12px;line-height:1.6;margin:16px 0 0;max-width:535px}
+.tide-otd-holidays{display:flex;gap:7px;flex-wrap:wrap;margin-top:16px}
+.tide-otd-holidays span{font-size:10px;font-weight:850;color:#f6e9ff;background:color-mix(in srgb,var(--c-primary),transparent 80%);padding:7px 9px;border-radius:8px;border:1px solid rgba(218,186,250,.17)}
+.tide-otd-art{position:relative;align-self:stretch;display:grid;place-items:center;width:210px;min-height:180px;flex:none}
+.tide-otd-art-orbit{width:173px;height:173px;border:2px solid color-mix(in srgb,var(--c-secondary),transparent 67%);border-radius:50%;box-shadow:0 0 0 14px color-mix(in srgb,var(--c-primary),transparent 94%),inset 0 0 25px color-mix(in srgb,var(--c-secondary),transparent 87%);transform:rotate(16deg) scaleX(.83)}
+.tide-otd-art-year{position:absolute;font-size:44px;font-weight:950;letter-spacing:-.055em;color:color-mix(in srgb,var(--c-highlight),transparent 31%);transform:rotate(-13deg)}
+.tide-otd-art-star{position:absolute;top:0;right:0;color:var(--c-primary);font-size:42px}
+.tide-otd-toolbar{display:flex;align-items:center;justify-content:space-between;gap:15px;flex-wrap:wrap;margin:17px 0;padding:13px 15px;border-radius:16px;border:1px solid rgba(179,157,222,.25);background:linear-gradient(120deg,rgba(109,75,166,.13),rgba(58,111,173,.06))}
+.tide-otd-nav-title{display:grid;gap:4px;min-width:178px;text-align:center}
+.tide-otd-nav-title b{font-size:14px;font-weight:900}
+.tide-otd-nav-title span{color:var(--muted);font-size:10px}
+.tide-otd-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:26px}
+.tide-otd-stats>div{display:flex;align-items:baseline;gap:11px;border:1px solid rgba(179,150,217,.21);border-radius:15px;padding:19px 17px;background:linear-gradient(135deg,rgba(111,79,161,.13),rgba(60,114,173,.07))}
+.tide-otd-stats b{font-size:32px;line-height:1;font-weight:950;letter-spacing:-.05em;color:var(--c-primary)}
+.tide-otd-stats span{font-size:10px;color:var(--muted);font-weight:900;letter-spacing:.07em}
+.tide-otd-main{margin-bottom:20px}
+.tide-otd-section-heading{display:flex;align-items:end;justify-content:space-between;gap:14px;margin-bottom:20px}
+.tide-otd-section-heading>div>span{font-size:10px;font-weight:950;color:var(--c-primary);letter-spacing:.16em}
+.tide-otd-section-heading h2{font-size:clamp(22px,3vw,31px);letter-spacing:-.04em;margin:7px 0 0}
+.tide-otd-section-heading>small{font-size:11px;color:var(--muted);max-width:260px;text-align:right}
+.tide-otd-timeline{position:relative;display:grid;gap:17px;padding-left:16px}
+.tide-otd-timeline:before{position:absolute;content:"";top:23px;bottom:26px;left:52px;width:2px;background:linear-gradient(var(--c-primary),var(--c-secondary));opacity:.42}
+.tide-otd-memory{display:grid;grid-template-columns:76px minmax(0,1fr);gap:18px;align-items:start;min-width:0;position:relative}
+.tide-otd-connector{display:none}
+.tide-otd-memory-mark{position:relative;z-index:1;display:grid;place-items:center;margin-top:16px;width:72px;height:44px;border-radius:13px;border:1px solid var(--c-primary);background:#26334f;color:var(--c-highlight);box-shadow:0 8px 20px rgba(9,11,32,.2)}
+.tide-otd-memory-mark span{font-size:16px;font-weight:950;font-variant-numeric:tabular-nums}
+.tide-otd-memory-body{position:relative;min-width:0;border:1px solid rgba(170,151,215,.24);border-radius:18px;padding:22px;background:linear-gradient(135deg,rgba(90,65,145,.15),rgba(48,97,152,.075));box-shadow:0 11px 28px rgba(6,9,28,.14)}
+.tide-otd-memory.is-featured .tide-otd-memory-body{border-color:color-mix(in srgb,var(--c-primary),transparent 44%);background:radial-gradient(circle at 95% 10%,color-mix(in srgb,var(--c-primary),transparent 89%),transparent 50%),linear-gradient(135deg,rgba(90,65,145,.15),rgba(48,97,152,.075))}
+.tide-otd-memory-body:before{position:absolute;content:"";inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--c-primary),transparent);border-radius:18px 18px 0 0}
+.tide-otd-memory-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--c-primary);font-size:10px;letter-spacing:.12em;font-weight:950}
+.tide-otd-memory-top span:last-child{color:var(--muted);letter-spacing:.06em}
+.tide-otd-memory-body h3{font-size:clamp(18px,2.2vw,26px);line-height:1.15;letter-spacing:-.035em;margin:13px 0 9px}
+.tide-otd-memory-summary{font-size:13px;line-height:1.65;font-weight:750;color:#e9e7f7;margin:0 0 14px;overflow-wrap:anywhere}
+.tide-otd-memory-events{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px}
+.tide-otd-memory-events span{padding:7px 10px;border-radius:9px;border:1px solid rgba(178,162,226,.18);background:rgba(142,111,193,.10);color:#d9d6ef;font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+.tide-otd-open{font-size:11px;font-weight:900;color:var(--c-highlight);border:1px solid color-mix(in srgb,var(--c-primary),transparent 60%);border-radius:9px;padding:10px 12px;background:color-mix(in srgb,var(--c-primary),transparent 88%);cursor:pointer}
+.tide-otd-open:hover,.tide-otd-open:focus-visible{background:color-mix(in srgb,var(--c-primary),transparent 71%)}
+.tide-otd-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;min-height:280px;border-radius:21px;border:1px dashed color-mix(in srgb,var(--c-primary),transparent 67%);background:radial-gradient(circle at 50% 10%,color-mix(in srgb,var(--c-primary),transparent 92%),transparent 50%),rgba(62,74,131,.04);padding:30px}
+.tide-otd-empty-symbol{font-size:56px;color:var(--c-primary)}
+.tide-otd-empty h3{font-size:21px;margin:0;letter-spacing:-.03em}
+.tide-otd-empty p{color:var(--muted);font-size:12px;line-height:1.6;max-width:450px;margin:0}
+.tide-otd-empty button{padding:11px 16px;border:1px solid color-mix(in srgb,var(--c-primary),transparent 55%);border-radius:11px;background:color-mix(in srgb,var(--c-primary),transparent 86%);color:#e8e1ff;font-size:11px;font-weight:900;cursor:pointer;margin-top:8px}
+.tide-otd-empty button:hover{background:color-mix(in srgb,var(--c-primary),transparent 73%)}
+.tide-otd-nearby{margin-top:20px;border-radius:17px;border:1px solid rgba(157,150,210,.22);padding:20px;background:rgba(99,87,160,.055)}
+.tide-otd-nearby-head h3{font-size:17px;margin:0 0 5px}
+.tide-otd-nearby-head p{font-size:11px;color:var(--muted);line-height:1.5;margin:0 0 12px}
+.tide-otd-nearby-item{display:grid;grid-template-columns:125px minmax(0,1fr) 14px;align-items:center;gap:12px;text-align:left;width:100%;border:0;border-top:1px solid rgba(162,149,219,.13);padding:14px 6px;background:transparent;color:var(--text);cursor:pointer}
+.tide-otd-nearby-item:hover{background:rgba(154,131,220,.10)}
+.tide-otd-nearby-item span{font-size:11px;color:var(--muted)}
+.tide-otd-nearby-item b{font-size:11px;line-height:1.4;overflow-wrap:anywhere}
+.tide-otd-footnote{margin:16px 0 24px;border-radius:11px;padding:12px 15px;background:rgba(78,96,154,.07);border:1px solid rgba(157,157,209,.13);font-size:10px;line-height:1.65;color:var(--muted)}
+@media(max-width:1190px){
+  .tide-cal-day{min-height:115px;padding:9px}
+  .tide-cal-grid{gap:6px}
+  .tide-cal-note{font-size:10px}
+  .tide-cal-holiday{font-size:9px}
+  .tide-cal-diary-label{font-size:8px}
+  .tide-otd-art{width:160px}
+}
+@media(max-width:925px){
+  .tide-cal-day{min-height:92px}
+  .tide-cal-note{display:none}
+  .tide-cal-holiday{font-size:9px;line-height:1.25;-webkit-line-clamp:2}
+  .tide-cal-diary-label{display:none}
+  .tide-cal-day-body{padding-top:8px}
+  .tide-cal-day-num{font-size:20px}
+  .tide-cal-agenda-list{grid-template-columns:1fr}
+  .tide-cal-current{min-width:145px}
+}
+@media(max-width:700px){
+  .tide-cal-hero{min-height:155px;padding:21px}
+  .tide-cal-hero h2{font-size:39px}
+  .tide-cal-hero-number{font-size:100px}
+  .tide-cal-toolbar{padding:12px;gap:12px}
+  .tide-cal-controls{width:100%;justify-content:flex-start}
+  .tide-cal-stat-strip{gap:7px}
+  .tide-cal-stat-strip>div{padding:7px 9px}
+  .tide-cal-holidays-toggle{margin-left:0}
+  .tide-cal-grid-wrap{padding:8px;border-radius:14px}
+  .tide-cal-grid{gap:5px}
+  .tide-cal-day{min-height:70px;padding:6px;border-radius:9px}
+  .tide-cal-day.is-today{padding:5px}
+  .tide-cal-day-num{font-size:17px}
+  .tide-cal-holiday{font-size:8px;padding:3px 4px}
+  .tide-cal-day-body{padding-top:6px}
+  .tide-cal-today-label{display:none}
+  .tide-cal-day-bottom{min-height:8px;margin-top:3px}
+  .tide-cal-pick-label{display:none}
+  .tide-cal-weekday{padding:9px 1px;font-size:9px}
+  .tide-cal-agenda{padding:17px}
+  .tide-otd-hero{padding:23px;min-height:230px}
+  .tide-otd-art{width:115px}
+  .tide-otd-art-orbit{width:110px;height:110px}
+  .tide-otd-art-year{font-size:28px}
+  .tide-otd-art-star{font-size:25px}
+  .tide-otd-stats>div{padding:13px;display:grid;gap:7px}
+  .tide-otd-stats b{font-size:29px}
+  .tide-otd-memory{grid-template-columns:62px minmax(0,1fr);gap:9px}
+  .tide-otd-memory-mark{width:60px;height:41px}
+  .tide-otd-timeline{padding-left:0}
+  .tide-otd-timeline:before{left:28px}
+  .tide-otd-memory-body{padding:17px}
+  .tide-otd-section-heading{align-items:start;flex-direction:column}
+  .tide-otd-section-heading>small{text-align:left}
+}
+@media(max-width:480px){
+  .tide-cal-hero{min-height:135px}
+  .tide-cal-hero h2{font-size:32px}
+  .tide-cal-hero h2 span{font-size:.5em;margin-left:8px}
+  .tide-cal-hero-number{font-size:75px;margin-right:0}
+  .tide-cal-hero p{font-size:11px}
+  .tide-cal-kicker{font-size:9px}
+  .tide-cal-month-navigation{width:100%;justify-content:space-between}
+  .tide-cal-controls{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px}
+  .tide-cal-month-chooser{display:grid;gap:3px}
+  .tide-cal-month-chooser input{width:100%;min-width:0;font-size:11px}
+  .tide-cal-action{padding:7px;min-height:37px;font-size:10px}
+  .tide-cal-grid-wrap{padding:5px}
+  .tide-cal-grid{gap:3px}
+  .tide-cal-day{min-height:53px;padding:4px;border-radius:7px}
+  .tide-cal-day.is-today{padding:3px}
+  .tide-cal-day-num{font-size:15px}
+  .tide-cal-day-body{padding-top:3px}
+  .tide-cal-holiday{display:none}
+  .tide-cal-day-bottom{margin-top:4px;min-height:8px}
+  .tide-cal-holiday-dot{margin-left:0}
+  .tide-cal-weekday{font-size:8px;padding:7px 0}
+  .tide-cal-legend{gap:8px;font-size:9px}
+  .tide-cal-stat-strip>div>span:last-child{font-size:8px}
+  .tide-cal-stat-number{font-size:15px}
+  .tide-cal-agenda-head h3{font-size:18px}
+  .tide-cal-agenda-event{padding:9px}
+  .tide-otd-hero{padding:20px;min-height:205px}
+  .tide-otd-art{display:none}
+  .tide-otd-date-main>strong{font-size:92px}
+  .tide-otd-date-main b{font-size:32px}
+  .tide-otd-toolbar{padding:11px}
+  .tide-otd-navigation{width:100%;justify-content:space-between}
+  .tide-otd-toolbar-actions{flex-wrap:wrap;width:100%}
+  .tide-otd-toolbar-actions label{flex:1}
+  .tide-otd-toolbar-actions input{min-width:0;max-width:none;flex:1}
+  .tide-otd-stats{gap:7px}
+  .tide-otd-stats b{font-size:25px}
+  .tide-otd-stats span{font-size:8px;line-height:1.35}
+  .tide-otd-memory-mark{width:54px}
+  .tide-otd-memory{grid-template-columns:56px minmax(0,1fr);gap:8px}
+  .tide-otd-memory-body{padding:14px}
+  .tide-otd-memory-events span{font-size:10px;padding:6px 7px}
+  .tide-otd-nearby-item{grid-template-columns:1fr 15px}
+  .tide-otd-nearby-item span:first-child{grid-column:1/-1}
+}
+@media(prefers-reduced-motion:reduce){
+  .tide-cal-day{transition:none}
+  .tide-cal-day:hover{transform:none}
+}
