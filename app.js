@@ -9,6 +9,7 @@ import {
   loadDraft, loadLocal, mergeStates, saveDraft, saveLocal
 } from './storage.js';
 import { fetchPeriodMusic } from './spotify.js';
+import { activityRange } from './gaming-data.js';
 
 const root=document.querySelector('#view-root');
 const nav=document.querySelector('#primary-nav');
@@ -86,7 +87,107 @@ function monthOptions(current){const years=[...new Set([2024,2025,2026,Number(is
 function activeMonthTrackers(month){return allTrackerDefinitions(state).filter(t=>t.kind==='event'&&(t.status!=='retired'||trackerTotal(state,t.id,{month})>0||legacyTrackerTotal(state,t.id,month)!=null))}
 function monthlyView(){const review=monthReview();const {start,end}=monthBounds(selectedMonth);const trackers=activeMonthTrackers(selectedMonth);const cached=musicCached(start,end);root.innerHTML=`${pageHead('Monthly Review','Your subjective picks stay manual. Objective trackers and music calculate around them.',`<select id="month-select" class="select">${monthOptions(selectedMonth)}</select>`)}<div class="grid grid-2"><section class="card"><div class="card-header"><h2>Best Day of the Month</h2><span class="chip accent">ALWAYS SAVED</span></div><div class="review-pick"><label class="label">Choose or type a date<input id="best-day" class="input" type="date" min="${start}" max="${end}" value="${esc(review.bestDay||'')}"></label>${button('Save','save-review','primary')}</div><div class="review-day-preview" id="best-preview">${review.bestDay&&entryExists(review.bestDay)?esc(daySummary(entryText(review.bestDay))):'You choose this. T.I.D.E. never decides it for you.'}</div></section><section class="card"><div class="card-header"><h2>Worst Day of the Month</h2><span class="chip accent">ALWAYS SAVED</span></div><label class="label">Choose or type a date<input id="worst-day" class="input" type="date" min="${start}" max="${end}" value="${esc(review.worstDay||'')}"></label><div class="review-day-preview" id="worst-preview">${review.worstDay&&entryExists(review.worstDay)?esc(daySummary(entryText(review.worstDay))):'This remains your judgment, not an algorithm.'}</div></section></div><div class="section-title">MONTHLY TRACKERS</div><div class="records-grid">${trackers.map(t=>{const v=trackerTotal(state,t.id,{month:selectedMonth});return `<div class="record-card"><div class="stat-label">${esc(t.name)}</div><div class="record-value">${fmt(v)}</div><div class="record-detail">${legacyTrackerTotal(state,t.id,selectedMonth)!=null?'Includes imported monthly total.':'Calculated from dated occurrences.'}</div></div>`}).join('')}</div><div class="section-title">MUSIC · ACTUAL STREAMS</div><section class="card"><div class="card-header"><div><h2>Top 5 of ${esc(monthLabel(selectedMonth))}</h2><div class="small muted">Direct from the same stats.fm source as Spotify Power Rankings. Ties are preserved.</div></div>${button('Refresh music','refresh-music')}</div><div id="monthly-music">${cached?renderMusicSections(cached):'<div class="muted small">Loading music…</div>'}</div></section>`;root.querySelector('#month-select').onchange=e=>{selectedMonth=e.target.value;selectedYear=Number(selectedMonth.slice(0,4));render()};const updatePreview=(id,target)=>root.querySelector(id).onchange=e=>{root.querySelector(target).textContent=entryExists(e.target.value)?daySummary(entryText(e.target.value)):'No diary entry saved for that date yet.'};updatePreview('#best-day','#best-preview');updatePreview('#worst-day','#worst-preview');root.querySelector('#save-review').onclick=()=>{saveMonthlyReview(state,selectedMonth,{bestDay:root.querySelector('#best-day').value,worstDay:root.querySelector('#worst-day').value});persist();toast('Monthly Best/Worst saved.');render()};root.querySelector('#refresh-music').onclick=()=>loadMusicFor(start,end,true,'#monthly-music');if(!cached)loadMusicFor(start,end,false,'#monthly-music')}
 
-function yearlyView(){const y=selectedYear;const review=state.yearlyReviews?.[y]||{};const start=`${y}-01-01`,end=`${y}-12-31`;const cached=musicCached(start,end);const dc=dailyChallengeStreaks(state),geo=geoguessr10kRecord(state);const acts=activityStats(state,{year:y}).counts.slice(0,5);const yearEntries=Object.keys(state.entries||{}).filter(d=>d.startsWith(`${y}-`));root.innerHTML=`${pageHead(`${y} · Year in Review`,'The full 2026-style review, with manual Best/Worst choices and automatic records.',`<select id="year-select" class="select">${[2024,2025,2026,...Object.keys(state.entries||{}).map(d=>yearOf(d))].filter((x,i,a)=>a.indexOf(x)===i).sort().map(x=>`<option ${x===y?'selected':''}>${x}</option>`).join('')}</select>`)}<div class="grid grid-4"><div class="card"><div class="stat-label">Diary Days</div><div class="big-stat">${yearEntries.length}</div></div><div class="card"><div class="stat-label">Mors Mutual</div><div class="big-stat">${trackerTotal(state,'mors-mutual',{year:y})}</div></div><div class="card"><div class="stat-label">Migraines</div><div class="big-stat">${trackerTotal(state,'migraines',{year:y})}</div></div><div class="card"><div class="stat-label">Hong Kong Spawns</div><div class="big-stat">${trackerTotal(state,'hong-kong',{year:y})}</div></div></div><div class="section-title">OVERALL · YOUR PICKS</div><section class="card"><div class="grid grid-4"><label class="label">Best Day<input id="year-best-day" type="date" class="input" min="${start}" max="${end}" value="${esc(review.bestDay||'')}"></label><label class="label">Worst Day<input id="year-worst-day" type="date" class="input" min="${start}" max="${end}" value="${esc(review.worstDay||'')}"></label><label class="label">Best Month<select id="year-best-month" class="select"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}" ${Number(review.bestMonth)===i+1?'selected':''}>${m}</option>`).join('')}</select></label><label class="label">Worst Month<select id="year-worst-month" class="select"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}" ${Number(review.worstMonth)===i+1?'selected':''}>${m}</option>`).join('')}</select></label></div><div style="margin-top:14px">${button('Save Year Picks','save-year','primary')}</div></section><div class="section-title">GEOGUESSR</div><div class="records-grid"><div class="record-card"><div class="stat-label">All-Time Hong Kong Spawns</div><div class="record-value">${trackerTotal(state,'hong-kong')}</div></div><div class="record-card"><div class="stat-label">Longest Daily Challenge Streak</div><div class="record-value">${dc.longest} days</div><div class="record-detail">${dc.longestStart?`${shortDate(dc.longestStart)} → ${shortDate(dc.longestEnd)}`:'No streak data yet.'}</div></div><div class="record-card"><div class="stat-label">Current Daily Challenge</div><div class="record-value">${dc.active?dc.current:0}</div><div class="record-detail">${dc.active?'Active':'Inactive'}</div></div><div class="record-card"><div class="stat-label">Geoguessr 10K Record</div><div class="record-value">${geo?fmt(geo.value):'—'}</div><div class="record-detail">${geo?shortDate(geo.date):'No data yet.'}</div></div></div><div class="section-title">TOP ACTIVITIES</div><section class="card">${acts.length?acts.map(([a,n])=>`<div class="detected-item"><span>${esc(a)}</span><b>${n}</b></div>`).join(''):'<div class="muted">Import or save diary days to build activity stats.</div>'}</section><div class="section-title">MUSIC YEAR IN REVIEW</div><section class="card"><div class="card-header"><div><h2>Top Songs, Artists & Albums</h2><div class="small muted">Actual stream counts, not Power Score or minutes.</div></div>${button('Refresh','refresh-year-music')}</div><div id="year-music">${cached?renderMusicSections(cached):'<div class="muted small">Loading music…</div>'}</div></section>`;root.querySelector('#year-select').onchange=e=>{selectedYear=Number(e.target.value);render()};root.querySelector('#save-year').onclick=()=>{saveYearlyReview(state,y,{bestDay:root.querySelector('#year-best-day').value,worstDay:root.querySelector('#year-worst-day').value,bestMonth:root.querySelector('#year-best-month').value,worstMonth:root.querySelector('#year-worst-month').value});persist();toast('Year picks saved.')};root.querySelector('#refresh-year-music').onclick=()=>loadMusicFor(start,end,true,'#year-music');if(!cached)loadMusicFor(start,end,false,'#year-music')}
+function yearAwardCard(theme,label,name,details,image,glyph,footnote=""){
+  const picture=/^https?:\/\//i.test(String(image||""))?`<img class="year-award-image" src="${esc(image)}" alt="${esc(label)} artwork" loading="lazy" referrerpolicy="no-referrer">`:`<div class="year-award-glyph" aria-hidden="true">${esc(glyph)}</div>`;
+  return `<article class="year-award year-award--${theme}"><div class="year-award-top"><span class="year-award-category">${esc(label)}</span><span class="year-award-sparkle" aria-hidden="true">✦</span></div><div class="year-award-center">${picture}<div class="year-award-copy"><div class="year-award-winner">${esc(name)}</div><div class="year-award-detail">${esc(details)}</div></div></div>${footnote?`<div class="year-award-foot">${esc(footnote)}</div>`:""}</article>`;
+}
+
+function yearAwardMarkup(y,music,failed=false){
+  const review=state.yearlyReviews?.[y]||{};
+  const bestDay=review.bestDay||"";
+  const bestMonth=Number(review.bestMonth)||0;
+  const topActivity=activityStats(state,{year:y}).counts[0];
+  const gameData=activityRange(`${y}-01-01`,`${y}-12-31`,"all");
+  const game=gameData.games.filter(g=>Number(g.minutes)>0).sort((a,b)=>b.minutes-a.minutes||a.title.localeCompare(b.title))[0];
+  const gamePartial=!gameData.coverageStart||`${y}-01-01`<gameData.coverageStart;
+  const song=music?.songs?.[0],artist=music?.artists?.[0];
+  const musicStatus=failed?"Could not load; refresh below.":"Loading year-end rankings…";
+  const gameHours=game?`${Math.floor(game.minutes/60).toLocaleString("en-US")}h ${Math.round(game.minutes%60)}m recorded`:"Waiting for dated gaming data";
+  return `<div class="year-awards-grid">
+    ${yearAwardCard("day","Best day of the year",bestDay?shortDate(bestDay):"Awaiting your pick",bestDay&&entryExists(bestDay)?daySummary(entryText(bestDay)):"Your personal highlight of the year","","✷","Chosen by you")}
+    ${yearAwardCard("month","Best month of the year",bestMonth>=1&&bestMonth<=12?MONTHS[bestMonth-1]:"Awaiting your pick",bestMonth>=1&&bestMonth<=12?`${y} · Your favorite chapter`:"Choose your best month below","","✦","Chosen by you")}
+    ${yearAwardCard("activity","Top activity",topActivity?.[0]||"No activity yet",topActivity?`${fmt(topActivity[1])} recognized events`:"Save diary entries to build rankings","","◇","From your diary")}
+    ${yearAwardCard("song","Song of the year",song?.name||(failed?"Music unavailable":musicStatus),song?`${song.artist||"Artist unavailable"} · ${fmt(song.streams)} streams`:musicStatus,song?.image,"♫","stats.fm · actual streams")}
+    ${yearAwardCard("artist","Artist of the year",artist?.name||(failed?"Music unavailable":musicStatus),artist?`${fmt(artist.streams)} streams`:musicStatus,artist?.image,"♬","stats.fm · actual streams")}
+    ${yearAwardCard("game","Video game of the year",game?.title||"No yearly leader yet",gameHours,game?.image,"🎮",gamePartial?"Known playtime · partial coverage":"Most played · yearly hours")}
+  </div>`;
+}
+
+function yearPersonalPick(label,value,note,tone){
+  return `<div class="year-personal-pick year-personal-pick--${tone}"><div class="year-personal-label">${esc(label)}</div><div class="year-personal-value">${esc(value||"Not selected")}</div><div class="year-personal-note">${esc(note)}</div></div>`;
+}
+
+async function loadYearMusic(start,end,force,y){
+  const list=root.querySelector("#year-music");
+  if(!list)return;
+  if(force)list.innerHTML='<div class="muted small">Refreshing stats.fm rankings…</div>';
+  try{
+    const data=await fetchPeriodMusic(start,end,state,{force});
+    persist();
+    if(view!=="yearly"||selectedYear!==y)return;
+    const awards=root.querySelector("#year-awards");
+    const rankings=root.querySelector("#year-music");
+    if(awards)awards.innerHTML=yearAwardMarkup(y,data);
+    if(rankings)rankings.innerHTML=renderMusicSections(data);
+  }catch(e){
+    if(view!=="yearly"||selectedYear!==y)return;
+    const awards=root.querySelector("#year-awards"),rankings=root.querySelector("#year-music");
+    if(awards&&!musicCached(start,end))awards.innerHTML=yearAwardMarkup(y,null,true);
+    if(rankings)rankings.innerHTML=`<div class="callout danger-callout">Could not load stats.fm data: ${esc(e.message)}</div>`;
+  }
+}
+
+function yearlyView(){
+  const y=selectedYear;
+  const review=state.yearlyReviews?.[y]||{};
+  const start=`${y}-01-01`,end=`${y}-12-31`;
+  const cached=musicCached(start,end);
+  const dc=dailyChallengeStreaks(state),geo=geoguessr10kRecord(state);
+  const acts=activityStats(state,{year:y}).counts.slice(0,5);
+  const bestDay=review.bestDay||"",worstDay=review.worstDay||"";
+  const bestMonth=Number(review.bestMonth)||0,worstMonth=Number(review.worstMonth)||0;
+  const dateChoice=(d)=>d?shortDate(d):"Not selected";
+  const monthChoice=(m)=>m>=1&&m<=12?`${MONTHS[m-1]} ${y}`:"Not selected";
+  const dayNote=(d)=>d&&entryExists(d)?daySummary(entryText(d)):"You choose this. Your pick remains yours, not an algorithm.";
+  const monthNote=(m)=>m>=1&&m<=12?`A chapter of ${y}, selected by you.`:"Choose a month to complete your year.";
+  root.innerHTML=`${pageHead(`${y} · Year in Review`,"The year's standout moments, music, gaming, and memories, presented like a personal awards night.",`<select id="year-select" class="select" aria-label="Select year">${[2024,2025,2026,...Object.keys(state.entries||{}).map(d=>yearOf(d))].filter((x,i,a)=>a.indexOf(x)===i).sort().map(x=>`<option ${x===y?"selected":""}>${x}</option>`).join("")}</select>`)}
+    <div class="year-awards-intro"><div><div class="year-awards-eyebrow">✦ THE ${y} HONORS ✦</div><h2>The highlights that defined your year</h2><p>Six headline awards, selected from your saved picks and real activity.</p></div><span class="year-awards-trophy" aria-hidden="true">✧</span></div>
+    <div id="year-awards">${yearAwardMarkup(y,cached)}</div>
+    <div class="section-title">THE YEAR'S PERSONAL PICKS</div>
+    <div class="year-personal-grid">
+      ${yearPersonalPick("Best day",dateChoice(bestDay),dayNote(bestDay),"best")}
+      ${yearPersonalPick("Worst day",dateChoice(worstDay),dayNote(worstDay),"worst")}
+      ${yearPersonalPick("Best month",monthChoice(bestMonth),monthNote(bestMonth),"best")}
+      ${yearPersonalPick("Worst month",monthChoice(worstMonth),monthNote(worstMonth),"worst")}
+    </div>
+    <details class="year-picks-editor"><summary><span>✎ Edit and save your personal picks</span><span class="year-editor-hint">Best / worst days and months <span aria-hidden="true">⌄</span></span></summary>
+      <div class="year-picks-form"><label class="label">Best day<input id="year-best-day" type="date" class="input" min="${start}" max="${end}" value="${esc(bestDay)}"></label>
+      <label class="label">Worst day<input id="year-worst-day" type="date" class="input" min="${start}" max="${end}" value="${esc(worstDay)}"></label>
+      <label class="label">Best month<select id="year-best-month" class="select"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}" ${bestMonth===i+1?"selected":""}>${m}</option>`).join("")}</select></label>
+      <label class="label">Worst month<select id="year-worst-month" class="select"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}" ${worstMonth===i+1?"selected":""}>${m}</option>`).join("")}</select></label>
+      <div class="year-picks-save">${button("Save Year Picks","save-year","primary")}</div></div>
+    </details>
+    <div class="section-title">YEARLY QUICK STATS</div>
+    <div class="year-side-stats"><div class="year-side-stat"><div class="stat-label">Migraines · ${y}</div><b>${fmt(trackerTotal(state,"migraines",{year:y}))}</b></div><div class="year-side-stat"><div class="stat-label">Hong Kong Spawns · ${y}</div><b>${fmt(trackerTotal(state,"hong-kong",{year:y}))}</b></div></div>
+    <div class="section-title">GEOGUESSR · RECORD BOOK</div>
+    <div class="records-grid year-geo-records">
+      <div class="record-card"><div class="stat-label">All-Time Hong Kong Spawns</div><div class="record-value">${fmt(trackerTotal(state,"hong-kong"))}</div></div>
+      <div class="record-card"><div class="stat-label">Longest Daily Challenge Streak</div><div class="record-value">${dc.longest} days</div><div class="record-detail">${dc.longestStart?`${shortDate(dc.longestStart)} → ${shortDate(dc.longestEnd)}`:"No streak data yet."}</div></div>
+      <div class="record-card"><div class="stat-label">Current Daily Challenge</div><div class="record-value">${dc.active?dc.current:0}</div><div class="record-detail">${dc.active?"Active":"Inactive"}</div></div>
+      <div class="record-card"><div class="stat-label">Geoguessr 10K Record</div><div class="record-value">${geo?fmt(geo.value):"—"}</div><div class="record-detail">${geo?shortDate(geo.date):"No data yet."}</div></div>
+    </div>
+    <div class="section-title">TOP FIVE ACTIVITIES</div>
+    <section class="card year-detail-list">${acts.length?acts.map(([a,n],i)=>`<div class="detected-item"><span><span class="year-rank-num">${String(i+1).padStart(2,"0")}</span> ${esc(a)}</span><b>${fmt(n)}</b></div>`).join(""):'<div class="muted">Import or save diary days to build activity stats.</div>'}</section>
+    <div class="section-title">YOUR YEAR IN MUSIC</div>
+    <section class="card year-music-detail"><div class="card-header"><div><h2>Top Songs, Artists & Albums</h2><div class="small muted">Real stats.fm streams and original artwork. Your award winners appear above.</div></div>${button("Refresh music","refresh-year-music")}</div><div id="year-music">${cached?renderMusicSections(cached):'<div class="muted small">Loading music…</div>'}</div></section>`;
+  root.querySelector("#year-select").onchange=e=>{selectedYear=Number(e.target.value);render()};
+  root.querySelector("#save-year").onclick=()=>{
+    saveYearlyReview(state,y,{bestDay:root.querySelector("#year-best-day").value,worstDay:root.querySelector("#year-worst-day").value,bestMonth:root.querySelector("#year-best-month").value,worstMonth:root.querySelector("#year-worst-month").value});
+    persist();toast("Year picks saved.");render();
+  };
+  root.querySelector("#refresh-year-music").onclick=()=>loadYearMusic(start,end,true,y);
+  if(!cached)loadYearMusic(start,end,false,y);
+}
 
 function trackersView(){const defs=allTrackerDefinitions(state);root.innerHTML=`${pageHead('Trackers','Retired trackers stay historical. Intermittent events only count when they happen. Lifetime records keep every dated occurrence.')}<section class="card"><div class="tracker-table">${defs.map(t=>{const month=trackerTotal(state,t.id,{month:selectedMonth}),year=trackerTotal(state,t.id,{year:selectedYear}),all=trackerTotal(state,t.id);return `<div class="tracker-row"><div class="tracker-name"><b>${esc(t.name)}</b><span class="tracker-status">${esc(t.status)} · ${esc(t.kind)}</span></div><div><div class="stat-label">Month</div><b>${fmt(month)}</b></div><div><div class="stat-label">${selectedYear}</div><b>${fmt(year)}</b></div><div><div class="stat-label">All Time</div><b>${fmt(all)}</b></div><button class="button" data-tracker="${t.id}">View / Add</button></div>`}).join('')}</div></section>`;root.querySelectorAll('[data-tracker]').forEach(b=>b.onclick=()=>showTracker(b.dataset.tracker))}
 function showTracker(id){const t=trackerDefinition(state,id);const rows=occurrencesFor(state,id).slice().reverse();const gtaEnded=['mors-mutual','google-car'].includes(id);openModal(t.name,`<div class="grid grid-3"><div class="record-card"><div class="stat-label">This Month</div><div class="record-value">${trackerTotal(state,id,{month:selectedMonth})}</div></div><div class="record-card"><div class="stat-label">${selectedYear}</div><div class="record-value">${trackerTotal(state,id,{year:selectedYear})}</div></div><div class="record-card"><div class="stat-label">All Time</div><div class="record-value">${trackerTotal(state,id)}</div></div></div><div class="section-title">MANUAL OCCURRENCE</div><div class="grid grid-3"><label class="label">Date<input id="manual-date" class="input" type="date" value="${gtaEnded&&isoToday()>='2026-11-19'?'2026-11-18':isoToday()}" ${gtaEnded?'max="2026-11-18"':''}></label><label class="label">Count<input id="manual-count" class="input" type="number" min="0" value="1"></label><label class="label">Note<input id="manual-note" class="input" value="Manual ${esc(t.name)}"></label></div><button class="button primary" id="manual-add" style="margin-top:12px">Add occurrence</button><div class="section-title">DATED HISTORY</div><div class="history-list">${rows.length?rows.slice(0,100).map(r=>`<div class="history-row"><div class="history-date">${shortDate(r.date)}</div><div class="history-text">${esc(r.snippet||'Occurrence')}</div><b>${r.value!=null?fmt(r.value):r.result?esc(r.result):`+${r.count}`}</b></div>`).join(''):'<div class="muted">No dated occurrences yet.</div>'}</div>`,'TRACKER');modal.querySelector('#manual-add').onclick=()=>{if(gtaEnded&&modal.querySelector('#manual-date').value>='2026-11-19'){toast('This GTA Online tracker retired on November 19. Historical dates remain editable.','bad');return;}addManualOccurrence(state,{trackerId:id,date:modal.querySelector('#manual-date').value,count:modal.querySelector('#manual-count').value,snippet:modal.querySelector('#manual-note').value});persist();closeModal();render();toast('Tracker occurrence added.')}}
