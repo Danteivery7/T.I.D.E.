@@ -165,7 +165,7 @@ function askDiaryTopic(state,topic,question,scope){
 function askPeopleAnswer(state,question,scope){
   const text=String(question||''),lower=text.toLowerCase(),dates=askDateRows(state,scope);
   const patterns=[
-    /\b(?:spoke (?:to|with)|talked (?:to|with)|called|facetimed|face timed|texted|hung out with|played with|went with|visited with|chatted with|on (?:a )?call with|with)\s+([A-Z][a-z]{2,})(?:\s+(?:and|&)\s+([A-Z][a-z]{2,}))?/g
+    /\b(?:spoke (?:to|with)|talked (?:to|with)|called|facetimed|face timed|texted|hung out with|played with|went with|visited with|chatted with|on (?:a )?call with|with)\s+([A-Z][a-z]{2,})(?:\s+(?:and|&)\s+([A-Z][a-z]{2,}))?/gi
   ];
   const reject=new Set(['The','And','My','His','Her','Our','Mom','Dad','Family','Friends','Everyone','Someone','World','Xbox','Playstation','Nintendo','Steam','Discord','Tide','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','Today','Yesterday','Youtube','Yankees','Knicks','Giants','Nfl','Nba','MlB','GeoGuessr','Geo','Man','City','Game','Month','Year','September','October','November','December','January','February','March','April','May','June','July','August','Walmart','Costco','Publix','Home','Work']);
   const perName=new Map();
@@ -174,7 +174,7 @@ function askPeopleAnswer(state,question,scope){
     for(const snippet of splitEvents(entry.text)){
       for(const p of patterns){p.lastIndex=0;let found;while((found=p.exec(snippet))!==null){
         for(const name of [found[1],found[2]].filter(Boolean)){
-          if(reject.has(name)||name.length<3)continue;
+          if(!/^[A-Z]/.test(name)||reject.has(name)||name.length<3)continue;
           const key=name.toLowerCase();
           if(seen.has(key))continue;seen.add(key);
           const row=perName.get(key)||{name,days:[],example:''};
@@ -256,12 +256,12 @@ function answerAsk(state,question,{today,selectedDate,musicData=null}={}){
   if(!q)return{kind:'help',heading:'Ask about your history',primary:'What would you like to explore?',detail:'Try a game, date, activity, song, person, life event, or money-related diary note. T.I.D.E. searches saved data; it does not make up missing information.',items:[],source:'Local T.I.D.E. search'};
   if(askMusicIntent(q))return musicData?askMusicAnswer(q,scope,musicData):{kind:'music-needed',scope,source:'stats.fm'};
   const gameList=aggregateAllTime('all'),game=askGameMatch(q,gameList);
-  const gameIntent=!!game||/\b(games?|gaming|playtime|ps4|ps5|nintendo|switch|steam|xbox|console|played)\b/i.test(q)&&!/played.*(?:sports|basketball|volleyball|football|baseball)/i.test(q);
+  const gameIntent=!!game||/\b(games?|gaming|playtime|ps4|ps5|nintendo|switch|steam|xbox|console|play|playing|played)\b/i.test(q)&&!/played.*(?:sports|basketball|volleyball|football|baseball)/i.test(q);
   const money=ASK_TOPIC_ALIASES.money.test(q);
   const moneyTimeQuestion=/\b(spend|spent)\s+(?:time|hours?|minutes?)\s+(?:play|gaming)|\btime\s+spent\s+(?:gaming|play)/i.test(q);
   if(money&&!moneyTimeQuestion&&(/\b(how much|budget|balance|afford|account|income|spent|spending|payment|subscription|money)\b/i.test(q)||!/game/.test(q)))return askMoneyNotice(state,scope,q);
   const summary=/\b(about my life|summari[sz]e|overview|recap|highlights?|what.*(?:did i do|happened|been doing)|how was my|tell me about my|my life|my year|my month)\b/i.test(q);
-  if(gameIntent && (!scope.date||/\b(gam(?:e|ing)|play(?:ed)?|console)\b/i.test(q)))return askGameAnswer(state,q,scope,{selectedDate});
+  if(gameIntent && (!scope.date||/\b(gam(?:e|ing)|play(?:ed|ing)?|console)\b/i.test(q)))return askGameAnswer(state,q,scope,{selectedDate});
   if(scope.date&&/what (?:did|happened|was)|tell me about|describe|how was|on this day|my day|that day/.test(lower))return askDateStory(state,scope,q);
   const tracker=trackerFromQuestion(state,q);
   if(tracker||/\bmonty\b|daily challenge|geo(?:guessr)? 10k|hong kong|mors mutual|migraine streak/.test(lower)){
