@@ -1,5 +1,5 @@
 import { MONTHS, askTide, trackerFromQuestion, activityStats, dateLabel, monthLabel, splitEvents, daySummary, loggingStreak, trackerTotal, occurrencesFor, montyRecord, dailyChallengeStreaks } from './engine.js';
-import { DIARY_SIGNALS, diarySignals } from './diary-insights.js';
+import { DIARY_SIGNALS, DIARY_SPORTS, diarySignals } from './diary-insights.js';
 import { aggregateAllTime, activityRange, allTimeTotal, gaming, gamingRecordHighlights, hours, platformLabel, keyTitle } from './gaming-data.js';
 
 const ASK_STOP = new Set('a an the i me my mine myself we our is are was were did do does have has had can could would should tell show find give get what when where why who which how much many often did do something anything about with from for since into across at on to in of by and or it this that those these there then be been being most least last first time times day days month months year years all ever please info information records record list any every life daily yesterday today recently recent things thing name number count am'.split(' '));
@@ -126,7 +126,13 @@ function askGameAnswer(state,question,scope,{selectedDate}={}){
     return{kind:'game',heading:`Diary mentions · ${game.title}`,primary:wantsLast?(recent?.date||'No dated diary mention'):`${entries.length} day${entries.length===1?'':'s'} found`,detail:'These are diary passages explicitly mentioning playing this game. They are not independently verified sessions.',items:entries.slice(0,70).map(e=>askRow(e.date,e.snippet,'Diary mention')),date:wantsLast?recent?.date:'',source:'Your diary',followups:[`When did I last play ${game.title}?`]};
   }
   if(game&&wantsWhen){
-    const matches=games.find(g=>g.key===game.key);
+    const first=/\b(first|earliest)\b/.test(q),matches=games.find(g=>g.key===game.key);
+    if(first){
+      const starts=(matches?.sources||[]).filter(x=>/^20\d{2}-\d{2}(?:-\d{2})?$/.test(String(x.firstPlayed||''))).sort((a,b)=>a.firstPlayed.localeCompare(b.firstPlayed));
+      const firstDate=starts[0]?.firstPlayed||'';
+      return{kind:'game',heading:`Earliest reported play · ${game.title}`,primary:firstDate||'First-played date unavailable',detail:firstDate?'This is the earliest first-played date supplied by the available linked source accounts, not necessarily the first time you played in your life.':'Your linked source data does not provide a reliable first-played date for this game.',items:starts.map(x=>({label:platformLabel(x.platform),meta:`First recorded ${x.firstPlayed}`,source:'Gaming account'})),source:'Connected gaming account metadata'};
+    }
+
     const last=matches?.lastPlayed||'';
     const sources=(matches?.sources||[]).filter(s=>s.lastPlayed).sort((a,b)=>String(b.lastPlayed).localeCompare(String(a.lastPlayed)));
     return{kind:'game',heading:`Last played · ${game.title}`,primary:last||'No reported last-played date',detail:last?`${game.title} was last reported played on ${last}. This is the date provided by the gaming source, not a T.I.D.E. session timer.`:'The linked sources do not provide a last-played date for this title.',items:sources.slice(0,12).map(s=>({label:platformLabel(s.platform),meta:`Last reported ${s.lastPlayed} · ${hours(s.minutes||0)} lifetime` ,source:'Gaming account'})),source:'Connected gaming sources',followups:[`How many hours have I played ${game.title}?`,`When did I mention playing ${game.title} in my diary?`]};
@@ -163,7 +169,8 @@ function askDiaryTopic(state,topic,question,scope){
   const rows=askDateRows(state,scope);
   const matches=[];
   for(const [date,entry] of rows){
-    const seg=splitEvents(entry.text).find(e=>category.pattern.test(e)&&!/\b(?:no|never|without)\s+(?:purchases?|payments?|spending|income)\b/i.test(e));
+    const team=topic==='sports'?DIARY_SPORTS.find(x=>x.pattern.test(question)):null;
+    const seg=splitEvents(entry.text).find(e=>category.pattern.test(e)&&(!team||team.pattern.test(e))&&!/\b(?:no|never|without)\s+(?:purchases?|payments?|spending|income)\b/i.test(e));
     if(seg)matches.push(askRow(date,seg,'Diary mention'));
   }
   const wantLast=/\b(last|recent|latest|most recent|when did i last)\b/i.test(question);
