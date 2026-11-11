@@ -481,7 +481,7 @@ function recordMusicWinners(data){
 async function loadRecordsMusic(){
   const target=root.querySelector("#record-music-winners");if(!target)return;
   const start="2020-11-01",end=isoToday(),cached=musicCached(start,end);
-  if(cached){target.innerHTML=recordMusicWinners(cached);return}
+  if(cached){target.innerHTML=recordMusicWinners(cached);if(musicExplorerFresh(start,end))return}
   try{
     const data=await fetchPeriodMusic(start,end,state,{force:false});persist();
     if(view==="records"&&root.querySelector("#record-music-winners"))root.querySelector("#record-music-winners").innerHTML=recordMusicWinners(data);
@@ -535,6 +535,11 @@ function recordsView(){
   const top=activityStats(state).counts[0],editing=mostActivityDay(state,"Editing");
   const streak=loggingStreak(state),daily=dailyChallengeStreaks(state),monty=montyRecord(state);
   const geo=geoguessr10kRecord(state);
+  const lifeRecords=diarySignals(state);
+  const lifeCategory=id=>lifeRecords.categories.find(c=>c.id===id);
+  const creative=lifeCategory("creative"),learning=lifeCategory("learning"),social=lifeCategory("social"),outings=lifeCategory("outings");
+  const monthLifeRecord=(category)=>category?.peakMonth?{days:category.peakMonth.days,month:monthLabel(category.peakMonth.month)}:null;
+  const creativeMonth=monthLifeRecord(creative),learningMonth=monthLifeRecord(learning),socialMonth=monthLifeRecord(social),outingsMonth=monthLifeRecord(outings);
   const monthTop=gamingRecords.topMonths;
   const maxMonthlyMinutes=monthTop[0]?.minutes||1;
   const dateHint=bestDay?shortDate(bestDay.date):"No dated playtime recorded yet";
@@ -576,6 +581,14 @@ function recordsView(){
         ${recordHallCard("writing","diary","Most events in one day",busiest?`${fmt(busiest.events)} events`:"—",busiest?shortDate(busiest.date):"No saved diary entries yet")}
         ${recordHallCard("streak","fire","Longest diary streak",`${fmt(streak.longest)} days`,streak.last?`Last saved ${shortDate(streak.last)}`:"No diary streak data yet")}
         ${recordHallCard("edit","edit","Most editing in a day",editing?`${fmt(editing.count)} events`:"—",editing?shortDate(editing.date):"No editing events recognized yet")}
+      </div>
+      <div class="section-title">LIFE RECORDS · ACTUAL DIARY PATTERNS</div>
+      <div class="record-hall-card-grid">
+        ${recordHallCard("activity","edit","Most creative month",creativeMonth?`${fmt(creativeMonth.days)} days`:"—",creativeMonth?`${creativeMonth.month} · creative mentions`:"No creative diary entries")}
+        ${recordHallCard("streak","fire","Longest creative streak",creative?.streak?`${fmt(creative.streak.days)} days`:"—",creative?.streak?`${shortDate(creative.streak.start)} – ${shortDate(creative.streak.end)}`:"No consecutive creative diary days")}
+        ${recordHallCard("writing","diary","Most learning-focused month",learningMonth?`${fmt(learningMonth.days)} days`:"—",learningMonth?`${learningMonth.month} · learning mentions`:"No school or learning diary entries")}
+        ${recordHallCard("activity","sparkle","Most social month",socialMonth?`${fmt(socialMonth.days)} days`:"—",socialMonth?`${socialMonth.month} · friends/family mentions`:"No social diary entries")}
+        ${recordHallCard("geoguessr","flag","Most outings in a month",outingsMonth?`${fmt(outingsMonth.days)} days`:"—",outingsMonth?`${outingsMonth.month} · outing mentions`:"No outings recorded in diary")}
       </div>
       <div class="section-title">PERSONAL MILESTONES · THE LIFE YOU LOGGED</div>
       ${diaryInsightPanel({},"Your lifetime diary highlights")}
