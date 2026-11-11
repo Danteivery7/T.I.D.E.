@@ -987,3 +987,27 @@ body.vice-city-season .toast{
 @media(prefers-reduced-motion:reduce){
   .record-hall-feature,.record-hall-card{scroll-behavior:auto}
 }
+
+
+/* Explain the biggest dated gaming increase with its actual per-game contributions. */
+.record-hall-day-breakdown{border:1px solid rgba(136,194,251,.28);border-radius:17px;background:linear-gradient(130deg,rgba(64,113,186,.1),rgba(156,93,201,.07));margin:-6px 0 24px;overflow:hidden}
+.record-hall-day-breakdown summary{display:flex;align-items:center;gap:13px;list-style:none;padding:17px 19px;cursor:pointer}
+.record-hall-day-breakdown summary::-webkit-details-marker{display:none}
+.record-hall-day-breakdown summary:hover{background:rgba(131,165,228,.08)}
+.record-hall-day-breakdown summary:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+.record-hall-breakdown-icon{display:grid;place-items:center;width:37px;height:37px;border-radius:10px;background:rgba(123,187,239,.12);color:#96d8ff;flex:none}
+.record-hall-breakdown-title{display:grid;gap:5px;min-width:0;flex:1}
+.record-hall-breakdown-title b{font-size:12px;font-weight:900;line-height:1.4}
+.record-hall-breakdown-title small{font-size:10px;color:var(--muted);line-height:1.4}
+.record-hall-breakdown-toggle{font-size:10px;font-weight:900;color:var(--accent);white-space:nowrap}
+.record-hall-day-breakdown[open] .record-hall-breakdown-toggle span{display:inline-block;transform:rotate(180deg)}
+.record-hall-breakdown-body{padding:3px 19px 16px;border-top:1px solid rgba(149,176,224,.13)}
+.record-hall-breakdown-game{display:flex;align-items:center;gap:13px;min-height:62px;padding:11px 2px}
+.record-hall-breakdown-game+.record-hall-breakdown-game{border-top:1px solid rgba(181,173,230,.14)}
+.record-hall-breakdown-rank{font-size:12px;font-weight:900;flex:none;width:25px;color:#b89ef1}
+.record-hall-breakdown-game-name{min-width:0;flex:1;display:grid;gap:4px}
+.record-hall-breakdown-game-name strong{font-size:12px;font-weight:900;overflow-wrap:anywhere}
+.record-hall-breakdown-game-name small{color:var(--muted);font-size:10px}
+.record-hall-breakdown-game-minutes{flex:none;font-variant-numeric:tabular-nums;font-size:16px;font-weight:900}
+.record-hall-breakdown-caveat{margin:7px 0 0;font-size:10px;color:var(--muted);line-height:1.65}
+@media(max-width:490px){.record-hall-day-breakdown summary{gap:9px;padding:14px}.record-hall-breakdown-toggle{font-size:9px}.record-hall-breakdown-body{padding:0 14px 14px}.record-hall-breakdown-game-minutes{font-size:13px}}
