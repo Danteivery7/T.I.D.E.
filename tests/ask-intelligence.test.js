@@ -85,3 +85,26 @@ test('music ranks actual supplied streams rather than guessing',()=>{
   assert.equal(music.primary,'Sample Song');
   assert.match(music.detail,/64 streams/);
 });
+
+test('rolling time windows are inclusive of the current date',()=>{
+  const lastWeek=askScope('What did I do last week?',context);
+  assert.equal(lastWeek.start,'2026-11-05');
+  assert.equal(lastWeek.end,'2026-11-11');
+  const lastMonth=askScope('What did I do last month?',context);
+  assert.equal(lastMonth.month,'2026-10');
+});
+test('named sports searches do not substitute unrelated sports diary days',()=>{
+  const result=answerAsk(state,'When did I last watch the Yankees?',context);
+  assert.equal(result.kind,'diary');
+  assert.equal(result.primary,'2026-10-06');
+  assert.ok(result.items.some(item=>/Yankees/i.test(item.meta)));
+});
+test('first played is not substituted with a last-played date',()=>{
+  const result=answerAsk(state,'When did I first play The Crew Motorfest?',context);
+  assert.equal(result.heading,'Earliest reported play · The Crew Motorfest');
+  assert.notEqual(result.primary,'2026-11-09');
+});
+test('questions about an unnamed game request clarification instead of guessing',()=>{
+  const result=answerAsk(state,'When did I last play this game?',context);
+  assert.equal(result.kind,'help');
+});
