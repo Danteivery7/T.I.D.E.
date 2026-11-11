@@ -150,7 +150,7 @@ function decorateTrackers(){
 }
 
 function decorateRecords(){
-  if((root?.querySelector('.page-head h1')?.textContent||'')!=='Personal Records')return;
+  if((root?.querySelector('.page-head h1')?.textContent||'')!=='Personal Records'||root.querySelector('#personal-records-showcase'))return;
   const grid=root.querySelector('.records-grid');if(!grid||grid.querySelector('[data-authoritative="collisions"]'))return;
   const s=ensureState(),card=document.createElement('div');card.className='record-card';card.dataset.authoritative='collisions';
   card.innerHTML=`<div class="stat-label">Collisions</div><div class="record-value">${fmt(trackerTotal(s,COLLISIONS))}</div><div class="record-detail">All time</div>`;
