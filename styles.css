@@ -406,3 +406,15 @@ body.vice-city-season .toast{
 /* Inline SVG award illustrations survive static builds and offline navigation. */
 .year-award-vector{padding:0;overflow:hidden;background:none}
 .year-award-vector svg{display:block;width:100%;height:100%;flex:none}
+
+/* Uploaded official Motorfest art is a landscape image: frame logo and car together. */
+.year-award--game .year-award-image[src="/awards/crew-motorfest.jpg"]{
+  width:148px;height:126px;object-fit:cover;object-position:50% 48%;
+  border-color:rgba(106,215,255,.5);
+}
+@media(max-width:620px){
+  .year-award--game .year-award-image[src="/awards/crew-motorfest.jpg"]{width:116px;height:110px}
+}
+@media(max-width:420px){
+  .year-award--game .year-award-image[src="/awards/crew-motorfest.jpg"]{width:104px;height:99px}
+}
