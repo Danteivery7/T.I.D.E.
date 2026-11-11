@@ -656,6 +656,7 @@ function renderAnswer(a){
 }
 
 function askView(){
+  ++askRequestToken; // Cancel any in-flight response from a prior Ask view.
   const groups=[
     {icon:'🎮',name:'Gaming',accent:'gaming',examples:[["What games did I play on September 5, 2026?","Games on a date"],["When did I last play The Crew Motorfest?","Last-played date"]]},
     {icon:'📓',name:'My life',accent:'life',examples:[["What happened on October 6, 2024?","Replay a day"],["Tell me about my life in October 2026","Month in review"]]},
@@ -683,22 +684,24 @@ function askView(){
   const run=async raw=>{
     const query=String(raw??input.value).trim();if(!query){input.focus();return;}
     input.value=query;askLastQuestion=query;
+    const contextualQuery=/\b(?:this|that) game\b/i.test(query)&&askAnswer?.kind==='game'&&askAnswer?.entity?query.replace(/\b(?:this|that) game\b/gi,askAnswer.entity):query;
     const id=++askRequestToken,submit=root.querySelector('#ask-go'),started=Date.now();
     submit.disabled=true;results.innerHTML=askLoading(query);
     let answer;
     try{
       const context={today:isoToday(),selectedDate};
-      if(askMusicIntent(query)){
-        const scope=askScope(query,context),start=scope.all?'2020-11-01':scope.start,end=scope.all?isoToday():scope.end;
-        if(start<'2020-11-01'||start>isoToday())answer={kind:'music',heading:'Listening data unavailable for this period',primary:'Outside stats.fm history',detail:'The connected listening history starts November 1, 2020. Choose a date on or after then.',source:'stats.fm'};
+      if(askMusicIntent(contextualQuery)){
+        const scope=askScope(contextualQuery,context),start=scope.all?'2020-11-01':scope.start,end=scope.all?isoToday():scope.end;
+        if(end<'2020-11-01'||start>isoToday())answer={kind:'music',heading:'Listening data unavailable for this period',primary:'Outside stats.fm history',detail:'The connected listening history starts November 1, 2020. Choose a date on or after then.',source:'stats.fm'};
         else{
           const finalEnd=end>isoToday()?isoToday():end;
-          const cached=musicCached(start,finalEnd);
-          const music=cached||await fetchPeriodMusic(start,finalEnd,state,{force:false});
+          const effectiveStart=start<'2020-11-01'?'2020-11-01':start;
+          const cached=musicCached(effectiveStart,finalEnd);
+          const music=cached||await fetchPeriodMusic(effectiveStart,finalEnd,state,{force:false});
           if(!cached)persist();
-          answer=answerAsk(state,query,{...context,musicData:music});
+          answer=answerAsk(state,contextualQuery,{...context,musicData:music});
         }
-      }else answer=answerAsk(state,query,context);
+      }else answer=answerAsk(state,contextualQuery,context);
       const remaining=Math.max(0,580-(Date.now()-started));if(remaining)await new Promise(resolve=>setTimeout(resolve,remaining));
     }catch(error){answer={kind:'none',heading:'Could not complete the search',primary:'Your records are safe',detail:`${error?.message||'This search failed.'} Try again or choose another question.`,source:'T.I.D.E. search'};}
     if(id!==askRequestToken||view!=='ask')return;
