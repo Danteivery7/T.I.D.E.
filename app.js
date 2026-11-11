@@ -1,7 +1,7 @@
 import {
   MONTHS, allTrackerDefinitions, askTide, activityStats, addManualOccurrence, buildStory, dailyChallengeStreaks,
   dateLabel, daySummary, daysInMonth, geoguessr10kRecord, isoToday, legacyTrackerTotal, loggingStreak,
-  monthBounds, monthLabel, mostActivityDay, occurrencesFor, parseNotesImport, saveEntry, saveMonthlyReview,
+  monthBounds, monthLabel, montyRecord, mostActivityDay, occurrencesFor, parseNotesImport, saveEntry, saveMonthlyReview,
   saveYearlyReview, shiftDay, splitEvents, trackerDefinition, trackerTotal, yearOf
 } from './engine.js';
 import {
@@ -85,7 +85,77 @@ function onThisDayView(){const rows=onThisDayRows();root.innerHTML=`${pageHead('
 
 function monthOptions(current){const years=[...new Set([2024,2025,2026,Number(isoToday().slice(0,4)),...Object.keys(state.entries||{}).map(d=>Number(d.slice(0,4)))])].sort();return years.flatMap(y=>MONTHS.map((m,i)=>{const k=`${y}-${String(i+1).padStart(2,'0')}`;return `<option value="${k}" ${k===current?'selected':''}>${m} ${y}</option>`})).join('')}
 function activeMonthTrackers(month){return allTrackerDefinitions(state).filter(t=>t.kind==='event'&&(t.status!=='retired'||trackerTotal(state,t.id,{month})>0||legacyTrackerTotal(state,t.id,month)!=null))}
-function monthlyView(){const review=monthReview();const {start,end}=monthBounds(selectedMonth);const trackers=activeMonthTrackers(selectedMonth);const cached=musicCached(start,end);root.innerHTML=`${pageHead('Monthly Review','Your subjective picks stay manual. Objective trackers and music calculate around them.',`<select id="month-select" class="select">${monthOptions(selectedMonth)}</select>`)}<div class="grid grid-2"><section class="card"><div class="card-header"><h2>Best Day of the Month</h2><span class="chip accent">ALWAYS SAVED</span></div><div class="review-pick"><label class="label">Choose or type a date<input id="best-day" class="input" type="date" min="${start}" max="${end}" value="${esc(review.bestDay||'')}"></label>${button('Save','save-review','primary')}</div><div class="review-day-preview" id="best-preview">${review.bestDay&&entryExists(review.bestDay)?esc(daySummary(entryText(review.bestDay))):'You choose this. T.I.D.E. never decides it for you.'}</div></section><section class="card"><div class="card-header"><h2>Worst Day of the Month</h2><span class="chip accent">ALWAYS SAVED</span></div><label class="label">Choose or type a date<input id="worst-day" class="input" type="date" min="${start}" max="${end}" value="${esc(review.worstDay||'')}"></label><div class="review-day-preview" id="worst-preview">${review.worstDay&&entryExists(review.worstDay)?esc(daySummary(entryText(review.worstDay))):'This remains your judgment, not an algorithm.'}</div></section></div><div class="section-title">MONTHLY TRACKERS</div><div class="records-grid">${trackers.map(t=>{const v=trackerTotal(state,t.id,{month:selectedMonth});return `<div class="record-card"><div class="stat-label">${esc(t.name)}</div><div class="record-value">${fmt(v)}</div><div class="record-detail">${legacyTrackerTotal(state,t.id,selectedMonth)!=null?'Includes imported monthly total.':'Calculated from dated occurrences.'}</div></div>`}).join('')}</div><div class="section-title">MUSIC · ACTUAL STREAMS</div><section class="card"><div class="card-header"><div><h2>Top 5 of ${esc(monthLabel(selectedMonth))}</h2><div class="small muted">Direct from the same stats.fm source as Spotify Power Rankings. Ties are preserved.</div></div>${button('Refresh music','refresh-music')}</div><div id="monthly-music">${cached?renderMusicSections(cached):'<div class="muted small">Loading music…</div>'}</div></section>`;root.querySelector('#month-select').onchange=e=>{selectedMonth=e.target.value;selectedYear=Number(selectedMonth.slice(0,4));render()};const updatePreview=(id,target)=>root.querySelector(id).onchange=e=>{root.querySelector(target).textContent=entryExists(e.target.value)?daySummary(entryText(e.target.value)):'No diary entry saved for that date yet.'};updatePreview('#best-day','#best-preview');updatePreview('#worst-day','#worst-preview');root.querySelector('#save-review').onclick=()=>{saveMonthlyReview(state,selectedMonth,{bestDay:root.querySelector('#best-day').value,worstDay:root.querySelector('#worst-day').value});persist();toast('Monthly Best/Worst saved.');render()};root.querySelector('#refresh-music').onclick=()=>loadMusicFor(start,end,true,'#monthly-music');if(!cached)loadMusicFor(start,end,false,'#monthly-music')}
+function monthPickDisplay(date,tone){
+  const best=tone==="best",kind=best?"Best Day":"Worst Day",chosen=Boolean(date),dayNum=chosen?String(Number(date.slice(-2))):"–";
+  const title=chosen?shortDate(date):"Not selected yet";
+  const note=chosen&&entryExists(date)?daySummary(entryText(date)):chosen?"No diary entry is saved for this date yet.":"Pick a date and save it to feature your choice here.";
+  const month=chosen?MONTHS[Number(date.slice(5,7))-1]?.slice(0,3).toUpperCase():"DAY";
+  return `<article class="month-pick-card month-pick--${tone}">
+    <div class="month-pick-top"><span class="month-pick-kicker">${best?"✦ YOUR HIGHLIGHT":"◇ YOUR CHOICE"}</span><span class="month-pick-pill">${esc(kind.toUpperCase())}</span></div>
+    <div class="month-pick-main"><div class="month-pick-calendar" aria-hidden="true"><span>${esc(month||"DAY")}</span><b>${esc(dayNum)}</b></div>
+      <div class="month-pick-content"><div class="month-pick-label">${esc(kind)} of the Month</div><h3>${esc(title)}</h3><p>${esc(note)}</p></div>
+    </div>
+    <div class="month-pick-bottom"><span>${chosen?"Selected by you, not an algorithm":"Your story, your choice"}</span>${chosen?`<button class="month-open-day" type="button" data-month-day="${esc(date)}">Open this day <span aria-hidden="true">↗</span></button>`:""}</div>
+  </article>`;
+}
+
+function monthlyView(){
+  const month=selectedMonth,review=monthReview(month),{start,end}=monthBounds(month),cached=musicCached(start,end);
+  const trackers=activeMonthTrackers(month),activities=activityStats(state,{month}).counts.slice(0,5);
+  const days=Object.entries(state.entries||{}).filter(([date,entry])=>date.startsWith(`${month}-`)&&entry?.text?.trim());
+  const busiest=days.map(([date,entry])=>({date,events:splitEvents(entry.text).length})).sort((a,b)=>b.events-a.events||a.date.localeCompare(b.date))[0];
+  const dc=dailyChallengeStreaks(state),monty=montyRecord(state,{month});
+  const topActivity=activities[0],period=monthLabel(month);
+  root.innerHTML=`${pageHead("Monthly Review","Your month at a glance: the days you chose, what you played, listened to, and accomplished.",`<select id="month-select" class="select" aria-label="Select review month">${monthOptions(month)}</select>`)}
+    <div class="month-review">
+      <div class="month-review-hero"><div class="month-review-hero-text"><div class="month-hero-kicker">✦ YOUR MONTHLY HIGHLIGHTS ✦</div><h2>${esc(period)}</h2><p>A month of memories, daily challenges, music and your personal favorites.</p></div><div class="month-hero-art" aria-hidden="true"><span>✧</span><span>✦</span></div></div>
+      <div class="section-title">THE DAYS YOU CHOSE</div>
+      <div class="month-pick-grid" id="month-pick-grid">${monthPickDisplay(review.bestDay||"","best")}${monthPickDisplay(review.worstDay||"","worst")}</div>
+      <details class="month-picks-editor" id="month-picks-editor">
+        <summary><span>✎ Edit and save your personal picks</span><span class="month-editor-hint">Best / worst day <span aria-hidden="true">⌄</span></span></summary>
+        <div class="month-picks-form">
+          <label class="label">Best day<input id="best-day" class="input" type="date" min="${start}" max="${end}" value="${esc(review.bestDay||"")}"></label>
+          <label class="label">Worst day<input id="worst-day" class="input" type="date" min="${start}" max="${end}" value="${esc(review.worstDay||"")}"></label>
+          <div class="month-pick-save">${button("Save Month Picks","save-review","primary")}</div>
+        </div>
+      </details>
+      <div class="section-title">YOUR MONTH AT A GLANCE</div>
+      <div class="month-pulse-grid">
+        <div class="month-pulse-card month-pulse--activity"><span class="month-pulse-icon" aria-hidden="true">✦</span><div class="stat-label">Top activity</div><div class="month-pulse-value">${esc(topActivity?.[0]||"No activity yet")}</div><div class="month-pulse-note">${topActivity?`${fmt(topActivity[1])} diary events recognized`:"Your diary will build this automatically"}</div></div>
+        <div class="month-pulse-card month-pulse--diary"><span class="month-pulse-icon" aria-hidden="true">▤</span><div class="stat-label">Days with diary entries</div><div class="month-pulse-value">${fmt(days.length)}</div><div class="month-pulse-note">Saved during ${esc(period)}</div></div>
+        <div class="month-pulse-card month-pulse--busiest"><span class="month-pulse-icon" aria-hidden="true">↗</span><div class="stat-label">Busiest diary day</div><div class="month-pulse-value">${busiest?esc(shortDate(busiest.date)):"No entries yet"}</div><div class="month-pulse-note">${busiest?`${fmt(busiest.events)} recorded events`:"Add diary entries to see this highlight"}</div></div>
+      </div>
+      <div id="gaming-month-review"><div class="section-title">GAMING · ${esc(period)}</div><section class="card"><div class="muted small">Loading monthly gaming recap…</div></section></div>
+      <div class="section-title">MUSIC · MONTHLY RANKINGS</div>
+      <section class="card month-music-section"><div class="card-header"><div><h2>Top songs, artists & albums</h2><div class="small muted">Actual stats.fm streams for ${esc(period)}. Ties are preserved.</div></div>${button("Refresh music","refresh-music")}</div><div id="monthly-music">${cached?renderMusicSections(cached):'<div class="muted small">Loading music…</div>'}</div></section>
+      <div class="section-title">DAILY CHALLENGE · MONTHLY SCORECARD</div>
+      <section class="card month-challenge-section"><div class="card-header"><div><h2>Your GeoGuessr daily challenge</h2><div class="small muted">Monty results are for this month. Streaks are live, all-time counters.</div></div><span class="chip accent">TRACKED</span></div>
+        <div class="month-challenge-grid">
+          <div class="month-challenge-stat"><span>Wins vs Monty · ${esc(period)}</span><b>${fmt(monty.wins)}</b><small>Monthly wins</small></div>
+          <div class="month-challenge-stat"><span>Losses vs Monty · ${esc(period)}</span><b>${fmt(monty.losses)}</b><small>Monthly losses</small></div>
+          <div class="month-challenge-stat"><span>Current DC streak</span><b>${fmt(dc.active?dc.current:0)}</b><small>Live streak · days</small></div>
+          <div class="month-challenge-stat"><span>Longest DC streak</span><b>${fmt(dc.longest)}</b><small>All-time best · days</small></div>
+        </div>
+      </section>
+      <div class="section-title">TOP ACTIVITIES · ${esc(period.toUpperCase())}</div>
+      <section class="card month-activities-section">${activities.length?activities.map(([a,n],i)=>`<div class="month-activity-row"><span class="month-activity-rank">${String(i+1).padStart(2,"0")}</span><div class="month-activity-info"><b>${esc(a)}</b><div class="month-activity-bar"><div style="width:${Math.max(4,Math.round(n/activities[0][1]*100))}%"></div></div></div><span class="month-activity-count">${fmt(n)}</span></div>`).join(""):'<div class="muted small">Once diary entries are saved for this month, the most common activities will appear here.</div>'}</section>
+      <div class="section-title">MONTHLY TRACKERS</div>
+      <div class="month-trackers-grid">${trackers.length?trackers.map(t=>{const v=trackerTotal(state,t.id,{month});return`<div class="month-tracker-card"><div class="stat-label">${esc(t.name)}</div><div class="month-tracker-value">${fmt(v)}</div><div class="month-tracker-detail">${legacyTrackerTotal(state,t.id,month)!=null?"Includes your imported monthly total.":"Dated occurrences"}</div></div>`}).join(""):'<div class="card muted small">No tracked events have been recorded for this month.</div>'}</div>
+    </div>`;
+  root.querySelector("#month-select").onchange=e=>{selectedMonth=e.target.value;selectedYear=Number(selectedMonth.slice(0,4));render()};
+  root.querySelector("#save-review").onclick=()=>{
+    const bestDay=root.querySelector("#best-day").value,worstDay=root.querySelector("#worst-day").value;
+    saveMonthlyReview(state,month,{bestDay,worstDay});
+    persist();toast("Monthly best and worst days saved.");
+    const saved=monthReview(month);
+    root.querySelector("#month-pick-grid").innerHTML=monthPickDisplay(saved.bestDay||"","best")+monthPickDisplay(saved.worstDay||"","worst");
+    root.querySelectorAll("[data-month-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.monthDay));
+    root.querySelector("#month-picks-editor").open=false;
+  };
+  root.querySelectorAll("[data-month-day]").forEach(b=>b.onclick=()=>openDay(b.dataset.monthDay));
+  root.querySelector("#refresh-music").onclick=()=>loadMusicFor(start,end,true,"#monthly-music");
+  if(!cached)loadMusicFor(start,end,false,"#monthly-music");
+}
 
 // Inline award vectors ensure icons display even when a static host omits /awards assets.
 const YEAR_AWARD_VECTORS={
@@ -240,6 +310,6 @@ async function syncCloud(){if(!cloud.authenticated)return toast('Connect cloud s
 async function pullCloud(silent=false){try{const r=await cloudPull();state=mergeStates(state,r.state);cloud.etag=r.etag;persist();if(!silent)toast('Cloud data loaded.')}catch(e){if(!silent)toast(e.message,'bad')}}
 async function bootstrapCloud(){const status=await cloudStatus();cloud={...cloud,...status,checked:true};if(status.authenticated){cloud.authenticated=true;await pullCloud(true)}updateSyncPill();render()}
 function updateSyncPill(){const pill=document.querySelector('#sync-pill');pill.innerHTML=`<span class="sync-dot"></span><span>${cloud.authenticated?'Cloud ready · local-first':cloud.configured?'Cloud available · locked':'Local-first'}</span>`}
-function render(){const viceCityActive=selectedDate>='2026-11-19'&&selectedDate<='2026-12-31';root.classList.toggle('vice-city-nov19',viceCityActive);document.body.classList.toggle('vice-city-season',viceCityActive);updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'music':musicView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}}
+function render(){const viceCityActive=selectedDate>='2026-11-19'&&selectedDate<='2026-12-31';root.classList.toggle('vice-city-nov19',viceCityActive);document.body.classList.toggle('vice-city-season',viceCityActive);updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'music':musicView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}document.dispatchEvent(new Event('tide:view-rendered'))}
 render();bootstrapCloud();
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
