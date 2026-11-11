@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Best day award">
+<defs><linearGradient id="bg" x1="0" x2="1" y1="1" y2="0"><stop stop-color="#2e2259"/><stop offset="1" stop-color="#6c3058"/></linearGradient><linearGradient id="gold" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#fff8db"/><stop offset=".43" stop-color="#ffd99a"/><stop offset="1" stop-color="#fc9f7c"/></linearGradient><radialGradient id="halo"><stop stop-color="#ffda9a" stop-opacity=".34"/><stop offset="1" stop-color="#ffda9a" stop-opacity="0"/></radialGradient></defs>
+<rect width="256" height="256" rx="43" fill="url(#bg)"/><circle cx="128" cy="121" r="105" fill="url(#halo)"/>
+<circle cx="128" cy="119" r="84" fill="none" stroke="#ffd6b0" stroke-opacity=".28" stroke-width="2"/><circle cx="128" cy="119" r="69" fill="#291c4c" fill-opacity=".46" stroke="url(#gold)" stroke-width="5"/>
+<g fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" opacity=".94"><path d="M63 168c-20-19-27-47-18-71"/><path d="M193 168c20-19 27-47 18-71"/><path d="M60 150c-13-2-21-10-25-20M52 128c-11-7-16-17-15-29M56 104c-7-12-7-22-2-32M196 150c13-2 21-10 25-20M204 128c11-7 16-17 15-29M200 104c7-12 7-22 2-32"/></g>
+<path d="m128 69 15.7 31.8 35.1 5.1-25.4 24.7 6 35-31.4-16.5-31.4 16.5 6-35-25.4-24.7 35.1-5.1Z" fill="url(#gold)" stroke="#fff2d0" stroke-width="3" stroke-linejoin="round"/>
+<g fill="#ffe3c0"><circle cx="49" cy="60" r="3"/><circle cx="210" cy="59" r="3"/><circle cx="211" cy="188" r="2.5"/><circle cx="40" cy="194" r="2"/></g>
+<path d="M99 189h58" stroke="#ffd7bd" stroke-opacity=".76" stroke-width="3" stroke-linecap="round"/></svg>
