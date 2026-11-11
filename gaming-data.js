@@ -98,6 +98,56 @@ export function activityRange(start,end,filter='all'){
   }
   return{games:[...map.values()],total,recoveredMinutes,trackedMinutes,coverageStart:gaming().baselineDate,recoveredMonths:Object.keys(gaming().recoveredMonths||{}).filter(m=>monthKeyInRange(m,start,end))};
 }
+// Records are derived from actual snapshot deltas and recovered monthly totals.
+// Daily deltas represent changes seen on that date, not necessarily a single session.
+export function gamingRecordHighlights(){
+  const g=gaming(),byDay=[],daysByGame=[];
+  for(const [date,record] of Object.entries(g.activity||{})){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))continue;
+    let minutes=0;const perGame=new Map();
+    for(const item of Object.values(record?.games||{})){
+      const title=item.title||item.key||'Unknown Game',key=keyTitle(title);
+      let sum=0;
+      for(const [platform,value] of Object.entries(item.platformMinutes||{})){
+        if(ignoreGamePlatform(title,platform)||!filterAllows(shownPlatform(title,platform),'all'))continue;
+        const n=Number(value);if(Number.isFinite(n)&&n>0)sum+=n;
+      }
+      if(!sum)continue;
+      minutes+=sum;
+      const old=perGame.get(key)||{title:displayTitle(title),minutes:0};
+      old.minutes+=sum;perGame.set(key,old);
+    }
+    if(minutes>0)byDay.push({date,minutes});
+    for(const value of perGame.values())daysByGame.push({date,...value});
+  }
+  const byMinutes=(a,b)=>b.minutes-a.minutes||String(a.date||a.month||a.year||'').localeCompare(String(b.date||b.month||b.year||''));
+  byDay.sort(byMinutes);daysByGame.sort(byMinutes);
+  const monthKeys=[...new Set([
+    ...Object.keys(g.recoveredMonths||{}).filter(x=>/^\d{4}-\d{2}$/.test(x)),
+    ...Object.keys(g.activity||{}).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)).map(x=>x.slice(0,7))
+  ])].sort();
+  const monthRows=[],monthsByGame=[];
+  for(const month of monthKeys){
+    const start=`${month}-01`,end=`${month}-31`,data=activityRange(start,end,'all');
+    if(data.total<=0)continue;
+    monthRows.push({month,minutes:data.total,recoveredMinutes:data.recoveredMinutes,trackedMinutes:data.trackedMinutes});
+    for(const item of data.games)if(item.minutes>0)monthsByGame.push({month,title:item.title,minutes:item.minutes});
+  }
+  monthRows.sort(byMinutes);monthsByGame.sort(byMinutes);
+  const years=new Map();
+  for(const item of monthRows){const year=item.month.slice(0,4);years.set(year,(years.get(year)||0)+item.minutes);}
+  const yearRows=[...years].map(([year,minutes])=>({year,minutes})).sort(byMinutes);
+  const lifetimeGames=aggregateAllTime('all').sort(byMinutes);
+  return{
+    bestDay:byDay[0]||null,bestMonth:monthRows[0]||null,
+    bestGameDay:daysByGame[0]||null,bestGameMonth:monthsByGame[0]||null,
+    bestYear:yearRows[0]||null,
+    topMonths:monthRows.slice(0,3),trackedDays:byDay.length,trackedMonths:monthRows.length,
+    favoriteGame:lifetimeGames[0]||null,lifetimeMinutes:allTimeTotal('all'),
+    coverageStart:g.baselineDate||null,unassignedLegacyMinutes:remainderFor('all')
+  };
+}
+
 export function knownLastPlayed(start,end,filter='all'){
   const floor=d=>/^\d{4}-\d{2}$/.test(d)?`${d}-01`:d,ceil=d=>/^\d{4}-\d{2}$/.test(d)?`${d}-31`:d;
   return aggregateAllTime(filter).filter(g=>g.lastPlayed&&floor(g.lastPlayed)>=start&&ceil(g.lastPlayed)<=end).sort((a,b)=>String(b.lastPlayed).localeCompare(String(a.lastPlayed)));
