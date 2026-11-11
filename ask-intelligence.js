@@ -1,4 +1,4 @@
-import { MONTHS, askTide, trackerFromQuestion, activityStats, dateLabel, monthLabel, splitEvents, daySummary, loggingStreak } from './engine.js';
+import { MONTHS, askTide, trackerFromQuestion, activityStats, dateLabel, monthLabel, splitEvents, daySummary, loggingStreak, trackerTotal, occurrencesFor, montyRecord, dailyChallengeStreaks } from './engine.js';
 import { DIARY_SIGNALS, diarySignals } from './diary-insights.js';
 import { aggregateAllTime, activityRange, allTimeTotal, gaming, gamingRecordHighlights, hours, platformLabel, keyTitle } from './gaming-data.js';
 
@@ -271,11 +271,29 @@ function answerAsk(state,question,{today,selectedDate,musicData=null}={}){
   const gameIntent=!!game||/\b(games?|gaming|playtime|ps4|ps5|nintendo|switch|steam|xbox|console|play|playing|played)\b/i.test(q)&&!/played.*(?:sports|basketball|volleyball|football|baseball)/i.test(q);
   const money=ASK_TOPIC_ALIASES.money.test(q);
   const moneyTimeQuestion=/\b(spend|spent)\s+(?:time|hours?|minutes?)\s+(?:play|gaming)|\btime\s+spent\s+(?:gaming|play)/i.test(q);
-  if(money&&!moneyTimeQuestion&&(/\b(how much|budget|balance|afford|account|income|spent|spending|payment|subscription|money)\b/i.test(q)||!/game/.test(q)))return askMoneyNotice(state,scope,q);
+  if(money&&!moneyTimeQuestion)return askMoneyNotice(state,scope,q);
   const summary=/\b(about my life|summari[sz]e|overview|recap|highlights?|what.*(?:did i do|happened|been doing)|how was my|tell me about my|my life|my year|my month)\b/i.test(q);
   if(gameIntent && (!scope.date||/\b(gam(?:e|ing)|play(?:ed|ing)?|console)\b/i.test(q)))return askGameAnswer(state,q,scope,{selectedDate});
 
   const tracker=trackerFromQuestion(state,q);
+  if(/\bmonty\b/.test(lower)&&/\b(wins?|loss(?:es)?|record|versus|vs)\b/.test(lower)){
+    const rec=montyRecord(state,scope.month?{month:scope.month}:scope.year?{year:scope.year}:{});
+    return{kind:'tracker',heading:`Monty Daily Challenge · ${scope.label}`,primary:`${rec.wins}–${rec.losses}`,detail:`${rec.wins} wins and ${rec.losses} losses recorded for this period.`,source:'T.I.D.E. Daily Challenge logs'};
+  }
+  if(tracker&&scope.date){
+    const rows=occurrencesFor(state,tracker.id).filter(x=>x.date===scope.date);
+    const count=rows.reduce((total,row)=>total+(Number(row.count)||1),0);
+    return{kind:'tracker',heading:`${tracker.name} · ${scope.date}`,primary:`${count} dated record${count===1?'':'s'}`,detail:count?'Dated occurrences for this specific day.':'No individually dated occurrences on this day. Some imported tracker totals have no exact dates.',items:rows.slice(0,60).map(row=>askRow(row.date,row.snippet||`${Number(row.count)||1} occurrence(s)`,'Tracker event')),source:'Dated tracker occurrences'};
+  }
+  if(tracker&&(scope.month||scope.year)){
+    const filter=scope.month?{month:scope.month}:{year:scope.year},total=trackerTotal(state,tracker.id,filter);
+    const rows=occurrencesFor(state,tracker.id,filter).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+    if(/\b(when|which days|what days|dates?|last|first)\b/.test(lower)){
+      const only=/\b(last|latest|most recent)\b/.test(lower)?rows.slice(0,1):/\b(first|earliest)\b/.test(lower)?rows.slice(-1):rows;
+      return{kind:'tracker',heading:`${tracker.name} · ${scope.label}`,primary:`${total} recorded occurrence${total===1?'':'s'}`,detail:'Dated occurrences are shown below. Imported monthly totals may include events without individual dates.',items:only.slice(0,75).map(x=>askRow(x.date,x.snippet||`${x.count||1} occurrence(s)`,'Tracker event')),source:'T.I.D.E. tracker totals + dated events'};
+    }
+    return{kind:'tracker',heading:`${tracker.name} · ${scope.label}`,primary:String(total),detail:'Authoritative tracked total where available, including imported historic totals. Individual event dates are not always available.',items:rows.slice(0,10).map(x=>askRow(x.date,x.snippet||'Tracked occurrence','Tracker event')),source:'T.I.D.E. tracker history'};
+  }
   if(tracker||/\bmonty\b|daily challenge|geo(?:guessr)? 10k|hong kong|mors mutual|migraine streak/.test(lower)){
     const a=askTide(state,q);
     return{...a,kind:'tracker',heading:tracker?.name||'Tracked record',source:'T.I.D.E. tracker history',items:a?.items||[]};
