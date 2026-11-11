@@ -1,10 +1,8 @@
 import {gaming,pullGaming} from './gaming-data.js';
 import {autoRefreshGaming} from './gaming-live.js';
 import {decorateGamingReviews,wireGamingView} from './gaming-view.js';
-import {wireGamingAsk} from './gaming-ask.js';
 await pullGaming();
 wireGamingView();
-wireGamingAsk();
 decorateGamingReviews();
 autoRefreshGaming();
 window.__tideGaming={get state(){return gaming();}};
