@@ -11,6 +11,7 @@ import {
 import { fetchPeriodMusic } from './spotify.js';
 import { activityRange, gamingRecordHighlights, hours as gamingHours, platformLabel } from './gaming-data.js';
 import { diarySignals } from './diary-insights.js';
+import { holidaysForMonth, holidaysOnDate, monthIdentity } from './calendar-data.js';
 import { answerAsk, askScope, askMusicIntent } from './ask-intelligence.js';
 
 const root=document.querySelector('#view-root');
@@ -24,6 +25,8 @@ let view='today';
 let selectedDate=isoToday();
 let selectedMonth=selectedDate.slice(0,7);
 let selectedYear=Number(selectedDate.slice(0,4));
+let onThisDayDate=isoToday();
+let showCalendarHolidays=true;
 let musicPeriod='month',musicCategory='songs',musicMonth=selectedMonth,musicYear=selectedYear;
 let musicCustomStart=shiftDay(isoToday(),-29),musicCustomEnd=isoToday(),musicRequestId=0;
 let cloud={configured:false,authenticated:false,etag:null,checked:false};
@@ -83,12 +86,150 @@ function todayView(){
 async function saveCurrentDay(date,text){saveEntry(state,date,text);persist();clearDraft(date);toast('Day saved locally.');render();if(state.settings.autoCloudSync&&cloud.authenticated){try{const r=await cloudPush(state,cloud.etag);cloud.etag=r.etag||cloud.etag;toast('Cloud sync complete.')}catch(e){toast(`Saved locally; cloud sync failed: ${e.message}`,'bad')}}}
 function showVersions(date){const revisions=state.entries?.[date]?.revisions||[];openModal('Version History',revisions.length?revisions.map((r,i)=>`<div class="result-row"><b>${new Date(r.savedAt).toLocaleString()}</b><div class="small muted" style="margin-top:7px">${esc(r.text).slice(0,500)}</div><button class="button" data-restore="${i}" style="margin-top:10px">Restore</button></div>`).join(''):`<div class="muted">No earlier saved versions yet.</div>`,'SAFE HISTORY');modal.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>{const r=revisions[Number(b.dataset.restore)];if(r){saveEntry(state,date,r.text);persist();closeModal();render();toast('Earlier version restored.')}})}
 
-function calendarView(){const [y,m]=selectedMonth.split('-').map(Number);const first=new Date(y,m-1,1).getDay();const days=daysInMonth(selectedMonth);const review=monthReview();const cells=[];for(let i=0;i<first;i++)cells.push('<div class="cal-day empty"></div>');for(let d=1;d<=days;d++){const date=`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;const cls=['cal-day',entryExists(date)?'has-entry':'',date===isoToday()?'today':'',review.bestDay===date?'best':'',review.worstDay===date?'worst':''].join(' ');cells.push(`<button class="${cls}" data-date="${date}"><span class="cal-num">${d}</span><span class="cal-preview">${esc(daySummary(entryText(date)))}</span></button>`)}root.innerHTML=`${pageHead(monthLabel(selectedMonth),'Every day exists automatically. No placeholder dates needed.',`<div class="calendar-toolbar">${button('‹','cal-prev')}${button('Today','cal-today')}${button('›','cal-next')}</div>`)}<section class="card"><div class="calendar"><div class="weekday">SUN</div><div class="weekday">MON</div><div class="weekday">TUE</div><div class="weekday">WED</div><div class="weekday">THU</div><div class="weekday">FRI</div><div class="weekday">SAT</div>${cells.join('')}</div></section>`;root.querySelector('#cal-prev').onclick=()=>changeMonth(-1);root.querySelector('#cal-next').onclick=()=>changeMonth(1);root.querySelector('#cal-today').onclick=()=>{selectedMonth=isoToday().slice(0,7);render()};root.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>openDay(b.dataset.date))}
+function tideCalendarCell(date,isCurrentMonth,holidays,review){
+  const entry=entryExists(date),day=Number(date.slice(-2)),today=date===isoToday(),best=review?.bestDay===date,worst=review?.worstDay===date;
+  const special=holidays.find(h=>h.kind==='special');
+  const primary=special||holidays.find(h=>h.kind==='federal')||holidays.find(h=>h.kind==='observed')||holidays[0];
+  const classes=['tide-cal-day',isCurrentMonth?'':'is-adjacent',entry?'has-diary':'',today?'is-today':'',best?'is-best':'',worst?'is-worst':'',primary?'has-holiday':'',special?'is-special':''].filter(Boolean).join(' ');
+  const count=entry?eventCount(date):0,note=entry?daySummary(entryText(date)).slice(0,110):'';
+  const markers=[best?'BEST DAY':'',worst?'WORST DAY':''].filter(Boolean);
+  const label=`${shortDate(date)}${today?', today':''}${holidays.length?', '+holidays.map(h=>h.name).join(', '):''}${entry?`, ${count} diary event${count===1?'':'s'}`:', no diary entry'}${best?', monthly best day':''}${worst?', monthly worst day':''}`;
+  return `<button type="button" class="${classes}" data-date="${esc(date)}" title="${esc(label)}" aria-label="${esc(label)}">
+    <span class="tide-cal-day-top"><span class="tide-cal-day-num">${day}</span>${today?'<span class="tide-cal-today-label">TODAY</span>':''}</span>
+    <span class="tide-cal-day-body">
+      ${primary?`<span class="tide-cal-holiday tide-cal-holiday--${primary.kind}">${esc(primary.name)}</span>`:''}
+      ${entry?`<span class="tide-cal-note">${esc(note)}</span>`:''}
+    </span>
+    <span class="tide-cal-day-bottom">${entry?`<span class="tide-cal-diary-dot"></span><span class="tide-cal-diary-label">${count} ${count===1?'EVENT':'EVENTS'}</span>`:''}${markers.length?`<span class="tide-cal-pick-label">${markers.join(' · ')}</span>`:''}${primary?'<span class="tide-cal-holiday-dot" aria-hidden="true"></span>':''}</span>
+  </button>`;
+}
+
+function calendarView(){
+  const [year,month]=selectedMonth.split('-').map(Number),first=new Date(Date.UTC(year,month-1,1)).getUTCDay();
+  const days=daysInMonth(selectedMonth),totalCells=Math.ceil((first+days)/7)*7;
+  const theme=monthIdentity(selectedMonth),monthNum=String(month).padStart(2,'0'),review=monthReview(selectedMonth);
+  const everyHoliday=holidaysForMonth(selectedMonth);
+  const holidays=showCalendarHolidays?everyHoliday:everyHoliday.filter(x=>x.kind==='special');
+  const byDate=new Map();
+  for(const h of holidays){if(!byDate.has(h.date))byDate.set(h.date,[]);byDate.get(h.date).push(h);}
+  let recordedDays=0,recordedEvents=0;
+  for(let d=1;d<=days;d++){const date=selectedMonth+'-'+String(d).padStart(2,'0');if(entryExists(date)){recordedDays++;recordedEvents+=eventCount(date);}}
+  const cells=Array.from({length:totalCells},(_,i)=>{
+    const date=new Date(Date.UTC(year,month-1,1-first+i)).toISOString().slice(0,10);
+    const isCurrent=date.startsWith(selectedMonth+'-');
+    const events=isCurrent?byDate.get(date)||[]:showCalendarHolidays?holidaysOnDate(date):holidaysOnDate(date).filter(h=>h.kind==='special');
+    return tideCalendarCell(date,isCurrent,events,isCurrent?review:null);
+  });
+  const weekDays=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
+  const holidayList=holidays.map(h=>`<button type="button" class="tide-cal-agenda-event tide-cal-agenda--${h.kind}" data-date="${esc(h.date)}">
+    <span class="tide-cal-agenda-day"><span>${MONTHS[month-1].slice(0,3).toUpperCase()}</span><b>${Number(h.date.slice(-2))}</b></span>
+    <span class="tide-cal-agenda-info"><b>${esc(h.name)}</b><span>${h.kind==='special'?'Featured event':h.kind==='federal'?'U.S. federal holiday':h.kind==='observed'?'Federal holiday observed':'Cultural observance'}</span></span>
+    <span class="tide-cal-agenda-arrow" aria-hidden="true">↗</span>
+  </button>`).join('');
+  root.innerHTML=`${pageHead('Calendar','A clearer view of every day, diary memory, and U.S. holiday.')}
+    <div class="tide-calendar-stage theme-${monthNum}">
+      <header class="tide-cal-hero">
+        <div class="tide-cal-hero-copy"><div class="tide-cal-kicker">YOUR PERSONAL CALENDAR · ${year}</div><h2>${esc(theme.name)}<span>${year}</span></h2><p>${esc(theme.tagline)}</p></div>
+        <div class="tide-cal-hero-number" aria-hidden="true">${theme.motif}</div>
+      </header>
+      <div class="tide-cal-toolbar">
+        <div class="tide-cal-month-navigation"><button type="button" id="cal-prev" class="tide-cal-nav" aria-label="Previous month">‹</button>
+          <div class="tide-cal-current"><b>${esc(monthLabel(selectedMonth))}</b><small>Sunday through Saturday</small></div>
+          <button type="button" id="cal-next" class="tide-cal-nav" aria-label="Next month">›</button></div>
+        <div class="tide-cal-controls"><label class="tide-cal-month-chooser">Jump to <input id="cal-jump" type="month" value="${selectedMonth}" min="2020-01" max="2100-12" aria-label="Choose calendar month"></label>
+          <button type="button" id="cal-today" class="tide-cal-action">Today</button><button type="button" id="cal-to-otd" class="tide-cal-action tide-cal-action--soft">On This Day</button></div>
+      </div>
+      <div class="tide-cal-stat-strip">
+        <div><span class="tide-cal-stat-number">${recordedDays}</span><span>DAYS LOGGED</span></div>
+        <div><span class="tide-cal-stat-number">${recordedEvents}</span><span>DIARY EVENTS</span></div>
+        <div><span class="tide-cal-stat-number">${holidays.length}</span><span>HOLIDAYS & EVENTS</span></div>
+        <label class="tide-cal-holidays-toggle"><input id="cal-holidays-toggle" type="checkbox" ${showCalendarHolidays?'checked':''}><span>Show U.S. holidays</span></label>
+      </div>
+      <div class="tide-cal-grid-wrap"><div class="tide-cal-grid">
+        ${weekDays.map((name,i)=>`<div class="tide-cal-weekday ${i===0||i===6?'is-weekend':''}"><span>${name.slice(0,3)}</span><span class="tide-cal-weekday-full">${name.slice(3)}</span></div>`).join('')}
+        ${cells.join('')}
+      </div></div>
+      <div class="tide-cal-legend"><span><i class="legend-today"></i>Today</span><span><i class="legend-diary"></i>Diary entry</span><span><i class="legend-holiday"></i>Holiday / event</span><span><i class="legend-best"></i>Best day</span><span><i class="legend-worst"></i>Worst day</span></div>
+      <div class="tide-cal-agenda">
+        <div class="tide-cal-agenda-head"><div><span class="tide-cal-eyebrow">DATES WORTH NOTICING</span><h3>On the calendar this month</h3></div><span class="tide-cal-agenda-total">${holidays.length} ${holidays.length===1?'date':'dates'}</span></div>
+        ${holidays.length?`<div class="tide-cal-agenda-list">${holidayList}</div>`:'<div class="tide-cal-agenda-empty">No listed holidays or featured events this month. Your diary days are still visible above.</div>'}
+        <p class="tide-cal-disclaimer">U.S. federal holidays, federal observed dates, and selected cultural observances are labeled separately. Holiday names do not imply that offices or businesses are closed.</p>
+      </div>
+    </div>`;
+  root.querySelector('#cal-prev').onclick=()=>changeMonth(-1);
+  root.querySelector('#cal-next').onclick=()=>changeMonth(1);
+  root.querySelector('#cal-today').onclick=()=>{selectedMonth=isoToday().slice(0,7);selectedYear=Number(selectedMonth.slice(0,4));render()};
+  root.querySelector('#cal-to-otd').onclick=()=>{onThisDayDate=isoToday();setView('on-this-day')};
+  root.querySelector('#cal-jump').onchange=e=>{if(/^\d{4}-(0[1-9]|1[0-2])$/.test(e.target.value)){selectedMonth=e.target.value;selectedYear=Number(selectedMonth.slice(0,4));render();}};
+  root.querySelector('#cal-holidays-toggle').onchange=e=>{showCalendarHolidays=e.target.checked;render()};
+  root.querySelectorAll('.tide-calendar-stage [data-date]').forEach(b=>b.onclick=()=>openDay(b.dataset.date));
+}
 function changeMonth(delta){let[y,m]=selectedMonth.split('-').map(Number);m+=delta;if(m<1){m=12;y--}if(m>12){m=1;y++}selectedMonth=`${y}-${String(m).padStart(2,'0')}`;selectedYear=y;render()}
 function openDay(date){selectedDate=date;selectedMonth=date.slice(0,7);selectedYear=yearOf(date);setView('today')}
 
 function onThisDayRows(date=isoToday()){const md=date.slice(5);return Object.entries(state.entries||{}).filter(([d,e])=>d.slice(5)===md&&e.text?.trim()).sort((a,b)=>b[0].localeCompare(a[0])).map(([d,e])=>({date:d,year:d.slice(0,4),summary:daySummary(e.text),story:buildStory(e.text,{maxEvents:12})}))}
-function onThisDayView(){const rows=onThisDayRows();root.innerHTML=`${pageHead('On This Day',`What happened on ${dateLabel(isoToday(),{weekday:false}).replace(/, \d{4}$/,'')} across your T.I.D.E. history.`)}<div class="grid grid-2">${rows.length?rows.map(r=>`<section class="card"><div class="eyebrow">${r.year}</div><h2 style="margin:7px 0">${esc(dateLabel(r.date,{weekday:false}))}</h2><p class="muted small" style="line-height:1.65">${esc(r.story)}</p><button class="button" data-date="${r.date}">Open full day</button></section>`).join(''):`<section class="card"><h2>Your timeline starts here.</h2><p class="muted">Once another year contains this same date, T.I.D.E. will build the comparison automatically.</p></section>`}</div>`;root.querySelectorAll('[data-date]').forEach(b=>b.onclick=()=>openDay(b.dataset.date))}
+function otdNearbyRows(date){
+  const target=new Date(Date.UTC(2000,Number(date.slice(5,7))-1,Number(date.slice(8,10)))).getTime();
+  const year=Number(isoToday().slice(0,4));
+  return Object.entries(state.entries||{}).filter(([d,e])=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&e?.text?.trim()&&Number(d.slice(0,4))<=year).map(([d,e])=>{
+    const ms=new Date(Date.UTC(2000,Number(d.slice(5,7))-1,Number(d.slice(8,10)))).getTime();
+    const delta=Math.round(Math.abs(ms-target)/86400000),distance=Math.min(delta,366-delta);
+    return{date:d,distance,summary:daySummary(e.text)};
+  }).filter(x=>x.distance>0&&x.distance<=3).sort((a,b)=>a.distance-b.distance||b.date.localeCompare(a.date)).slice(0,4);
+}
+
+function onThisDayView(){
+  const target=onThisDayDate,rows=onThisDayRows(target),month=target.slice(0,7),theme=monthIdentity(month),monthNum=target.slice(5,7);
+  const memories=rows.length,distinctYears=new Set(rows.map(x=>x.year)).size,events=rows.reduce((n,x)=>n+eventCount(x.date),0);
+  const featured=rows[0],historical=rows.slice().reverse(),holiday=holidaysOnDate(target),nearby=rows.length?[]:otdNearbyRows(target);
+  const fullMonth=MONTHS[Number(monthNum)-1],day=Number(target.slice(-2));
+  const timeline=historical.map((row,i)=>{
+    const count=eventCount(row.date),parts=splitEvents(entryText(row.date)),yearDistance=Number(isoToday().slice(0,4))-Number(row.year);
+    const yearLabel=yearDistance===0?'THIS YEAR':yearDistance>0?`${yearDistance} ${yearDistance===1?'YEAR':'YEARS'} AGO`:'FUTURE ENTRY';
+    return `<article class="tide-otd-memory ${row.date===featured?.date?'is-featured':''}">
+      <span class="tide-otd-connector" aria-hidden="true"></span><div class="tide-otd-memory-mark"><span>${esc(row.year)}</span></div>
+      <div class="tide-otd-memory-body"><div class="tide-otd-memory-top"><span>${esc(yearLabel)}</span><span>${count} ${count===1?'EVENT':'EVENTS'}</span></div>
+        <h3>${esc(shortDate(row.date))}</h3>
+        <p class="tide-otd-memory-summary">${esc(row.summary)}</p>
+        <div class="tide-otd-memory-events">${parts.slice(0,4).map(text=>`<span>${esc(text.slice(0,140))}</span>`).join('')}</div>
+        <button type="button" data-otd-date="${esc(row.date)}" class="tide-otd-open">Open this day in your diary <span aria-hidden="true">↗</span></button>
+      </div>
+    </article>`;
+  }).join('');
+  const nearMarkup=nearby.map(row=>`<button class="tide-otd-nearby-item" type="button" data-otd-date="${esc(row.date)}"><span>${esc(shortDate(row.date))}</span><b>${esc(row.summary)}</b><span>↗</span></button>`).join('');
+  root.innerHTML=`${pageHead('On This Day','Your personal time capsule: compare what happened on the same date across different years.')}
+    <div class="tide-otd-stage theme-${monthNum}">
+      <div class="tide-otd-hero">
+        <div class="tide-otd-hero-copy"><div class="tide-otd-kicker">✦ YOUR TIME CAPSULE</div><p class="tide-otd-hero-month">${esc(fullMonth.toUpperCase())} <span>${target.slice(0,4)}</span></p>
+          <div class="tide-otd-date-main"><strong>${day}</strong><span><b>${esc(fullMonth)}</b><small>What were you doing on this date?</small></span></div>
+          <p>One day on the calendar. A whole collection of years, moments and memories.</p>
+          ${holiday.length?`<div class="tide-otd-holidays">${holiday.map(h=>`<span>${esc(h.name)}</span>`).join('')}</div>`:''}
+        </div><div class="tide-otd-art" aria-hidden="true"><span class="tide-otd-art-orbit"></span><span class="tide-otd-art-year">${esc(target.slice(0,4))}</span><span class="tide-otd-art-star">✦</span></div>
+      </div>
+      <div class="tide-otd-toolbar"><div class="tide-otd-navigation">
+        <button class="tide-otd-nav" type="button" id="otd-prev" aria-label="Previous date">‹</button>
+        <div class="tide-otd-nav-title"><b>${esc(shortDate(target))}</b><span>Same date, different years</span></div>
+        <button class="tide-otd-nav" type="button" id="otd-next" aria-label="Next date">›</button>
+        </div><div class="tide-otd-toolbar-actions"><label>Jump to date <input id="otd-date-picker" type="date" value="${esc(target)}" aria-label="Choose a date for On This Day"></label><button id="otd-today" type="button">Today's date</button></div></div>
+      <div class="tide-otd-stats"><div><b>${memories}</b><span>MEMORIES</span></div><div><b>${distinctYears}</b><span>YEARS FEATURED</span></div><div><b>${events}</b><span>RECORDED EVENTS</span></div></div>
+      <div class="tide-otd-main">
+        <div class="tide-otd-section-heading"><div><span>THROUGH THE YEARS</span><h2>${memories?'Your personal timeline':'A blank page in your timeline'}</h2></div><small>${memories?`${memories} saved ${memories===1?'entry':'entries'} for ${esc(fullMonth)} ${day}`:'Explore another date or start a memory'}</small></div>
+        ${memories?`<div class="tide-otd-timeline">${timeline}</div>`:`<section class="tide-otd-empty">
+          <div class="tide-otd-empty-symbol" aria-hidden="true">✧</div><h3>No diary memories on this exact date yet</h3>
+          <p>That's part of the story, too. Save a memory for this date, or travel to another day to discover more.</p>
+          <button type="button" id="otd-open-target">Open ${esc(shortDate(target))} in my diary ↗</button>
+        </section>
+        ${nearby.length?`<section class="tide-otd-nearby"><div class="tide-otd-nearby-head"><h3>Close to this day</h3><p>Real diary notes within three calendar days, clearly separated from exact-date matches.</p></div>${nearMarkup}</section>`:''}`}
+      </div>
+      <div class="tide-otd-footnote">Each timeline card comes from an actual saved diary entry. Changing the date explores the same month and day across years; nothing here is generated or invented.</div>
+    </div>`;
+  root.querySelector('#otd-prev').onclick=()=>{onThisDayDate=shiftDay(target,-1);render()};
+  root.querySelector('#otd-next').onclick=()=>{onThisDayDate=shiftDay(target,1);render()};
+  root.querySelector('#otd-today').onclick=()=>{onThisDayDate=isoToday();render()};
+  root.querySelector('#otd-date-picker').onchange=e=>{if(/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)){onThisDayDate=e.target.value;render();}};
+  const open=root.querySelector('#otd-open-target');if(open)open.onclick=()=>openDay(target);
+  root.querySelectorAll('.tide-otd-stage [data-otd-date]').forEach(b=>b.onclick=()=>openDay(b.dataset.otdDate));
+}
 
 function monthOptions(current){const years=[...new Set([2024,2025,2026,Number(isoToday().slice(0,4)),...Object.keys(state.entries||{}).map(d=>Number(d.slice(0,4)))])].sort();return years.flatMap(y=>MONTHS.map((m,i)=>{const k=`${y}-${String(i+1).padStart(2,'0')}`;return `<option value="${k}" ${k===current?'selected':''}>${m} ${y}</option>`})).join('')}
 function activeMonthTrackers(month){return allTrackerDefinitions(state).filter(t=>t.kind==='event'&&(t.status!=='retired'||trackerTotal(state,t.id,{month})>0||legacyTrackerTotal(state,t.id,month)!=null))}
