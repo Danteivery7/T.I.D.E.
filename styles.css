@@ -274,3 +274,131 @@ body.vice-city-season .toast{
   background:#2b1b48;
   border-color:rgba(229,150,243,.37);
 }
+
+
+/* Year in Review: award-night spotlight. Limited to this view only. */
+.year-awards-intro{
+  position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;
+  gap:20px;margin:0 0 16px;padding:26px 28px;border-radius:23px;
+  background:linear-gradient(112deg,#3a194e 0%,#352052 38%,#1b3564 75%,#16345b 100%);
+  border:1px solid rgba(237,155,244,.36);box-shadow:0 19px 46px rgba(10,8,45,.23);
+}
+.year-awards-intro:before{
+  content:"";position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,#ffbb79,#ff74c6 36%,#aa7cff 68%,#6ad7ff);
+}
+.year-awards-eyebrow{color:#ffbddd;font-size:11px;letter-spacing:.2em;font-weight:900}
+.year-awards-intro h2{color:#fff5fc;font-size:clamp(23px,3vw,33px);margin:10px 0 6px;letter-spacing:-.04em}
+.year-awards-intro p{color:#e7d6f2;margin:0;font-size:13px;line-height:1.6}
+.year-awards-trophy{font-size:clamp(46px,8vw,100px);font-weight:200;line-height:1;color:#ffd8ef;text-shadow:0 0 30px rgba(255,135,210,.5);opacity:.9;flex-shrink:0}
+#year-awards{margin-bottom:24px}
+.year-awards-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.year-award{
+  --year-bright:#ffc5dd;--year-glow:rgba(255,125,208,.20);
+  position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;
+  min-width:0;min-height:242px;padding:20px;border:1px solid rgba(255,255,255,.17);
+  border-radius:22px;box-shadow:0 15px 38px rgba(12,9,37,.23);color:#fff9ff;
+  background:linear-gradient(140deg,#3b1d51,#27234e 60%,#183457);
+}
+.year-award:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:var(--year-bright);z-index:1}
+.year-award:after{
+  content:"";position:absolute;top:-78px;right:-62px;height:210px;width:210px;border-radius:50%;
+  background:radial-gradient(circle,var(--year-glow),transparent 69%);pointer-events:none;z-index:-1;
+}
+.year-award--day{--year-bright:#ffd18c;--year-glow:rgba(255,174,110,.34);background:linear-gradient(140deg,#57304e,#362249 60%,#432648)}
+.year-award--month{--year-bright:#edb1ff;--year-glow:rgba(208,123,255,.30);background:linear-gradient(140deg,#4a285f,#322454 61%,#2b275a)}
+.year-award--activity{--year-bright:#84f5d4;--year-glow:rgba(104,242,211,.28);background:linear-gradient(140deg,#174b59,#21395f 60%,#252c53)}
+.year-award--song{--year-bright:#ff88cf;--year-glow:rgba(255,109,197,.33);background:linear-gradient(140deg,#572348,#402050 59%,#2b2a63)}
+.year-award--artist{--year-bright:#c59dff;--year-glow:rgba(185,139,255,.37);background:linear-gradient(140deg,#432567,#33285f 63%,#213b63)}
+.year-award--game{--year-bright:#81dcff;--year-glow:rgba(96,205,255,.33);background:linear-gradient(140deg,#174560,#1d3a66 60%,#272b62)}
+.year-award-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:19px}
+.year-award-category{font-size:10px;font-weight:900;letter-spacing:.13em;text-transform:uppercase;color:var(--year-bright);line-height:1.4}
+.year-award-sparkle{color:var(--year-bright);opacity:.72;font-size:21px}
+.year-award-center{display:flex;align-items:center;gap:16px;flex:1;min-width:0}
+.year-award-image,.year-award-glyph{
+  width:105px;height:105px;flex:none;object-fit:cover;border-radius:17px;
+  border:1px solid rgba(255,255,255,.23);box-shadow:0 12px 29px rgba(0,0,0,.26);
+}
+.year-award-image{display:block;background:rgba(255,255,255,.08)}
+.year-award--artist .year-award-image{border-radius:50%}
+.year-award--game .year-award-image{width:102px;height:119px}
+.year-award-glyph{
+  display:grid;place-items:center;font-size:47px;color:var(--year-bright);
+  background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.16),transparent 60%),rgba(255,255,255,.07);
+}
+.year-award-copy{flex:1;min-width:0}
+.year-award-winner{
+  font-weight:900;font-size:clamp(19px,2vw,26px);line-height:1.17;
+  letter-spacing:-.03em;color:#fff9ff;overflow-wrap:anywhere;
+}
+.year-award-detail{font-size:12px;line-height:1.6;color:#e7d9f3;margin-top:9px;overflow-wrap:anywhere}
+.year-award-foot{
+  border-top:1px solid rgba(255,255,255,.12);padding-top:12px;margin-top:21px;
+  font-size:10px;font-weight:700;letter-spacing:.035em;color:#ddcce9;
+}
+.year-personal-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:14px}
+.year-personal-pick{
+  padding:17px 18px;border-radius:17px;border:1px solid rgba(207,155,241,.28);
+  background:linear-gradient(145deg,rgba(149,95,208,.13),rgba(58,106,184,.12));
+  min-width:0;min-height:160px;
+}
+.year-personal-pick--best{border-color:rgba(255,177,208,.3);background:linear-gradient(130deg,rgba(255,130,198,.14),rgba(163,102,220,.10))}
+.year-personal-pick--worst{border-color:rgba(134,195,247,.27);background:linear-gradient(130deg,rgba(78,134,215,.13),rgba(128,93,180,.1))}
+.year-personal-label{font-size:10px;font-weight:900;letter-spacing:.13em;text-transform:uppercase;color:var(--accent)}
+.year-personal-pick--best .year-personal-label{color:#ff95cf}
+.year-personal-pick--worst .year-personal-label{color:#9bd9ff}
+.year-personal-value{font-size:clamp(17px,2vw,22px);font-weight:850;letter-spacing:-.025em;margin:15px 0 8px;overflow-wrap:anywhere}
+.year-personal-note{font-size:11px;line-height:1.6;color:var(--muted);overflow-wrap:anywhere}
+.year-picks-editor{
+  overflow:hidden;margin-bottom:22px;border:1px solid rgba(205,153,234,.25);
+  background:linear-gradient(115deg,rgba(154,105,202,.07),rgba(73,142,222,.06));border-radius:15px;
+}
+.year-picks-editor summary{
+  list-style:none;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  cursor:pointer;padding:16px 20px;font-size:12px;font-weight:900;color:var(--text);
+}
+.year-picks-editor summary::-webkit-details-marker{display:none}
+.year-picks-editor summary:hover{background:rgba(218,149,247,.08)}
+.year-picks-editor summary:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+.year-editor-hint{font-size:11px;color:var(--muted);font-weight:600}
+.year-picks-form{border-top:1px solid rgba(207,155,241,.18);padding:20px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.year-picks-form .input,.year-picks-form .select{width:100%;min-width:0}
+.year-picks-save{grid-column:1/-1;display:flex;justify-content:flex-end;margin-top:2px}
+.year-picks-save .button{min-width:150px}
+.year-side-stats{display:flex;gap:13px;flex-wrap:wrap;margin-bottom:18px}
+.year-side-stat{
+  display:flex;justify-content:space-between;align-items:center;gap:20px;
+  flex:1 1 220px;padding:13px 17px;border:1px solid rgba(195,149,235,.22);
+  border-radius:13px;background:rgba(123,101,193,.065);
+}
+.year-side-stat b{font-size:21px;font-weight:900;color:var(--text)}
+.year-geo-records .record-value{font-size:clamp(20px,2.4vw,26px)}
+.year-detail-list .detected-item+.detected-item{margin-top:8px}
+.year-rank-num{display:inline-block;margin-right:12px;font-size:11px;font-weight:900;color:#bd9aff}
+.year-music-detail{margin-bottom:20px}
+@media(max-width:1240px){
+  .year-awards-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .year-personal-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .year-picks-form{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:620px){
+  .year-awards-intro{padding:20px}
+  .year-awards-trophy{font-size:53px}
+  .year-awards-grid{grid-template-columns:1fr;gap:11px}
+  .year-award{min-height:205px;padding:17px}
+  .year-award-top{margin-bottom:12px}
+  .year-award-image,.year-award-glyph{width:88px;height:88px}
+  .year-award--game .year-award-image{width:88px;height:98px}
+  .year-award-winner{font-size:23px}
+  .year-personal-grid{grid-template-columns:1fr 1fr;gap:9px}
+  .year-personal-pick{padding:14px;min-height:146px}
+  .year-personal-value{font-size:18px}
+  .year-editor-hint{display:none}
+}
+@media(max-width:420px){
+  .year-personal-grid{grid-template-columns:1fr}
+  .year-picks-form{grid-template-columns:1fr}
+  .year-award-center{gap:12px}
+  .year-award-winner{font-size:21px}
+  .year-picks-save .button{width:100%}
+}
