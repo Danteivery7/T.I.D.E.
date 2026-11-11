@@ -192,7 +192,7 @@ function injectTrackers(s){
   });
 }
 function injectRecords(s){
-  if((root?.querySelector('.page-head h1')?.textContent||'')!=='Personal Records'||root.querySelector('#geo-records'))return;
+  if((root?.querySelector('.page-head h1')?.textContent||'')!=='Personal Records'||root.querySelector('#geo-records')||root.querySelector('#personal-records-showcase'))return;
   const d=streak(s),m=monthRecord(s),a=overallRecord(s),grid=root.querySelector('.records-grid');if(!grid)return;
   const x=document.createElement('div');x.id='geo-records';x.style.display='contents';
   x.innerHTML=`${card('Current Daily Challenge',`${d.current} days`,d.current?'ACTIVE':'INACTIVE')}${card('Monty This Month',`${m.wins}-${m.losses}`)}${card('Monty All Time',`${a.wins}-${a.losses}`)}`;
