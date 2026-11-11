@@ -30,6 +30,9 @@ test('gaming hall of fame uses dated deltas for day records and recovery for mon
 
   const r=gamingRecordHighlights();
   assert.deepEqual(r.bestDay,{date:'2026-11-02',minutes:170});
+  assert.deepEqual(r.bestDayGames.map(x=>[x.title,x.minutes]),[['The Crew Motorfest',110],['Rocket League',60]]);
+  assert.deepEqual(r.bestDayGames[0].platformMinutes,{ps5:110});
+  assert.equal(r.bestDayGames.reduce((sum,game)=>sum+game.minutes,0),r.bestDay.minutes);
   assert.equal(r.bestMonth.month,'2026-10');
   assert.equal(r.bestMonth.minutes,500);
   assert.equal(r.bestMonth.recoveredMinutes,500);
