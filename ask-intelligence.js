@@ -35,6 +35,15 @@ function askScope(q,{today=new Date().toLocaleDateString('en-CA'),selectedDate=t
   if(!date&&/\byesterday\b/.test(lower))date=askShiftDate(today,-1);
   if(!date&&/\b(today|on this day)\b/.test(lower))date=/\bon this day\b/.test(lower)?selectedDate:today;
   if(date&&!askDateValid(date))date='';
+  if(!date&&/\b(?:last|past)\s+(?:week|7 days|seven days|30 days|thirty days|90 days)\b/.test(lower)){
+    const count=/\b(30|thirty)\b/.test(lower)?30:/\b(90)\b/.test(lower)?90:7;
+    return{date:'',month:'',year:null,start:askShiftDate(today,-count+1),end:today,label:`the past ${count} days`,all:false};
+  }
+  if(!date&&/\bthis week\b/.test(lower)){
+    const n=new Date(today+'T12:00:00Z').getUTCDay(),back=(n+6)%7;
+    return{date:'',month:'',year:null,start:askShiftDate(today,-back),end:today,label:'this week',all:false};
+  }
+
   const yMatch=lower.match(/\b(20\d{2})\b/);
   if(!date){
     if(/\blast month\b/.test(lower)){const d=new Date(today.slice(0,7)+'-15T12:00:00Z');d.setUTCMonth(d.getUTCMonth()-1);month=d.toISOString().slice(0,7)}
@@ -101,7 +110,7 @@ function askMoneyNotice(state,scope,query){
     return s.slice(0,2).map(seg=>askRow(date,seg,'Diary note'));
   });
   const finance=/\b(balance|bank|account|afford|budget|spent|spending|earnings?|income|monthly expenses|profit|net worth|total money|how much money)\b/i.test(query);
-  return{kind:'money',heading:finance?'Financial records are not connected here':`${rows.length} money-related diary note${rows.length===1?'':'s'}`,primary:finance?'No verified financial total available':`${new Set(rows.map(r=>r.date)).size} diary days`,detail:finance?'T.I.D.E. can locate mentions of purchases, refunds and payments, but it cannot verify your current balance, actual expenses, earnings, or Budget Tracker figures.':'These are diary mentions, not bank transactions or spending totals.',items:rows.slice(0,60),source:'Your saved diary · mentions only',confidence:'Diary evidence',followups:['Show money-related diary entries this month','What did I write about purchases in 2026?']};
+  return{kind:'money',heading:finance?'Financial records are not connected here':`${rows.length} money-related diary note${rows.length===1?'':'s'}`,primary:finance?'No verified financial total available':`${new Set(rows.map(r=>r.date)).size} diary day${new Set(rows.map(r=>r.date)).size===1?'':'s'}`,detail:finance?'T.I.D.E. can locate mentions of purchases, refunds and payments, but it cannot verify your current balance, actual expenses, earnings, or Budget Tracker figures.':'These are diary mentions, not bank transactions or spending totals.',items:rows.slice(0,60),source:'Your saved diary · mentions only',confidence:'Diary evidence',followups:['Show money-related diary entries this month','What did I write about purchases in 2026?']};
 }
 
 function askGameAnswer(state,question,scope,{selectedDate}={}){
@@ -135,11 +144,14 @@ function askGameAnswer(state,question,scope,{selectedDate}={}){
     const covered=scope.all?'All-time known hours':`Recorded ${scope.label} playtime`;
     return{kind:'game',heading:`${game.title} · ${covered}`,primary:hours(mins),detail:scope.all?'Known playtime aggregated across available platform sources.':'Only tracked and explicitly recovered playtime is assigned to this period; undated historical hours are not invented.',items:scope.all?Object.entries(game.platformMinutes||{}).sort((a,b)=>b[1]-a[1]).map(([platform,n])=>({label:platformLabel(platform),meta:hours(n),source:'Gaming account'})):[],source:scope.all?'Gaming account totals':'Dated / recovered gaming data',followups:[`When did I last play ${game.title}?`,`What games did I play in ${scope.label}?`]};
   }
-  if(/last.*played|recent.*game/.test(q)&&scope.all){
+  if(/last.*play(?:ed|ing)?|recent.*game/.test(q)&&scope.all){
     const recent=games.filter(x=>x.lastPlayed).sort((a,b)=>b.lastPlayed.localeCompare(a.lastPlayed));
     return{kind:'game',heading:'Most recently played games',primary:recent[0]?.title||'No last-played history',detail:recent[0]?`Latest reported date: ${recent[0].lastPlayed}. Based on source-provided last-played dates.`:'No linked game has a reported last-played date.',items:recent.slice(0,topN).map(g=>({label:g.title,meta:`Last reported ${g.lastPlayed} · ${hours(g.minutes)} lifetime`,source:'Gaming account'})),source:'Gaming source last-played dates'};
   }
   const ranked=(scope.all?games:activity?.games||[]).slice().sort((a,b)=>b.minutes-a.minutes).filter(x=>x.minutes>0);
+  const diaryPlayed=!scope.all?askGameDiaryMatches(state,scope,games):[];
+  if(!scope.all&&!ranked.length&&diaryPlayed.length)return{kind:'game',heading:`Gaming diary · ${scope.label}`,primary:`${diaryPlayed.length} diary day${diaryPlayed.length===1?'':'s'}`,detail:'No period-specific gaming minutes were available, but these dated diary notes explicitly mention playing games. They are not verified playtime totals.',items:diaryPlayed.slice(0,70).flatMap(row=>row.titles.map(title=>({date:row.date,label:title,meta:row.snippet,source:'Diary mention'}))),source:'Saved diary'};
+
   const total=scope.all?allTimeTotal('all'):activity?.total||0;
   const label=scope.all?'all time':scope.label;
   if(asksHours&&/\b(total|all|overall|how many)\b/.test(q))return{kind:'game',heading:`Gaming hours · ${label}`,primary:hours(total),detail:scope.all?'Lifetime known playtime includes historical totals.':'These minutes cover tracked and recovered data, not guessed historical playtime.',items:ranked.slice(0,5).map(x=>({label:x.title,meta:hours(x.minutes),source:'Gaming source'})),source:'Gaming data'};
@@ -262,7 +274,7 @@ function answerAsk(state,question,{today,selectedDate,musicData=null}={}){
   if(money&&!moneyTimeQuestion&&(/\b(how much|budget|balance|afford|account|income|spent|spending|payment|subscription|money)\b/i.test(q)||!/game/.test(q)))return askMoneyNotice(state,scope,q);
   const summary=/\b(about my life|summari[sz]e|overview|recap|highlights?|what.*(?:did i do|happened|been doing)|how was my|tell me about my|my life|my year|my month)\b/i.test(q);
   if(gameIntent && (!scope.date||/\b(gam(?:e|ing)|play(?:ed|ing)?|console)\b/i.test(q)))return askGameAnswer(state,q,scope,{selectedDate});
-  if(scope.date&&/what (?:did|happened|was)|tell me about|describe|how was|on this day|my day|that day/.test(lower))return askDateStory(state,scope,q);
+
   const tracker=trackerFromQuestion(state,q);
   if(tracker||/\bmonty\b|daily challenge|geo(?:guessr)? 10k|hong kong|mors mutual|migraine streak/.test(lower)){
     const a=askTide(state,q);
@@ -276,6 +288,7 @@ function answerAsk(state,question,{today,selectedDate,musicData=null}={}){
   if(people)return people;
   const topic=Object.keys(ASK_TOPIC_ALIASES).find(id=>id!=='money'&&ASK_TOPIC_ALIASES[id].test(q));
   if(topic)return askDiaryTopic(state,topic,q,scope);
+if(scope.date&&/what (?:did|happened|was)|tell me about|describe|how was|on this day|my day|that day/.test(lower))return askDateStory(state,scope,q);
   if(summary||!askTokens(q).length)return scope.date?askDateStory(state,scope,q):askLifeOverview(state,scope);
   const searched=askDiarySearch(state,q,scope);
   if(searched?.items?.length)return searched;
