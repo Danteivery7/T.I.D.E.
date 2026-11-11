@@ -41,7 +41,7 @@ test('money notes are text mentions only and cannot be interpreted as cash amoun
     '2026-07-03':{text:'No purchases today'},
     'nonsense':{text:'Paid $999'},
   }},{month:'2026-07'});
-  assert.equal(note.categories.find(x=>x.id==='money').days,2);
+  assert.equal(note.categories.find(x=>x.id==='money').days,1); // Negated 'no purchases' does not count.
   assert.equal(note.loggedDays,2);
   assert.ok(!('totalSpent' in note));
   assert.ok(!('balance' in note));
