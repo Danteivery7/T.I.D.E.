@@ -114,3 +114,163 @@
 .tracker-edit-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px}
 .tracker-modal-save{margin-top:12px}
 @media(max-width:820px){#tracker-showcase .tracker-quick-actions{display:grid;grid-template-columns:1fr 1fr}#tracker-showcase .tracker-quick-actions .button:first-child{grid-column:1/-1}#tracker-showcase .tracker-spotlight-row .button{grid-column:1/-1;justify-self:stretch}}
+
+
+/* GTA VI / Vice City: follow the selected diary date, Nov 19–Dec 31, 2026.
+   Extends the original four-card November 19 treatment without changing its colors,
+   markup, responsive layout, interactions, or navigation. */
+body.vice-city-season{
+  --bg:#110e29;
+  --panel:#251735;
+  --panel-2:#2d1b4b;
+  --panel-3:#202d58;
+  --line:rgba(236,144,239,.32);
+  --text:#fff4fd;
+  --muted:#e0cce9;
+  --subtle:#bea9d6;
+  --accent:#ff74c6;
+  --accent-2:#6ad7ff;
+  --shadow:0 22px 60px rgba(21,8,48,.38);
+  background:
+    radial-gradient(circle at 87% 4%,rgba(243,91,183,.17),transparent 36%),
+    radial-gradient(circle at 12% 70%,rgba(76,166,255,.12),transparent 44%),
+    linear-gradient(155deg,#190f2f,#110e29 59%,#101c39);
+}
+body.vice-city-season .sidebar{
+  background:linear-gradient(165deg,rgba(43,19,60,.97),rgba(24,17,51,.97) 58%,rgba(13,32,62,.97));
+  border-right-color:rgba(255,136,218,.21);
+  box-shadow:inset -1px 0 0 rgba(98,198,255,.06);
+}
+body.vice-city-season .topbar{
+  background:linear-gradient(100deg,rgba(43,19,62,.97),rgba(36,25,72,.95) 58%,rgba(18,48,81,.96));
+  border-bottom-color:rgba(255,146,226,.23);
+}
+body.vice-city-season .brand-mark{
+  background:linear-gradient(135deg,#ff6cbd,#ac71ff 52%,#5ad1ff);
+  box-shadow:0 9px 30px rgba(243,89,208,.27);
+}
+body.vice-city-season .brand{color:#fff3ff}
+body.vice-city-season .brand-sub{color:#cab2dc}
+body.vice-city-season .nav-item:hover{background:rgba(250,139,219,.10);color:#fff5ff}
+body.vice-city-season .nav-item.active{
+  background:linear-gradient(90deg,rgba(255,108,189,.24),rgba(172,113,255,.16) 62%,rgba(90,209,255,.10));
+  color:#fff8ff;
+  box-shadow:inset 3px 0 0 #ff74c6;
+}
+body.vice-city-season .nav-item.active span{color:#ff9bdb}
+body.vice-city-season .ask-nav{
+  border-color:rgba(248,133,219,.38);
+  background:linear-gradient(100deg,rgba(233,96,183,.10),rgba(103,151,245,.07));
+}
+body.vice-city-season .sync-pill{color:#d7bedf}
+body.vice-city-season .sync-dot,
+body.vice-city-season .status-dot{background:#6ad7ff;box-shadow:0 0 11px rgba(106,215,255,.44)}
+body.vice-city-season .page-head h1{
+  color:#fff3ff;
+  text-shadow:0 2px 22px rgba(243,89,208,.17);
+}
+body.vice-city-season .eyebrow,
+body.vice-city-season .section-title{color:#ffa8de}
+body.vice-city-season .card{
+  background:
+    radial-gradient(circle at 95% 0%,rgba(251,116,198,.10),transparent 49%),
+    linear-gradient(145deg,#2c193f,#211b4a 62%,#172b51);
+  border-color:rgba(230,146,243,.28);
+  box-shadow:0 16px 43px rgba(15,9,45,.25);
+}
+body.vice-city-season .record-card,
+body.vice-city-season .tracker-row,
+body.vice-city-season .music-item{
+  background:linear-gradient(115deg,rgba(241,108,196,.10),rgba(136,105,233,.11) 55%,rgba(83,191,254,.07));
+  border-color:rgba(220,149,246,.25);
+}
+body.vice-city-season .record-card:nth-child(3n+2){
+  background:linear-gradient(135deg,rgba(164,113,255,.17),rgba(70,139,246,.10));
+  border-color:rgba(187,152,255,.32);
+}
+body.vice-city-season .record-card:nth-child(3n){
+  background:linear-gradient(135deg,rgba(63,154,236,.16),rgba(140,96,210,.10));
+  border-color:rgba(109,202,255,.31);
+}
+body.vice-city-season .otd-item,
+body.vice-city-season .history-row,
+body.vice-city-season .result-row,
+body.vice-city-season .detected-item,
+body.vice-city-season .review-day-preview{
+  background:rgba(202,115,232,.10);
+  border-color:rgba(224,160,244,.22);
+}
+body.vice-city-season .otd-item:hover,
+body.vice-city-season .history-row:hover,
+body.vice-city-season .result-row:hover{background:rgba(245,135,218,.16)}
+body.vice-city-season .otd-year,
+body.vice-city-season .music-rank{color:#ff9edc}
+body.vice-city-season .otd-summary,
+body.vice-city-season .record-detail{color:#eddbf5}
+body.vice-city-season .big-stat,
+body.vice-city-season .record-value{color:#fff4ff}
+body.vice-city-season .stat-label{color:#e2cde9}
+body.vice-city-season .chip{
+  border-color:rgba(221,156,246,.27);
+  background:rgba(163,105,211,.10);
+  color:#e8d4f2;
+}
+body.vice-city-season .chip.accent{
+  border-color:rgba(255,139,218,.47);
+  background:rgba(241,101,187,.14);
+  color:#ffc7ea;
+}
+body.vice-city-season .button.primary{
+  background:linear-gradient(110deg,#f959ae,#b764ee 54%,#479eea);
+  color:#fff;
+  box-shadow:0 9px 24px rgba(210,80,199,.23);
+}
+body.vice-city-season .button:not(.good):not(.danger):not(.primary),
+body.vice-city-season .top-action,
+body.vice-city-season .icon-button{
+  border-color:rgba(224,154,243,.29);
+  background:rgba(170,103,212,.09);
+  color:#f5defb;
+}
+body.vice-city-season .button.ghost{background:rgba(170,103,212,.07)}
+body.vice-city-season .button:not(.good):not(.danger):hover,
+body.vice-city-season .top-action:hover,
+body.vice-city-season .icon-button:hover{
+  background:rgba(246,142,217,.17);
+  color:#fff;
+}
+body.vice-city-season .editor,
+body.vice-city-season .input,
+body.vice-city-season .select,
+body.vice-city-season .ask-input-wrap{
+  background:linear-gradient(145deg,rgba(20,14,49,.94),rgba(13,33,64,.92));
+  border-color:rgba(236,144,239,.37);
+  color:#fff5fd;
+}
+body.vice-city-season .editor:focus,
+body.vice-city-season .input:focus,
+body.vice-city-season .select:focus{
+  border-color:#ff83d1;
+  outline-color:#ff83d1;
+}
+body.vice-city-season .cal-day:not(.empty):not(.best):not(.worst){
+  background:linear-gradient(145deg,rgba(181,99,216,.11),rgba(65,143,226,.08));
+  border-color:rgba(224,154,243,.23);
+}
+body.vice-city-season .cal-day:hover{border-color:#ff8bd4}
+body.vice-city-season .cal-day.today{box-shadow:inset 0 0 0 1px #ff74c6}
+body.vice-city-season .cal-day.has-entry:after{background:#6ad7ff}
+body.vice-city-season .ask-input-wrap,
+body.vice-city-season .answer-card,
+body.vice-city-season .callout{
+  border-color:rgba(229,151,243,.29);
+  background:linear-gradient(120deg,rgba(187,89,201,.13),rgba(63,149,243,.09));
+}
+body.vice-city-season .modal{
+  background:linear-gradient(145deg,#2b1844,#1c214a 70%,#153657);
+  border-color:rgba(236,144,239,.42);
+}
+body.vice-city-season .toast{
+  background:#2b1b48;
+  border-color:rgba(229,150,243,.37);
+}
