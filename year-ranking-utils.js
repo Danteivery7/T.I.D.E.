@@ -19,8 +19,9 @@ export function yearRankSummary(list,nowYear){
 }
 export function repositionYear(list,from,to){
   if(!Array.isArray(list))return null;
-  const source=Number(from),target=Number(to);
-  if(!Number.isInteger(source)||!Number.isInteger(target)||source<0||target<0||source>=list.length||target>=list.length||source===target)return null;
+  if(!Number.isInteger(from)||!Number.isInteger(to))return null;
+  const source=from,target=to;
+  if(source<0||target<0||source>=list.length||target>=list.length||source===target)return null;
   const reordered=list.slice(),[year]=reordered.splice(source,1);
   reordered.splice(target,0,year);
   return reordered;
