@@ -30,6 +30,8 @@ export function normalizeHealthRow(raw){
   }
   for(const extra of ['sleepSessions','napHours','standHoursGoal','exerciseGoalMinutes','moveGoalCalories'])if(raw[extra]!=null&&Number.isFinite(Number(raw[extra]))&&Number(raw[extra])>=0)result[extra]=round(Number(raw[extra]),3);
   for(const extra of ['standGoalMet','exerciseGoalMet','moveGoalMet'])if(typeof raw[extra]==='boolean')result[extra]=raw[extra];
+  // Local 24-hour clock times from Apple Watch sleep stages (day of waking).
+  for(const extra of ['sleepStartTime','sleepWakeTime'])if(/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(raw[extra]||'')))result[extra]=String(raw[extra]);
   if(raw.workoutTypes&&typeof raw.workoutTypes==='object')result.workoutTypes=Object.fromEntries(Object.entries(raw.workoutTypes).filter(([k,v])=>/^[A-Za-z]{1,45}$/.test(k)&&Number.isInteger(Number(v))&&Number(v)>=0).slice(0,30));
   return Object.keys(result).length>1?result:null;
 }
