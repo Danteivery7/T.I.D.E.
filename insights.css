@@ -862,3 +862,23 @@ body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):no
   color:var(--accent-2) !important;
   -webkit-text-fill-color:var(--accent-2);
 }
+
+
+/* Personal Watch sleep coaching. Uses inherited year theme; no mobile shell changes. */
+.sleep-coach{display:grid;gap:13px}
+.sleep-coach h3{font-size:clamp(20px,3vw,28px);line-height:1.18;letter-spacing:-.02em}
+.sleep-coach-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.sleep-coach-tile{display:flex;flex-direction:column;gap:6px;min-width:0;padding:15px;border:1px solid color-mix(in srgb,var(--accent) 26%,var(--line));border-radius:15px;background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
+.sleep-coach-tile span{color:var(--muted);text-transform:uppercase;font-size:10px;letter-spacing:.09em;font-weight:800}
+.sleep-coach-tile strong{font-size:clamp(21px,2.3vw,30px);line-height:1.16;color:var(--text);font-variant-numeric:tabular-nums}
+.sleep-coach-tile:last-child strong{color:var(--accent-2)}
+.sleep-coach-tile small{color:var(--muted);font-size:11px;line-height:1.4}
+.sleep-coach-advice{padding:15px 18px;border-left:3px solid var(--accent);border-radius:0 12px 12px 0;background:color-mix(in srgb,var(--accent) 7%,var(--panel));font-size:13px;line-height:1.7}
+.sleep-coach-progress h4{font-size:15px;letter-spacing:-.015em;margin:8px 0}
+.sleep-coach-weeks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.sleep-coach-week{display:grid;gap:6px;min-width:0;padding:13px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.sleep-coach-week span{color:var(--muted);font-size:11px}
+.sleep-coach-week strong{font-size:20px;font-variant-numeric:tabular-nums}
+.sleep-coach-week small{font-size:11px;color:var(--muted)}
+@media(max-width:980px){#view-root .sleep-coach-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}#view-root .sleep-coach-weeks{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:440px){#view-root .sleep-coach-weeks{grid-template-columns:minmax(0,1fr)}}
