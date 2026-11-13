@@ -4,7 +4,7 @@ import { holidaysOnDate } from './calendar-data.js';
 export const ERA_THEMES={
   2024:{name:'Forest Night',main:'#3b976f',secondary:'#b4d6b9',dark:'#091811'},
   2025:{name:'Amber Era',main:'#ed8e47',secondary:'#f6d3a4',dark:'#18100c'},
-  2026:{name:'Midnight Blue',main:'#7c9cff',secondary:'#5ee0cc',dark:'#080c17'},
+  2026:{name:'Vice City',main:'#ff74c6',secondary:'#6ad7ff',dark:'#110e29'},
   2027:{name:'Golden Hour',main:'#e8bb57',secondary:'#ffdc86',dark:'#0c0c0c'}
 };
 export const THEME_PRIORITY=['personal-override','holiday','birthday','vice-city','year'];
@@ -31,24 +31,30 @@ const holidays={
   "Father's Day":'family',
   'Labor Day':'patriotic'
 };
-export function themeForDate(date,events=[]){
-  const d=String(date||'');
-  const era=themeYear(d);
-  if(!YEAR_RE.test(d))return{era,occasion:'',viceCity:false,name:ERA_THEMES[era].name};
-  const themed=events.find(e=>e&&e.theme&&e.theme!=='none'&&e.kind!=='birthday');
-  if(themed)return{era,occasion:themed.theme,viceCity:false,name:themed.name||themed.title};
-  const h=holidaysOnDate(d).find(e=>holidays[e.name]);
-  if(h)return{era,occasion:holidays[h.name],viceCity:false,name:h.name};
-  if(d.slice(5)==='07-31')return{era,occasion:'my-birthday',viceCity:false,name:'My Birthday'};
-  if(d>='2026-11-19'&&d<='2026-12-31')return{era,occasion:'',viceCity:true,name:'GTA VI'};
-  return{era,occasion:'',viceCity:false,name:ERA_THEMES[era].name};
+export function themeForDate(date,events=[],options={}){
+  const d=String(date||''),era=themeYear(d);
+  const launchWindow=d>='2026-11-19'&&d<='2026-12-31';
+  if(!YEAR_RE.test(d))return{era,occasion:'',viceCity:false,launchWindow:false,name:ERA_THEMES[era].name};
+  // A period (calendar, year, music, trackers) must not inherit one day's
+  // holiday or custom occasion. Single diary dates retain all existing overrides.
+  if(!options.period){
+    const themed=events.find(e=>e&&e.theme&&e.theme!=='none'&&e.kind!=='birthday');
+    if(themed)return{era,occasion:themed.theme,viceCity:false,launchWindow:false,name:themed.name||themed.title};
+    const h=holidaysOnDate(d).find(e=>holidays[e.name]);
+    if(h)return{era,occasion:holidays[h.name],viceCity:false,launchWindow:false,name:h.name};
+    if(d.slice(5)==='07-31')return{era,occasion:'my-birthday',viceCity:false,launchWindow:false,name:'My Birthday'};
+  }
+  // Vice City is the default visual identity of all of 2026. The special
+  // November 19 diary-card treatment remains restricted to the launch window.
+  if(era===2026)return{era,occasion:'',viceCity:true,launchWindow,name:'GTA VI'};
+  return{era,occasion:'',viceCity:false,launchWindow:false,name:ERA_THEMES[era].name};
 }
-export function setThemeForDate(root,date,events=[]){
-  const theme=themeForDate(date,events),body=document.body;
+export function setThemeForDate(root,date,events=[],options={}){
+  const theme=themeForDate(date,events,options),body=document.body;
   body.dataset.tideEra=String(theme.era);
   if(theme.occasion)body.dataset.tideOccasion=theme.occasion;else delete body.dataset.tideOccasion;
   body.classList.toggle('vice-city-season',theme.viceCity);
-  root?.classList.toggle('vice-city-nov19',theme.viceCity);
+  root?.classList.toggle('vice-city-nov19',theme.viceCity&&theme.launchWindow&&!options.period);
   const m=document.querySelector('meta[name="theme-color"]');
   if(m)m.content=theme.viceCity?'#251735':theme.occasion==='thanksgiving'?'#24190f':ERA_THEMES[theme.era].dark;
   return theme;
