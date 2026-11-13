@@ -1,0 +1,481 @@
+/* T.I.D.E. MOBILE EXPERIENCE v1
+   Loaded last. Year/holiday colors come from theme-engine, never a mobile-only palette.
+   Desktop remains unchanged. Designed for 320–980px including landscape phones. */
+
+/* Images, figures and long values cannot widen any screen. */
+@media (max-width:980px) {
+  *, *::before, *::after { box-sizing:border-box; }
+  html { min-width:0; width:100%; scroll-padding-top:78px; -webkit-text-size-adjust:100%; }
+  body { min-width:0; width:100%; max-width:100%; overflow-x:clip; }
+  #app-shell, .app-shell, .main-area, .view-root, #view-root { min-width:0; max-width:100%; }
+  #view-root > *, #view-root article, #view-root section, #view-root .card,
+  #view-root .grid > *, #view-root .insight-hub > * { min-width:0; max-width:100%; }
+  #view-root img, #view-root picture, #view-root video, #view-root canvas,
+  #view-root svg, #modal img, #modal svg { max-inline-size:100%; }
+  #view-root img { display:block; height:auto; }
+  #view-root p, #view-root h1, #view-root h2, #view-root h3,
+  #view-root b, #view-root strong, #view-root .stat-label,
+  #view-root .insight-stat, #view-root .record-value { overflow-wrap:anywhere; }
+  #view-root :where(.grid,.grid-2,.grid-3,.grid-4,.right-stack,
+    .year-awards-grid,.year-personal-grid,.month-pick-grid,.month-pulse-grid,
+    .diary-insights-grid,.insight-stat-grid,.insight-two-col,.insight-review-grid) > * { min-width:0; }
+  #view-root :where(.button,.select,.input,textarea,select,input) { max-width:100%; }
+  #view-root :where(input,textarea,select) { font-size:16px; }
+  #view-root .button, #view-root button,
+  .sidebar button, .tide-topbar button { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+  #view-root button:focus-visible, .mobile-dock button:focus-visible,
+  .sidebar button:focus-visible, .tide-topbar button:focus-visible {
+    outline:2px solid var(--accent); outline-offset:3px;
+  }
+  #view-root :is(.card,.record-card,.month-pick-card,.month-pulse-card,
+     .year-award,.yrk-podium-card,.insight-surface,.insight-stat,
+     .record-hall-card,.tracker-row) {
+    min-width:0; border-radius:18px;
+  }
+
+  /* Compact native shell. The menu is a drawer; the dock remains visible. */
+  .app-shell { display:block; min-height:100dvh; }
+  .main-area { width:100%; min-width:0; }
+  .sidebar {
+    position:fixed !important; inset:0 auto 0 0; top:0;
+    width:min(86vw,332px); max-width:calc(100vw - 44px);
+    height:100dvh; transform:translate3d(-105%,0,0);
+    visibility:hidden; opacity:0; pointer-events:none;
+    z-index:90; display:flex; flex-direction:column;
+    padding:calc(17px + env(safe-area-inset-top)) 15px calc(20px + env(safe-area-inset-bottom));
+    box-shadow:20px 0 60px rgba(0,0,0,.36);
+    transition:transform .24s ease,opacity .24s ease,visibility .24s;
+    overscroll-behavior:contain;
+  }
+  .sidebar.open { visibility:visible; opacity:1; transform:translate3d(0,0,0); pointer-events:auto; }
+  .sidebar-scrim.show {
+    display:block; position:fixed; inset:0; z-index:85;
+    background:rgba(2,5,12,.7); backdrop-filter:blur(5px); -webkit-backdrop-filter:blur(5px);
+  }
+  .sidebar .brand-row { flex:none; padding-bottom:14px; }
+  .sidebar #mobile-close { display:grid !important; min-width:44px; min-height:44px; order:3; margin-left:auto; }
+  .sidebar .nav-stack { flex:1; min-height:0; overflow-y:auto; padding:7px 2px 24px; overscroll-behavior:contain; }
+  .sidebar .nav-item { min-height:46px; gap:12px; border-radius:12px; }
+  .sidebar-bottom { flex:none; padding-bottom:2px; }
+  .desktop-hide, .mobile-only { display:grid !important; }
+  .tide-topbar {
+    height:calc(62px + env(safe-area-inset-top)) !important;
+    min-height:62px; top:0; position:sticky;
+    z-index:30; padding:env(safe-area-inset-top) 14px 0 !important;
+    display:flex; align-items:center; justify-content:space-between;
+    backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+    border-bottom:1px solid color-mix(in srgb,var(--accent) 16%,var(--line));
+  }
+  .tide-topbar .tide-topbar-context { flex:1 1 auto; min-width:0; gap:9px; }
+  .tide-topbar .tide-topbar-menu { display:grid !important; width:44px; height:44px; padding:10px; border-radius:13px; flex:none; }
+  .tide-topbar .tide-topbar-context-mark { display:grid; flex:none; }
+  .tide-topbar .tide-topbar-location { min-width:0; }
+  .tide-topbar .tide-topbar-current { max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:11px; }
+  .tide-topbar .tide-topbar-kicker { font-size:9px; letter-spacing:.11em; }
+  .tide-topbar .tide-topbar-actions { display:flex; flex:none; gap:6px; min-width:0; }
+  .tide-topbar .tide-topbar-action {
+    display:flex; justify-content:center; align-items:center; gap:7px;
+    min-width:44px; min-height:44px; padding:9px 11px !important;
+    border-radius:13px; font-size:11px;
+  }
+  .tide-topbar .tide-topbar-action svg { width:19px; height:19px; flex:none; }
+
+  .mobile-dock {
+    position:fixed; inset:auto 0 0; z-index:60;
+    display:grid; grid-template-columns:repeat(5,minmax(0,1fr));
+    gap:3px; padding:8px max(8px,env(safe-area-inset-left))
+      calc(8px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-right));
+    background:color-mix(in srgb,var(--bg) 93%,transparent);
+    border-top:1px solid color-mix(in srgb,var(--accent) 25%,var(--line));
+    box-shadow:0 -9px 35px rgba(0,0,0,.22);
+    backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+  }
+  .mobile-dock button {
+    appearance:none; border:0; background:transparent; color:var(--muted);
+    border-radius:13px; min-width:0; min-height:56px; padding:7px 2px 5px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+    font:800 10px/1.1 inherit; font-family:inherit; font-size:10px; font-weight:800;
+    transition:background .16s ease,color .16s ease;
+    cursor:pointer;
+  }
+  .mobile-dock svg { display:block; width:21px; height:21px; flex:none; }
+  .mobile-dock .is-active, .mobile-dock button[aria-current="page"] {
+    color:var(--accent); background:color-mix(in srgb,var(--accent) 13%,var(--panel));
+  }
+  .mobile-dock span { max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+
+  .view-root {
+    width:100%; max-width:760px; margin-inline:auto;
+    padding:18px clamp(12px,3.7vw,24px) calc(103px + env(safe-area-inset-bottom)) !important;
+    min-height:calc(100dvh - 68px);
+  }
+  .page-head { display:flex; flex-direction:column; align-items:flex-start; gap:12px; margin:0 0 18px; }
+  .page-head > div { max-width:100%; min-width:0; }
+  .page-head h1 { margin:3px 0 5px; line-height:1.08; font-size:clamp(26px,5.8vw,38px); letter-spacing:-.04em; }
+  .page-head p { max-width:60ch; line-height:1.55; font-size:12px; }
+  .page-head > :not(div):not(p) { max-width:100%; }
+  .page-head > select, .page-head > .select { width:100%; min-height:44px; }
+  .page-head .filter-row { width:100%; }
+  #view-root .section-title { margin:22px 0 11px; font-size:10px; letter-spacing:.1em; }
+  #view-root .card { padding:clamp(14px,3.7vw,22px); }
+  #view-root :is(.button,.input,.select) { min-height:42px; }
+  #view-root .filter-row { display:flex; flex-wrap:wrap; align-items:stretch; gap:8px; }
+  #view-root .filter-row > * { min-width:0; }
+  #view-root textarea { width:100%; max-width:100%; resize:vertical; }
+  #view-root :is(.grid-2,.grid-3,.grid-4,.right-stack) { grid-template-columns:minmax(0,1fr); }
+  #view-root .record-card { min-width:0; padding:14px; }
+  #view-root .music-item { min-width:0; }
+  #view-root .music-cover { width:52px; height:52px; aspect-ratio:1; object-fit:cover; flex:none; }
+  #view-root .music-title, #view-root .music-meta { overflow:hidden; text-overflow:ellipsis; }
+  #view-root :is(.settings-section,.callout,.month-music-section) { overflow-wrap:anywhere; }
+  #view-root .settings-section .card-header { flex-wrap:wrap; gap:10px; }
+  #view-root .settings-section .filter-row :is(.button,label.button) { justify-content:center; }
+  #view-root .history-row { min-width:0; }
+
+  /* Dialog stays on-screen and scrolls internally; no tiny inaccessible close control. */
+  .modal { width:min(680px,calc(100vw - 20px)); max-width:calc(100vw - 20px);
+    max-height:calc(100dvh - 28px); margin:auto; padding:0; border-radius:21px;
+    overflow:auto; overscroll-behavior:contain; }
+  .modal .modal-head { position:sticky; top:0; z-index:2; padding:16px; background:var(--panel); }
+  .modal .modal-body { min-width:0; padding:16px; }
+  .modal .icon-button { min-width:44px; min-height:44px; }
+  .modal .grid { grid-template-columns:minmax(0,1fr); }
+
+  /* TODAY: editor first; stats and history stack cleanly. */
+  #view-root .hero-day { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
+  #view-root .day-card { min-width:0; padding:16px; }
+  #view-root .day-nav-center { min-width:0; }
+  #view-root .day-nav-center h1 { font-size:clamp(24px,6vw,36px); overflow-wrap:normal; }
+  #view-root .day-card .editor { display:block; box-sizing:border-box; min-height:190px; width:100%; }
+  #view-root .right-stack { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
+  #view-root .today-home-overview { padding:18px; min-width:0; }
+  #view-root .today-dashboard { grid-template-columns:minmax(0,1fr); gap:12px; }
+  #view-root .today-dashboard > .card { min-height:0; padding:16px 17px; }
+  #view-root .today-dashboard .today-metrics-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #view-root .today-panel-header { flex-wrap:wrap; gap:10px; }
+  #view-root .today-panel-header h3 { font-size:19px; line-height:1.2; }
+  #view-root .today-month-pick, #view-root .today-record-tile,
+  #view-root .today-otd-item { min-width:0; }
+  #view-root .today-otd-panel .otd-item { min-width:0; }
+  #view-root .insight-today-headline { font-size:clamp(29px,8vw,42px); }
+  #view-root .today-dashboard .today-finance-panel { min-height:0; }
+
+  /* CALENDAR: true seven-column mobile grid; long text goes into agenda, not cells. */
+  #view-root .tide-calendar-stage, #view-root .tide-otd-stage { min-width:0; width:100%; overflow:hidden; }
+  #view-root .tide-cal-hero { min-width:0; padding:20px; gap:10px; }
+  #view-root .tide-cal-hero-copy { min-width:0; }
+  #view-root .tide-cal-hero h2 { font-size:clamp(27px,6vw,38px); line-height:1.08; }
+  #view-root .tide-cal-hero-number { flex:none; opacity:.45; font-size:clamp(48px,10vw,92px); }
+  #view-root .tide-cal-toolbar { display:flex; flex-direction:column; align-items:stretch; gap:10px; padding:12px; }
+  #view-root .tide-cal-month-navigation { display:flex; align-items:center; justify-content:space-between; gap:6px; width:100%; min-width:0; }
+  #view-root .tide-cal-controls { display:flex; flex-wrap:wrap; gap:7px; width:100%; min-width:0; }
+  #view-root .tide-cal-controls :is(button,input,select) { min-width:0; min-height:42px; }
+  #view-root .tide-cal-grid-wrap { width:100%; max-width:100%; overflow:hidden; }
+  #view-root .tide-cal-grid, #view-root .calendar {
+    display:grid; grid-template-columns:repeat(7,minmax(0,1fr));
+    min-width:0; width:100%; gap:3px;
+  }
+  #view-root .tide-cal-weekday { min-width:0; font-size:9px; padding:6px 1px; text-align:center; }
+  #view-root .tide-cal-day { min-width:0; min-height:48px; width:100%; padding:5px 3px; border-radius:10px; overflow:hidden; }
+  #view-root .tide-cal-day-num { font-size:12px; }
+  #view-root .tide-cal-note, #view-root .tide-cal-diary-label,
+  #view-root .tide-cal-holiday { display:none; }
+  #view-root .tide-cal-day-body { min-width:0; }
+  #view-root .tide-cal-agenda { padding:14px; }
+  #view-root .tide-cal-agenda-list { grid-template-columns:minmax(0,1fr); }
+  #view-root .tide-cal-stat-strip { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+  #view-root .tide-cal-stat-strip > div { min-width:0; }
+  #view-root .tide-calendar-event-form { grid-template-columns:minmax(0,1fr); }
+  #view-root .tide-calendar-event-form .tide-wide { grid-column:1; }
+
+  /* ON THIS DAY: a time capsule, not an over-wide hero. */
+  #view-root .tide-otd-hero { display:flex; padding:19px; gap:10px; }
+  #view-root .tide-otd-hero-copy { min-width:0; }
+  #view-root .tide-otd-art { width:80px; height:100px; min-width:0; flex:none; opacity:.68; }
+  #view-root .tide-otd-art-year { font-size:23px; }
+  #view-root .tide-otd-date-main { min-width:0; }
+  #view-root .tide-otd-toolbar { display:flex; flex-direction:column; gap:10px; }
+  #view-root .tide-otd-toolbar-actions { min-width:0; flex-wrap:wrap; }
+  #view-root .tide-otd-toolbar-actions input { max-width:100%; min-width:0; }
+  #view-root .tide-otd-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; }
+  #view-root .tide-otd-stats > div { min-width:0; }
+  #view-root .tide-otd-memory, #view-root .tide-otd-memory-body { min-width:0; }
+  #view-root .tide-otd-memory-body { padding:14px; }
+  #view-root .tide-otd-memory-events { display:flex; flex-wrap:wrap; min-width:0; }
+  #view-root .tide-otd-open { min-height:42px; }
+
+  /* REVIEWS: period identity is preserved; artwork is framed, never clipped. */
+  #view-root .month-review-hero, #view-root .year-review-hero,
+  #view-root .year-awards-intro { min-width:0; padding:19px; }
+  #view-root .month-review-hero h2, #view-root .year-awards-intro h2 { font-size:clamp(24px,5.7vw,34px); }
+  #view-root .month-hero-art { flex:none; opacity:.5; }
+  #view-root .month-pick-grid, #view-root .month-pulse-grid,
+  #view-root .year-awards-grid, #view-root .year-personal-grid {
+    display:grid; grid-template-columns:minmax(0,1fr); gap:12px;
+  }
+  #view-root .month-pick-card, #view-root .year-personal-pick { min-width:0; padding:17px; }
+  #view-root .month-pick-main { min-width:0; }
+  #view-root .month-pick-content { min-width:0; }
+  #view-root .month-pick-content h3, #view-root .year-personal-value { overflow-wrap:anywhere; }
+  #view-root .month-picks-form, #view-root .year-picks-form { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+  #view-root .month-picks-form > *, #view-root .year-picks-form > * { min-width:0; }
+  #view-root .month-challenge-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  #view-root .month-challenge-stat { min-width:0; padding:13px; }
+  #view-root .month-activities-section, #view-root .month-trackers-grid { min-width:0; }
+  #view-root .month-activity-row, #view-root .month-tracker-card { min-width:0; }
+  #view-root .month-trackers-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #view-root .year-awards-grid .year-award {
+    min-height:0; display:flex; flex-direction:column; padding:17px; gap:8px;
+    overflow:hidden; border-radius:19px;
+  }
+  #view-root .year-award-center { display:grid; grid-template-columns:clamp(82px,23vw,124px) minmax(0,1fr); gap:13px; align-items:center; }
+  #view-root .year-award-copy, #view-root .year-award-winner, #view-root .year-award-detail { min-width:0; max-width:100%; }
+  #view-root .year-award-image, #view-root .year-award-glyph,
+  #view-root .year-award-vector {
+    width:100% !important; height:auto !important; max-height:128px;
+    aspect-ratio:1; flex:none; object-fit:cover; overflow:hidden;
+    border-radius:16px;
+  }
+  #view-root .year-award-vector svg { display:block; width:100%; height:100%; max-width:100%; }
+  #view-root .year-award--game .year-award-image[src*="crew-motorfest"] {
+    width:100% !important; height:auto !important; max-height:140px; aspect-ratio:4/3;
+    object-fit:contain; object-position:center; background:color-mix(in srgb,var(--panel) 84%,#000);
+  }
+  #view-root .year-award--artist .year-award-image { border-radius:50%; }
+  #view-root .year-award-winner { font-size:clamp(18px,4.9vw,24px); line-height:1.16; }
+  #view-root .year-awards-intro .year-awards-trophy { opacity:.35; }
+  #view-root .year-side-stats, #view-root .year-current-tracker-stats {
+    display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px;
+  }
+  #view-root .year-side-stat { min-width:0; padding:15px; }
+
+  /* TRACKERS: retain all values, reorganize into readable metric tiles. */
+  #view-root .trk-page, #view-root #tracker-showcase { min-width:0; }
+  #view-root .trk-hero { display:flex; padding:19px; gap:9px; }
+  #view-root .trk-hero-art { width:78px; height:78px; flex:none; opacity:.55; }
+  #view-root .trk-hero-art svg { width:60px; height:60px; padding:13px; }
+  #view-root .trk-hero h2 { font-size:clamp(25px,5.9vw,36px); }
+  #view-root .trk-dashboard-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  #view-root .trk-dashboard-stat { min-width:0; padding:14px; }
+  #view-root #tracker-showcase.trk-featured-section,
+  #view-root .trk-page .trk-ledger-section { padding:15px; }
+  #view-root #tracker-showcase .tracker-quick-actions { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+  #view-root #tracker-showcase .tracker-quick-actions .button,
+  #view-root #tracker-showcase .tracker-quick-actions .button:first-child { grid-column:auto; width:100%; min-height:44px; }
+  #view-root #tracker-showcase .tracker-spotlight-table { display:block; min-width:0; max-width:100%; }
+  #view-root #tracker-showcase .tracker-spotlight-row { min-width:0; width:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; padding:11px; }
+  #view-root #tracker-showcase .tracker-spotlight-name { grid-column:1/-1; min-width:0; }
+  #view-root #tracker-showcase .tracker-spotlight-cell { min-width:0; padding:9px; }
+  #view-root .trk-collection-head, #view-root .trk-ledger-heading { flex-wrap:wrap; gap:10px; }
+  #view-root .trk-library-tools { display:grid; grid-template-columns:minmax(0,1fr); gap:9px; }
+  #view-root .trk-filter-tabs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; gap:5px; }
+  #view-root .trk-filter-tab { min-width:0; min-height:43px; padding:9px 6px; white-space:normal; }
+  #view-root .trk-search-wrap { min-width:0; width:100%; }
+  #view-root .trk-search-wrap input { min-width:0; width:100%; }
+  #view-root .trk-ledger-list > .trk-ledger-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:12px; min-width:0; }
+  #view-root .trk-ledger-list .trk-ledger-name { grid-column:1/-1; }
+  #view-root .trk-ledger-list .trk-ledger-metric { min-width:0; padding:9px; }
+  #view-root .trk-ledger-list .trk-ledger-action { grid-column:1/-1; min-height:44px; width:100%; }
+  #view-root .tracker-table { min-width:0; max-width:100%; }
+  #view-root .tracker-row:not(.trk-ledger-row) { min-width:0; }
+
+  /* YEAR RANKINGS: full-width podium and independently readable rows. */
+  #view-root .yrk-hero { padding:19px; min-width:0; }
+  #view-root .yrk-hero h2 { font-size:clamp(25px,6vw,37px); }
+  #view-root .yrk-hero-art { width:68px; height:78px; flex:none; opacity:.65; }
+  #view-root .yrk-mode-buttons { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+  #view-root .yrk-mode-button { min-width:0; min-height:44px; }
+  #view-root .yrk-stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+  #view-root .yrk-stat { min-width:0; }
+  #view-root .yrk-podium { display:grid; grid-template-columns:minmax(0,1fr); gap:9px; }
+  #view-root .yrk-podium-card, #view-root .yrk-podium--1 { grid-column:auto; grid-row:auto; min-height:0; padding:17px; }
+  #view-root .yrk-podium-number, #view-root .yrk-podium--1 .yrk-podium-number { font-size:clamp(27px,7vw,42px); }
+  #view-root .yrk-row { display:grid; grid-template-columns:40px minmax(0,1fr); gap:7px 10px; padding:13px; }
+  #view-root .yrk-row-rank { grid-column:1; grid-row:1/3; min-width:0; }
+  #view-root .yrk-row-name { grid-column:2; min-width:0; overflow-wrap:anywhere; }
+  #view-root .yrk-row-year, #view-root .yrk-row-position { grid-column:2; min-width:0; }
+  #view-root .yrk-row-actions { grid-column:1/-1; display:flex; flex-wrap:wrap; min-width:0; }
+  #view-root .yrk-add-controls, #view-root .yrk-scope-panel { min-width:0; }
+
+  /* MUSIC: flexible cover sizes, no stretched, cropped or off-screen artwork. */
+  #view-root .music-explorer-hero { min-width:0; padding:19px; }
+  #view-root .music-explorer-hero-copy { min-width:0; }
+  #view-root .music-explorer-hero h2 { font-size:clamp(26px,6.2vw,38px); }
+  #view-root .music-explorer-hero-graphic { flex:none; width:70px; height:70px; font-size:42px; }
+  #view-root .music-explorer-toolbar { display:flex; flex-direction:column; align-items:stretch; gap:10px; }
+  #view-root .music-explorer-period-tabs { display:flex; width:100%; overflow-x:auto; scrollbar-width:none; gap:5px; padding-bottom:3px; }
+  #view-root .music-explorer-period-tabs::-webkit-scrollbar { display:none; }
+  #view-root .music-explorer-period { flex:1 0 auto; min-height:43px; white-space:nowrap; font-size:11px; padding:9px; }
+  #view-root .music-explorer-controls, #view-root .music-explorer-picker { min-width:0; display:flex; flex-wrap:wrap; gap:8px; }
+  #view-root .music-explorer-picker :is(input,select) { max-width:100%; min-width:0; }
+  #view-root .music-explorer-category-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #view-root .music-explorer-category { min-width:0; padding:13px; }
+  #view-root .music-explorer-category-art { min-width:0; max-width:100%; }
+  #view-root .music-explorer-winner-layout { display:grid; grid-template-columns:112px minmax(0,1fr); gap:12px; align-items:center; }
+  #view-root .music-explorer-winner-art { display:block; width:112px; height:112px; max-width:100%; aspect-ratio:1; object-fit:cover; border-radius:16px; }
+  #view-root .music-explorer-winner-art img { display:block; width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+  #view-root .music-explorer-winner-body { min-width:0; }
+  #view-root .music-explorer-winner-body h3 { font-size:clamp(20px,5vw,27px); }
+  #view-root .music-explorer-runners { min-width:0; }
+  #view-root .music-explorer-runner { display:grid; grid-template-columns:24px 48px minmax(0,1fr) auto; gap:9px; min-width:0; }
+  #view-root .music-explorer-runner-image { width:48px; height:48px; aspect-ratio:1; object-fit:cover; border-radius:10px; }
+  #view-root .music-explorer-runner img { object-fit:cover; }
+  #view-root .music-explorer-runner-streams { white-space:nowrap; }
+  #view-root .record-music-winners { min-width:0; }
+
+  /* RECORDS: cover artwork is contained; cards never create two page widths. */
+  #view-root .record-hall-hero { min-width:0; padding:18px; }
+  #view-root .record-hall-hero-art { width:70px; height:80px; flex:none; }
+  #view-root .record-hall-hero-art svg { width:65px; height:65px; }
+  #view-root .record-hall-feature-grid, #view-root .record-hall-history-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+  #view-root .record-hall-card-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #view-root .record-hall-feature, #view-root .record-hall-card { min-width:0; padding:15px; }
+  #view-root .record-hall-feature-value, #view-root .record-hall-card-value { font-size:clamp(23px,6vw,32px); }
+  #view-root .record-music-winners { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #view-root .record-music-winner { min-width:0; }
+  #view-root .record-music-art { width:100%; max-width:100%; max-height:none; aspect-ratio:1; border-radius:13px; overflow:hidden; }
+  #view-root .record-music-art img { width:100%; height:100%; object-fit:cover; }
+  #view-root .record-music-winner--artists .record-music-art { border-radius:50%; }
+  #view-root .record-hall-month-row, #view-root .record-hall-history-grid > div { min-width:0; }
+
+  /* FINANCES + HEALTH: readable data grids and scroll-free charts. */
+  #view-root .insight-hub, #view-root .insight-review { min-width:0; }
+  #view-root .insight-hero { display:flex; padding:20px; gap:12px; }
+  #view-root .insight-hero-copy, #view-root .insight-hero-content { min-width:0; }
+  #view-root .insight-hero h2 { font-size:clamp(26px,6vw,38px); }
+  #view-root .insight-hero-art { width:76px; height:76px; flex:none; font-size:45px; border-radius:22px; }
+  #view-root .insight-toolbar { display:flex; flex-direction:column; align-items:stretch; gap:9px; }
+  #view-root .insight-tabs, #view-root .insight-segment {
+    display:flex; gap:5px; max-width:100%; min-width:0;
+    overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:none; padding:2px 0 5px;
+  }
+  #view-root .insight-tabs::-webkit-scrollbar, #view-root .insight-segment::-webkit-scrollbar { display:none; }
+  #view-root .insight-tab, #view-root .insight-segment button { flex:0 0 auto; min-height:42px; white-space:nowrap; padding:9px 12px; }
+  #view-root .insight-stat-grid, #view-root .insight-review-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #view-root .insight-two-col { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+  #view-root .insight-stat { min-width:0; min-height:0; padding:14px; }
+  #view-root .insight-stat strong { display:block; max-width:100%; overflow-wrap:anywhere; font-size:clamp(19px,5vw,29px); }
+  #view-root .insight-surface { padding:17px; min-width:0; overflow:hidden; }
+  #view-root .insight-surface :where(.insight-stat,.insight-record-row,.insight-charge) { min-width:0; }
+  #view-root .insight-review { padding:17px; }
+  #view-root .insight-review-head { flex-wrap:wrap; gap:9px; }
+  #view-root .insight-form { min-width:0; display:flex; flex-wrap:wrap; gap:8px; }
+  #view-root .insight-form :is(input,select) { flex:1 1 150px; min-width:0; }
+  #view-root .insight-chart-shell { width:100%; max-width:100%; overflow:hidden; }
+  #view-root .insight-line { width:100%; max-width:100%; height:auto; min-height:150px; display:block; overflow:hidden; }
+  #view-root .insight-chart-axis { display:flex; flex-wrap:wrap; gap:7px; }
+  #view-root .insight-bars { min-width:0; }
+  #view-root .insight-bar-row { display:grid; grid-template-columns:75px minmax(0,1fr) 65px; min-width:0; gap:6px; }
+  #view-root .insight-ring-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #view-root .insight-today-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #view-root .insight-account-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #view-root .insight-record-stack { display:grid; grid-template-columns:minmax(0,1fr); gap:8px; }
+  #view-root .health-sleep-feature, #view-root .health-year-comparison-grid { min-width:0; }
+  #view-root .health-metric-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  #view-root .health-metric-card { min-width:0; padding:14px; }
+  #view-root .health-section { min-width:0; padding:17px; }
+  #view-root .health-section-head { flex-wrap:wrap; }
+  #view-root .health-sleep-feature { grid-template-columns:minmax(0,1fr); }
+  #view-root .health-sleep-highs { grid-template-columns:repeat(2,minmax(0,1fr)); }
+
+  /* ASK, HISTORY, SETTINGS: tap-first forms and clearly readable results. */
+  #view-root .ask-explorer { min-width:0; }
+  #view-root .ask-explorer-hero { padding:20px; min-width:0; }
+  #view-root .ask-explorer-art { width:65px; height:80px; flex:none; opacity:.46; }
+  #view-root .ask-explorer-hero h2 { font-size:clamp(27px,6vw,38px); }
+  #view-root .ask-explorer-search { padding:17px; min-width:0; }
+  #view-root .ask-explorer-form-row { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+  #view-root .ask-explorer-submit { width:100%; min-height:46px; }
+  #view-root .ask-explorer-suggestions { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+  #view-root .ask-suggestion-group { min-width:0; }
+  #view-root .ask-answer-rows { min-width:0; }
+  #view-root .ask-answer-row { min-width:0; }
+  #view-root .ask-answer-row-image { max-width:78px; max-height:78px; object-fit:cover; }
+  #view-root .tide-favorite-row, #view-root .tide-favorite-panel { min-width:0; }
+  #view-root .tide-favorite-panel .card-header { flex-wrap:wrap; }
+  #view-root .tide-favorite-row .button { min-height:42px; }
+}
+
+/* Small phone refinements. No hidden metrics or functionality. */
+@media (max-width:640px) {
+  .view-root { max-width:100%; }
+  .tide-topbar .tide-topbar-context-mark { display:none; }
+  .tide-topbar .tide-topbar-label-full { display:none; }
+  .tide-topbar .tide-topbar-label-short { display:none; }
+  .tide-topbar .tide-topbar-actions { gap:4px; }
+  .tide-topbar .tide-topbar-action { padding:9px !important; min-width:43px; }
+  #view-root .tide-cal-hero-number, #view-root .month-hero-art,
+  #view-root .year-awards-trophy { display:none; }
+  #view-root .tide-cal-hero { padding:18px 15px; }
+  #view-root .tide-cal-toolbar { padding:10px; }
+  #view-root .tide-cal-day { padding:4px 2px; min-height:47px; }
+  #view-root .tide-otd-art { display:none; }
+  #view-root .tide-otd-stats { gap:4px; }
+  #view-root .tide-otd-stats > div { padding:8px 3px; }
+  #view-root .tide-otd-memory { min-width:0; }
+  #view-root .tide-otd-memory-mark { font-size:10px; }
+  #view-root .year-awards-intro { padding:17px; }
+  #view-root .trk-hero-art, #view-root .yrk-hero-art,
+  #view-root .insight-hero-art, #view-root .record-hall-hero-art { display:none; }
+  #view-root .trk-hero, #view-root .yrk-hero,
+  #view-root .insight-hero, #view-root .record-hall-hero { padding:18px; }
+  #view-root .music-explorer-hero-graphic { display:none; }
+  #view-root .music-explorer-category-grid { grid-template-columns:minmax(0,1fr); }
+  #view-root .music-explorer-winner-layout { grid-template-columns:94px minmax(0,1fr); gap:11px; }
+  #view-root .music-explorer-winner-art { width:94px; height:94px; }
+  #view-root .yrk-stats { gap:7px; }
+  #view-root .insight-hero h2 { font-size:29px; }
+  #view-root .health-sleep-highs { grid-template-columns:minmax(0,1fr); }
+  #view-root .insight-account-grid { grid-template-columns:minmax(0,1fr); }
+  #view-root .year-awards-grid .year-award { padding:15px; }
+  #view-root .record-hall-history-grid { grid-template-columns:minmax(0,1fr); }
+  #view-root .record-hall-feature-grid { grid-template-columns:minmax(0,1fr); }
+  #view-root .settings-section .filter-row { flex-direction:column; }
+  #view-root .settings-section .filter-row > * { width:100%; }
+  #view-root .yrk-add-controls { display:grid; grid-template-columns:minmax(0,1fr); }
+  #view-root .yrk-add-field, #view-root .yrk-add-button { min-width:0; width:100%; }
+}
+
+@media (max-width:440px) {
+  .tide-topbar { padding-left:10px !important; padding-right:10px !important; }
+  .tide-topbar .tide-topbar-kicker { display:none; }
+  .mobile-dock { padding-inline:5px; gap:1px; }
+  .mobile-dock button { font-size:9px; padding-inline:0; }
+  .mobile-dock svg { width:20px; height:20px; }
+  #view-root .month-trackers-grid { grid-template-columns:minmax(0,1fr); }
+  #view-root .year-side-stats, #view-root .year-current-tracker-stats { grid-template-columns:minmax(0,1fr); }
+  #view-root .year-award-center { grid-template-columns:82px minmax(0,1fr); gap:10px; }
+  #view-root .record-hall-card-grid, #view-root .record-music-winners { grid-template-columns:minmax(0,1fr); }
+  #view-root .month-challenge-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #view-root .month-pick-main { min-width:0; }
+  #view-root .tide-cal-month-navigation { flex-wrap:wrap; }
+  #view-root .tide-cal-controls { display:grid; grid-template-columns:minmax(0,1fr); }
+  #view-root .tide-cal-month-chooser { width:100%; min-width:0; }
+  #view-root .tide-cal-month-chooser input { width:100%; min-width:0; }
+  #view-root .tide-cal-grid, #view-root .calendar { gap:2px; }
+  #view-root .tide-cal-weekday { font-size:8px; }
+  #view-root .tide-cal-day { min-height:44px; padding:3px 1px; border-radius:8px; }
+  #view-root .tide-cal-day-num { font-size:11px; }
+  #view-root .tide-otd-stats > div b { font-size:19px; }
+  #view-root .insight-review-grid { grid-template-columns:minmax(0,1fr); }
+  #view-root .insight-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  #view-root .insight-bar-row { grid-template-columns:61px minmax(0,1fr) 58px; gap:5px; }
+  #view-root .health-metric-grid { grid-template-columns:minmax(0,1fr); }
+  #view-root .insight-today-grid { grid-template-columns:minmax(0,1fr); }
+  #view-root .music-explorer-runner { grid-template-columns:22px 43px minmax(0,1fr); }
+  #view-root .music-explorer-runner-image { width:43px; height:43px; }
+  #view-root .music-explorer-runner-streams { grid-column:3; justify-self:start; }
+  #view-root .ask-explorer-art { display:none; }
+  #view-root .ask-answer-row { grid-template-columns:minmax(0,1fr); }
+  #view-root .ask-answer-row-image { max-width:66px; max-height:66px; }
+}
+@media (max-width:355px) {
+  #view-root .insight-stat-grid, #view-root .insight-ring-grid { grid-template-columns:minmax(0,1fr); }
+  #view-root .today-dashboard .today-metrics-grid { grid-template-columns:minmax(0,1fr); }
+  #view-root .year-award-center { grid-template-columns:75px minmax(0,1fr); gap:8px; }
+  #view-root .tide-cal-day-num { font-size:10px; }
+  .tide-topbar .tide-topbar-current { max-width:104px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .sidebar, .mobile-dock button { transition:none !important; }
+}
