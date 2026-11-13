@@ -145,6 +145,22 @@ function reconcileMotorfestActivity(g,mf,date,deltaGames){
   g.motorfestSnapshot=current;g.motorfestPendingPc=pending;
   g.ubisoftMotorfestDiagnostics={totalMinutes:mf.total,ps5Minutes:mf.ps5,xboxMinutes:mf.xbox,nintendoMinutes:mf.nintendo,pcResidualMinutes:mf.pc,verifiedPcMinutes:mf.source.minutes,unverifiedMinutes:unverified,formula:'Ubisoft total - PS5 - Xbox - Nintendo - unverified (PC only)',updatedAt:now()};
 }
+// One reported session per game with positive playtime delta per refresh.
+// Its key uses the game's cumulative platform snapshots, not a random refresh
+// timestamp, so retries and two devices seeing the same increase cannot double count.
+export function reportedSessionEvents(deltaGames,next,capturedAt,date){
+  const fingerprint=text=>{let hash=2166136261;for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619)}return(hash>>>0).toString(16).padStart(8,'0')};
+  return Object.entries(deltaGames||{}).flatMap(([gameKey,item])=>{
+    const minutes=Object.values(item.platformMinutes||{}).reduce((a,b)=>a+Math.max(0,Number(b)||0),0);
+    if(minutes<=0)return [];
+    const sources=(next||[]).filter(x=>keyTitle(x.title)===gameKey&&x.countMinutes!==false&&Number.isFinite(Number(x.minutes)))
+      .map(x=>[String(x.sourceKey||x.platform||''),Math.max(0,Number(x.minutes)||0)]).sort((a,b)=>a[0].localeCompare(b[0]));
+    const snapshot=JSON.stringify({gameKey,sources});
+    return[{id:'gaming-snapshot:'+fingerprint(snapshot),date,title:item.title||gameKey,gameKey,minutes:Math.round(minutes),
+      platformMinutes:{...(item.platformMinutes||{})},capturedAt:String(capturedAt||now()),source:'game-playtime-increase'}];
+  });
+}
+
 function process(data){
   const g=gaming();cleanInvalidMotorfestInference(g);
   const previous=new Map((g.latestSources||[]).map(x=>[x.sourceKey,x])),next=[],exoSteam=[];let ubiIdentity=null,keptUbisoft=[],mf=null;
@@ -204,6 +220,12 @@ function process(data){
   }
   if(next.some(x=>x.platform==='nintendo'&&isMotorfest(x)))g.motorfestNintendoInitialized=true;
   recoverBaselineMonth(g,next,date,data);
+  if(!first&&Object.keys(deltaGames).length){
+    const reports=reportedSessionEvents(deltaGames,next,data.capturedAt||now(),date);
+    const byId=new Map((g.sessions||[]).filter(x=>x?.id).map(x=>[x.id,x]));
+    for(const report of reports)if(!byId.has(report.id))byId.set(report.id,report);
+    g.sessions=[...byId.values()];
+  }
   g.latestSources=next;g.lastRefreshAt=data.capturedAt||now();g.lastRefreshLocalDate=date;g.liveSourceVersion=PC_SOURCE_VERSION;g.liveStatus={exophase:data.exophase||{},steam:data.steam||{},ubisoftMotorfest:data.ubisoftMotorfest||{}};saveGaming(g);
   return{first,ubiIdentity,keptUbisoft,motorfest:mf,added:Object.values(deltaGames).reduce((n,x)=>n+Object.values(x.platformMinutes).reduce((a,b)=>a+b,0),0)};
 }
