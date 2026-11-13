@@ -8,6 +8,7 @@ export function birthdayRegistry(state){
   for(const [date,row] of Object.entries(state?.entries||{})){
     if(!validDate(date))continue;
     const first=String(row?.text||'').split(/[,;\n]/)[0].trim();
+    if(first!==first.toUpperCase())continue; // Review mixed-case mentions before recurring them.
     const match=first.match(/^((?:my|mom(?:'s|s)?|dad(?:'s|s)?|grandpa\s+[\w'’]+|[\w'’.-]+(?:\s+[\w'’.-]+){0,2}))\s+(?:birthday|b[- ]day)\b/i);
     if(!match)continue;
     let name=match[1].replace(/[\u2019']/g,"'");
