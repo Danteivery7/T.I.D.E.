@@ -45,16 +45,23 @@ test('independent gaming saves merge events by unique snapshot ID, preserving ol
   assert.equal(both.activity['2026-11-13'].games.rocket.platformMinutes.ps5,60);
 });
 
-test('session tracker ignores diary mentions, counts multiple updates on the same day, and scopes totals',()=>{
-  const state=blank();state.entries['2026-11-13']={text:'Played The Crew Motorfest, played Rocket League'};
-  saveGaming({sessions:[{id:'S1',date:'2026-11-13',title:'Rocket League',minutes:40},{id:'S2',date:'2026-11-13',title:'Rocket League',minutes:25},{id:'S3',date:'2026-10-01',title:'Motorfest',minutes:50}]},{sync:false});
+test('session tracker is derived from distinct diary play starts across historical years',()=>{
+  const state=blank();
+  state.entries['2024-06-01']={text:'Played GeoGuessr, continued playing GeoGuessr'};
+  state.entries['2025-03-05']={text:'Played Adventure Capitalist, worked, played Adventure Capitalist again'};
+  state.entries['2026-11-13']={text:'Played The Crew Motorfest, played Rocket League, continued playing The Crew'};
+  saveGaming({sessions:[{id:'old-report-1',date:'2026-11-13',title:'Rocket League',minutes:40},
+    {id:'old-report-2',date:'2026-11-13',title:'Rocket League',minutes:25}]},{sync:false});
+  assert.equal(engine.trackerTotal(state,'gaming-sessions',{year:2024}),1);
+  assert.equal(engine.trackerTotal(state,'gaming-sessions',{year:2025}),2);
   assert.equal(engine.trackerTotal(state,'gaming-sessions',{month:'2026-11'}),2);
-  assert.equal(engine.trackerTotal(state,'gaming-sessions',{year:2026}),3);
-  assert.equal(engine.trackerTotal(state,'gaming-sessions'),3);
+  assert.equal(engine.trackerTotal(state,'gaming-sessions',{year:2026}),2);
+  assert.equal(engine.trackerTotal(state,'gaming-sessions'),5);
   assert.equal(derivedTrackerRows(state,'gaming-sessions',{month:'2026-11'}).length,2);
-  state.entries['2026-11-14']={text:'I played Adventure Capitalist 10 times'};
-  assert.equal(engine.trackerTotal(state,'gaming-sessions',{month:'2026-11'}),2);
-  assert.deepEqual(topTrackerMonth(state,'gaming-sessions'),{month:'2026-11',count:2});
+  assert.deepEqual(topTrackerMonth(state,'gaming-sessions'),{month:'2025-03',count:2});
+  state.entries['2025-03-05'].text='Continued playing Adventure Capitalist';
+  assert.equal(engine.trackerTotal(state,'gaming-sessions',{year:2025}),0,'editing old diary updates counts');
+  assert.equal(engine.trackerTotal(state,'gaming-sessions'),3);
 });
 
 test('editing counts distinct explicit diary activities and re-evaluates all historical months',()=>{
