@@ -53,6 +53,10 @@ function closeModal(){modal.close()}
 function persist(){saveLocal(state)}
 
 root.addEventListener('click',event=>{const button=event.target.closest('[data-insight-day]');if(button)openDay(button.dataset.insightDay)});
+root.addEventListener('click',event=>{
+  const open=event.target.closest('[data-personal-day]');if(open)return openDay(open.dataset.personalDay);
+  const edit=event.target.closest('[data-edit-favorites]');if(edit)return openFavoriteDaysEditor(Number(edit.dataset.editFavorites));
+});
 nav.addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 document.querySelector('.sidebar-bottom').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 document.querySelector('#mobile-menu').onclick=openSidebar;document.querySelector('#mobile-close').onclick=closeSidebar;scrim.onclick=closeSidebar;
@@ -433,6 +437,37 @@ async function loadYearMusic(start,end,force,y){
   }
 }
 
+function favoriteDaysPanel(year){
+  const dates=favoriteDays(state,year),suggestion=favoriteDaysSuggestion(state,year);
+  return `<section class="card tide-favorite-panel"><div class="card-header"><div><span class="tide-favorite-eyebrow">✦ THE FIVE DATES THAT DEFINED ${year}</span><h2>Your Favorite Days</h2><p class="small muted">Your personal ranking, not calculated scores. #1 is your favorite day of the year.</p></div><button class="button" type="button" data-edit-favorites="${year}">✎ Edit Top Five</button></div>
+  ${dates.length?dates.map((date,i)=>`<div class="tide-favorite-row"><span>#${i+1}</span><div><b>${esc(shortDate(date))}</b><p class="small muted">${esc(entryExists(date)?daySummary(entryText(date)):'Your personal choice')}</p></div><button type="button" class="button tide-record-open" data-personal-day="${esc(date)}">Open diary ↗</button></div>`).join(''):`<div class="tide-favorite-empty">No ranked days yet. ${suggestion?'Your diary suggests '+shortDate(suggestion.date)+' as a candidate, but you choose.':''}</div>`}
+  ${dates.length<5?`<p class="small muted">${5-dates.length} available places remain.</p>`:''}</section>`;
+}
+
+function favoriteDaysByYearPanel(){
+  return `<div class="tide-favorites-history">${yearsWithFavoriteDays(state,Number(isoToday().slice(0,4))).map(year=>favoriteDaysPanel(year)).join('')}</div>`;
+}
+
+function openFavoriteDaysEditor(year){
+  const dates=favoriteDays(state,year),suggestion=favoriteDaysSuggestion(state,year);
+  if(modal.open)closeModal();
+  openModal(`Top Five Days · ${year}`,`<p class="muted small">Select up to five unique dates from ${year}. Your first choice is your favorite day. Move dates with the arrows and save when finished.</p>
+  <div id="tide-fav-inputs">${Array.from({length:5},(_,i)=>`<div class="tide-fav-editor-row"><b>#${i+1}</b><input type="date" class="input tide-fav-date" min="${year}-01-01" max="${year}-12-31" value="${esc(dates[i]||'')}" aria-label="Favorite day rank ${i+1}"><div class="tide-fav-move"><button type="button" class="button tide-fav-up" data-position="${i}" ${i===0?'disabled':''}>↑</button><button type="button" class="button tide-fav-down" data-position="${i}" ${i===4?'disabled':''}>↓</button></div></div>`).join('')}</div>
+  ${suggestion?`<p class="small muted">Diary candidate: ${esc(shortDate(suggestion.date))}. ${esc(suggestion.reason)}</p><button class="button" type="button" id="tide-use-day-suggestion">Use as #1 candidate</button>`:''}
+  <div class="filter-row" style="margin-top:17px"><button type="button" id="tide-save-favorites" class="button primary">Save Favorite Days</button></div>`,'YOUR PERSONAL RANKINGS');
+  const body=modal.querySelector('#modal-body'),fields=[...body.querySelectorAll('.tide-fav-date')];
+  const swap=(i,j)=>{const val=fields[i].value;fields[i].value=fields[j].value;fields[j].value=val};
+  body.querySelectorAll('.tide-fav-up').forEach(b=>b.onclick=()=>swap(Number(b.dataset.position),Number(b.dataset.position)-1));
+  body.querySelectorAll('.tide-fav-down').forEach(b=>b.onclick=()=>swap(Number(b.dataset.position),Number(b.dataset.position)+1));
+  const candidate=body.querySelector('#tide-use-day-suggestion');if(candidate)candidate.onclick=()=>{fields[0].value=suggestion.date};
+  body.querySelector('#tide-save-favorites').onclick=()=>{
+    try{
+      saveFavoriteDays(state,year,fields.map(f=>f.value).filter(Boolean));
+      persist();closeModal();render();toast(`${year} favorite days saved.`);
+    }catch(e){toast(e.message,'bad')}
+  };
+}
+
 function yearlyView(){
   const y=selectedYear;
   const review=state.yearlyReviews?.[y]||{};
@@ -463,6 +498,8 @@ function yearlyView(){
       <label class="label">Worst month<select id="year-worst-month" class="select"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}" ${worstMonth===i+1?"selected":""}>${m}</option>`).join("")}</select></label>
       <div class="year-picks-save">${button("Save Year Picks","save-year","primary")}</div></div>
     </details>
+    <div class="section-title">YOUR FIVE FAVORITE DAYS · ${y}</div>
+    ${favoriteDaysPanel(y)}
     <div class="section-title">YOUR FIVE TRACKERS · ${y}</div>
     <div class="year-side-stats year-current-tracker-stats">${LIFE_TRACKER_IDS.map(id=>`<div class="year-side-stat"><div class="stat-label">${esc(trackerDefinition(state,id).name)} · ${y}</div><b>${fmt(trackerTotal(state,id,{year:y}))}</b></div>`).join('')}</div>
     <div class="section-title">GEOGUESSR · RECORD BOOK</div>
@@ -898,6 +935,8 @@ function recordsView(){
         </div>`).join(""):'<p class="muted small">As gaming data is recorded, your biggest months will appear here.</p>'}
       </div>
       <div class="record-hall-source-note">${recordHallIcon("target")}<span>Gaming day records come from changes detected between account snapshots; they are <b>not exact session timers</b>. Monthly records can also include recovered historical playtime. Older lifetime playtime without date evidence is never assigned to a specific day or month.</span></div>
+      <div class="section-title">FAVORITE DAYS · 2024 ONWARD</div>
+      ${favoriteDaysByYearPanel()}
       <div class="section-title">LIFE'S BIGGEST TRACKED MOMENTS</div>
       <div class="record-hall-card-grid">
         ${recordHallCard("total","gamepad","Most reported gaming sessions in a month",sessionPeak?`${fmt(sessionPeak.count)} sessions`:"—",sessionPeak?`${monthLabel(sessionPeak.month)} · reported game increases`:"Session reports are counted from new gaming refreshes")}
