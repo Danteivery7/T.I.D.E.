@@ -141,6 +141,16 @@ document.querySelector('#mobile-dock')?.addEventListener('click',event=>{
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&sidebar.classList.contains('open')){closeSidebar();document.querySelector('#mobile-menu')?.focus();}});
 document.querySelector('#quick-ask').onclick=()=>setView('ask');document.querySelector('#jump-today').onclick=()=>{selectedDate=isoToday();selectedMonth=selectedDate.slice(0,7);selectedYear=yearOf(selectedDate);setView('today')};
 document.querySelector('#modal-close').onclick=closeModal;
+document.addEventListener('tide:gaming-period',event=>{
+  if(view!=='gaming')return;
+  const y=Number(event.detail?.year),m=String(event.detail?.month||'');
+  if(Number.isInteger(y)&&y>=2020&&y<=2099){
+    selectedYear=y;
+    if(/^\d{4}-\d{2}$/.test(m)&&Number(m.slice(0,4))===y)selectedMonth=m;
+    else selectedMonth=String(y)+selectedMonth.slice(4);
+  }
+});
+
 
 function pageHead(title,sub='',actions=''){return `<div class="page-head"><div><div class="eyebrow">T.I.D.E.</div><h1>${esc(title)}</h1>${sub?`<p>${esc(sub)}</p>`:''}</div>${actions}</div>`}
 function button(label,id,cls=''){return `<button class="button ${cls}" id="${id}">${label}</button>`}
