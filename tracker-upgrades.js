@@ -90,7 +90,10 @@ function hideDuplicateRows(){
 }
 
 function showcaseCell(label,value){return '<div class="tracker-spotlight-cell"><div class="stat-label">'+esc(label)+'</div><b>'+esc(value)+'</b></div>'}
-function showcaseRow(name,subtitle,columns,key){return '<div class="tracker-row tracker-spotlight-row"><div class="tracker-name"><b>'+esc(name)+'</b><span class="tracker-status">'+esc(subtitle)+'</span></div>'+columns.map(c=>showcaseCell(c[0],c[1])).join('')+'<button type="button" class="button" data-special-edit="'+key+'">View / Add</button></div>'}
+function showcaseRow(name,subtitle,columns,key){
+  const icons={dc:'✦',monty:'♛',tenk:'◎',hk:'⌖',collisions:'◆'};
+  return '<div class="tracker-row tracker-spotlight-row trk-spotlight--'+key+'" data-trk-feature="'+key+'"><div class="tracker-name trk-spotlight-name"><span class="trk-spotlight-icon trk-spotlight-icon--'+key+'" aria-hidden="true">'+(icons[key]||'✦')+'</span><span class="trk-spotlight-name-copy"><b>'+esc(name)+'</b><span class="tracker-status">'+esc(subtitle)+'</span></span></div>'+columns.map(c=>showcaseCell(c[0],c[1])).join('')+'<button type="button" class="button trk-spotlight-edit" data-special-edit="'+key+'">View / Add <span aria-hidden="true">↗</span></button></div>';
+}
 function editNumber(id,label,val){return '<label class="label">'+esc(label)+'<input id="'+id+'" class="input" type="number" min="0" step="1" value="'+Math.max(0,Number(val)||0)+'"></label>'}
 function openShowcaseEditor(key){
   const s=ensureState(),month=isoToday().slice(0,7),dc=s.tideCounters?.dailyChallenge||{};
@@ -140,9 +143,11 @@ function decorateTrackers(){
     showcaseRow('Hong Kong Spawns','event totals',[['This Month',fmt(trackerTotal(s,HK,{month}))],[String(year),fmt(trackerTotal(s,HK,{year}))],['All Time',fmt(trackerTotal(s,HK))]],'hk'),
     showcaseRow('Collisions','event totals',[['This Month',fmt(trackerTotal(s,COLLISIONS,{month}))],[String(year),fmt(trackerTotal(s,COLLISIONS,{year}))],['All Time',fmt(trackerTotal(s,COLLISIONS))]],'collisions')
   ];
-  const section=document.createElement('section');section.id='tracker-showcase';section.className='card';
-  section.innerHTML='<div class="card-header"><div><h2>GeoGuessr & Performance</h2><div class="small muted">Totals stay on display. Select View / Add to make changes.</div></div><span class="chip accent">LIVE TOTALS</span></div>'+
-    '<div class="tracker-quick-actions"><button type="button" class="button primary" data-quick="gc-plus">↑ +1 Daily Challenge</button><button type="button" class="button primary" data-quick="gc-win">WIN vs Monty</button><button type="button" class="button" data-quick="gc-loss">LOSS vs Monty</button></div>'+
+  const section=document.createElement('section');section.id='tracker-showcase';section.className='card trk-featured-section';
+  section.innerHTML='<div class="card-header trk-featured-heading"><div><span class="trk-section-eyebrow">✦ YOUR FEATURED RECORDS</span><h2>GeoGuessr & Performance</h2><div class="small muted">Live streaks, Monty results, and performance totals. Open any record to edit it.</div></div><span class="trk-featured-live"><span aria-hidden="true">●</span> LIVE TRACKING</span></div>'+
+    '<div class="trk-quick-heading">QUICK ACTIONS <span>Updates use your existing tracker controls</span></div>'+
+    '<div class="tracker-quick-actions"><button type="button" class="button primary" data-quick="gc-plus"><span aria-hidden="true">＋</span> +1 Daily Challenge</button><button type="button" class="button primary" data-quick="gc-win"><span aria-hidden="true">★</span> WIN vs Monty</button><button type="button" class="button" data-quick="gc-loss"><span aria-hidden="true">↘</span> LOSS vs Monty</button></div>'+
+    '<div class="trk-featured-metrics-caption"><span>PERFORMANCE DASHBOARD</span><span>OPEN A RECORD TO UPDATE</span></div>'+
     '<div class="tracker-table tracker-spotlight-table">'+rows.join('')+'</div>';
   table.closest('section.card').before(section);
   section.querySelectorAll('[data-special-edit]').forEach(b=>b.onclick=()=>openShowcaseEditor(b.dataset.specialEdit));
