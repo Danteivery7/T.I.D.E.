@@ -1,9 +1,9 @@
 import { mkdir,rm,copyFile,cp } from 'node:fs/promises';
 
 const files=[
-  'index.html','styles.css','app.js','voice-dictation.js','engine.js','engine-v2.js','engine-v3.js','engine-v4.js',
+  'index.html','styles.css','themes.css','app.js','voice-dictation.js','engine.js','engine-v2.js','engine-v3.js','engine-v4.js',
   'enhancements.js','history-bootstrap.js','migraine-fix.js','tracker-upgrades.js','shared-save.js','year-rankings.js','year-ranking-utils.js',
-  'gaming.js','gaming-data.js','gaming-live.js','gaming-view.js','gaming-ask.js','diary-insights.js','life-trackers.js','ask-intelligence.js','calendar-data.js',
+  'gaming.js','gaming-data.js','gaming-live.js','gaming-view.js','gaming-ask.js','diary-insights.js','life-trackers.js','ask-intelligence.js','calendar-data.js','theme-engine.js','personal-calendar.js','favorite-days.js','health-activity.js',
   'platform-copy.js','storage.js','spotify.js','sw.js','manifest.webmanifest','icon.svg'
 ];
 await rm('dist',{recursive:true,force:true});
