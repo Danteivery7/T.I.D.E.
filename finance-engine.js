@@ -212,7 +212,7 @@ export function askFinance(state,text,context={}){
   return mk('CONDITIONAL CASH RUNWAY',forecast.firstNegativeDate||'No negative date found',forecast.firstNegativeDate,
    (forecast.firstNegativeDate?'First modeled negative date with scheduled charges. ':'No negative balance through '+forecast.through+'. ')+forecast.assumption);
  }
- if(/biggest|most|highest|peak|best/.test(q)&&/(deposit|income|earn|make|made|received|got)/.test(q)){
+ if(/biggest|most|highest|peak|best/.test(q)&&/(deposit|income|earn|make|made|receive|received|got|get|inflow)/.test(q)){
   const r=/(earn|income)/.test(q)?rep.highestIncomeDay:rep.highestReceiptDay,metric=/(earn|income)/.test(q)?'confirmedIncome':'receipts';
   return mk('HIGHEST '+(metric==='receipts'?'RECEIPTS':'CLASSIFIED INCOME')+' DAY',r?moneyText(r[metric]):'No recorded inflows',r?.date,
    'Based on categorized posted credits, excluding identifiable own-account transfers. Deposits may be unclassified as earned income.');
