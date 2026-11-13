@@ -129,6 +129,7 @@ export function financePeriod(state,scope={},group='all'){
  const cash=financeBalanceHistory(state,{group,start:scope.start||scope.month&&scope.month+'-01'||scope.year&&scope.year+'-01-01',end:scope.end||scope.month&&scope.month+'-31'||scope.year&&scope.year+'-12-31'});
  const bestCash=pick(cash,'balance'),worstCash=pick(cash,'balance',true);
  const first=cash[0]||null,last=cash.at(-1)||null,closing=last?.balance??null,opening=first?.balance??null;
+ const negativeCashDays=cash.filter(r=>r.balance<0).length;
  const cashDelta=first&&last?money(last.balance-first.balance):null;
  const months=new Map();
  for(const d of daily){
@@ -141,7 +142,7 @@ export function financePeriod(state,scope={},group='all'){
  return{scope,group,received:sum('receipts'),confirmedIncome:sum('confirmedIncome'),unclassifiedDeposits:sum('unclassifiedDeposits'),expenses:sum('expenses'),refunds:sum('refunds'),
   credits:sum('grossCredits'),daily,months:monthly,closingCash:closing,openingCash:opening,cashChange:cashDelta,bestCash,worstCash,
   highestReceiptDay:credits,highestIncomeDay:earnings,highestSpendingDay:spending,
-  bestReceiptMonth:by('receipts'),bestIncomeMonth:by('confirmedIncome'),bestCashMonth:by('peakCash'),worstCashMonth:by('lowCash',true),
+  bestReceiptMonth:by('receipts'),worstReceiptMonth:by('receipts',true),bestIncomeMonth:by('confirmedIncome'),bestExpenseMonth:by('expenses'),worstExpenseMonth:by('expenses',true),bestCashMonth:by('peakCash'),worstCashMonth:by('lowCash',true),negativeCashDays,
   highestEndingMonth:by('endingCash'),lowestEndingMonth:by('endingCash',true),knownSource:!!Object.keys(ensureFinances(state).transactions).length,
   balanceStatus:financeBalanceSnapshot(state,group).status,
   sourceNote:'Historical cash values are estimates reconstructed from latest imported balances and posted transactions; not verified daily bank snapshots.'};
