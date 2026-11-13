@@ -34,7 +34,12 @@ export function derivedTrackerRows(state,id,scope={}){
     const pieces=segments(entry.text);
     if(id==='editing-events'){
       pieces.forEach((piece,index)=>{
-        if(EDIT.test(piece)&&!NOT_EDIT.test(piece))rows.push({id:'diary-edit:'+date+':'+index,trackerId:id,date,count:1,source:'diary-derived',snippet:piece});
+        const hits=[...piece.matchAll(new RegExp(EDIT.source,'gi'))];
+        hits.forEach((hit,actionIndex)=>{
+          const context=piece.slice(Math.max(0,hit.index-55),hit.index+hit[0].length);
+          if(NOT_EDIT.test(context))return;
+          rows.push({id:'diary-edit:'+date+':'+index+':'+actionIndex,trackerId:id,date,count:1,source:'diary-derived',snippet:piece});
+        });
       });
     }else{
       const first=pieces.find(piece=>socialPattern?.test(piece)&&!NOT_SOCIAL.test(piece));
