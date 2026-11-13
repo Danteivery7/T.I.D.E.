@@ -38,7 +38,10 @@ export function financeRecordsMarkup(state,scope={},group='all'){
  ['Lowest reconstructed cash day',moneyLabel(p.worstCash?.balance),dateText(p.worstCash?.date),p.worstCash?.date],
  ['Best month of money received',moneyLabel(p.bestReceiptMonth?.receipts),monthText(p.bestReceiptMonth?.month),null],
  ['Highest estimated closing month',moneyLabel(p.highestEndingMonth?.endingCash),monthText(p.highestEndingMonth?.month),null],
- ['Lowest estimated closing month',moneyLabel(p.lowestEndingMonth?.endingCash),monthText(p.lowestEndingMonth?.month),null]
+ ['Lowest estimated closing month',moneyLabel(p.lowestEndingMonth?.endingCash),monthText(p.lowestEndingMonth?.month),null],
+ ['Reconstructed days below zero',String(p.negativeCashDays??0),'Estimated combined cash position; incomplete historical coverage',null],
+ ['Lowest money received month',moneyLabel(p.worstReceiptMonth?.receipts),monthText(p.worstReceiptMonth?.month),null],
+ ['Highest recorded expense month',moneyLabel(p.bestExpenseMonth?.expenses),monthText(p.bestExpenseMonth?.month),null]
  ].map(([a,b,c,d])=>financeRow(a,b,c,d)).join('')}</div><p class="insight-disclaimer">Cash-day and closing-month highs/lows are reconstructed estimates, not verified bank balance history. Historical coverage begins with imported transaction data.</p>`;
 }
 
@@ -69,6 +72,7 @@ export function financeHubMarkup(state,{tab='overview',group='all',year=2026,sea
   body=`<div class="insight-stat-grid">${financeStat('Imported cash snapshot',moneyLabel(snap.value),snap.status==='date_unknown'?'Source balance date unknown':'Source-dated balance','primary')}
   ${financeStat('Money received · this month',moneyText(current.received),'Excludes identifiable own transfers','good')}
   ${financeStat('Expenses · this month',moneyText(current.expenses),'No double-counted card repayments')}
+  ${financeStat('Cash change this month',current.cashChange!=null?moneyText(current.cashChange):'—','Reconstructed · month to date')}
   ${financeStat('Next scheduled charge',forecast.nextCharge?moneyText(forecast.nextCharge.amount):'—',forecast.nextCharge?dateText(forecast.nextCharge.date)+' · '+forecast.nextCharge.name:'No dated upcoming charge')}
   </div><div class="insight-two-col"><section class="insight-surface"><h3>Cash balance story</h3><p class="insight-subcopy">Estimated daily cash position from imported records</p>${financeLineChart(financeBalanceHistory(state,{group,start:year+'-01-01',end:year+'-12-31'}),'Cash position · '+year)}</section>
   <section class="insight-surface"><h3>Cash runway</h3><div class="insight-forecast-emphasis ${forecast.firstNegativeDate?'is-risk':''}"><span>First projected negative date</span><strong>${forecast.firstNegativeDate?dateText(forecast.firstNegativeDate):'None in modeled window'}</strong><small>Conditional; no unknown income included</small></div>${forecast.items.filter(r=>r.source!=='hypothetical').slice(0,5).map(r=>`<div class="insight-charge"><b>${htmlSafe(r.name)}</b><span>${dateText(r.date)}</span><strong>−${moneyText(r.amount)}</strong></div>`).join('')}</section></div>
