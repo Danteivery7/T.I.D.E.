@@ -538,7 +538,7 @@ function monthlyView(){
       <div class="section-title">DIARY INTELLIGENCE · THIS MONTH</div>
       ${diaryInsightPanel({month},"A fuller picture of this month")}
       <div class="section-title">MONTHLY TRACKERS</div>
-      <div class="month-trackers-grid">${trackers.length?trackers.map(t=>{const v=trackerTotal(state,t.id,{month});return`<div class="month-tracker-card"><div class="stat-label">${esc(t.name)}</div><div class="month-tracker-value">${fmt(v)}</div><div class="month-tracker-detail">${t.id==='gaming-sessions'?'Detected game playtime increases · not diary mentions':t.id==='editing-events'?'Explicit editing mentions in the diary':t.id==='social-days'?'Days with social diary activity':legacyTrackerTotal(state,t.id,month)!=null?'Includes imported monthly totals':'Tracked occurrences'}</div></div>`}).join(""):'<div class="card muted small">No tracked events have been recorded for this month.</div>'}</div>
+      <div class="month-trackers-grid">${trackers.length?trackers.map(t=>{const v=trackerTotal(state,t.id,{month});return`<div class="month-tracker-card"><div class="stat-label">${esc(t.name)}</div><div class="month-tracker-value">${fmt(v)}</div><div class="month-tracker-detail">${t.id==='gaming-sessions'?'Dated diary play starts · repeated plays count; continuations do not':t.id==='editing-events'?'Explicit editing mentions in the diary':t.id==='social-days'?'Days with social diary activity':legacyTrackerTotal(state,t.id,month)!=null?'Includes imported monthly totals':'Tracked occurrences'}</div></div>`}).join(""):'<div class="card muted small">No tracked events have been recorded for this month.</div>'}</div>
     </div>`;
   root.querySelector("#month-select").onchange=e=>{selectedMonth=e.target.value;selectedYear=Number(selectedMonth.slice(0,4));render()};
   root.querySelector("#save-review").onclick=()=>{
@@ -742,12 +742,12 @@ function trackerViewIcon(kind,status){
 
 function showReadOnlyTracker(id){
   const t=trackerDefinition(state,id),auto=AUTO_TRACKER_IDS.has(id),rows=(id==='apartment-collisions'?[...occurrencesFor(state,'apartment-collisions'),...occurrencesFor(state,'collision-count')]:occurrencesFor(state,id)).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  const note=id==='gaming-sessions'?'One report per game with increased playtime on each successful gaming refresh. An earlier daily aggregate cannot reliably be split into sessions.':
+  const note=id==='gaming-sessions'?'Each distinct time you wrote that you played a game counts as one diary session. 'Played again' counts another, but 'continued playing' does not. Sessions from 2024 onward are reconstructed from saved diary entries; gaming account refreshes track hours separately.':
     id==='editing-events'?'Counts explicit diary editing activity mentions, one per separate diary segment. Existing notes are included.':
     id==='social-days'?'One date with social diary activity counts as one day, even if multiple conversations are mentioned.':
     'Historical GTA Online counter. Original totals are preserved, with tracking ending November 19, 2026.';
   const history=rows.length?rows.slice(0,120).map(r=>{
-    const validTime=id==='gaming-sessions'&&Number.isFinite(Date.parse(r.capturedAt||''));
+    const validTime=id!=='gaming-sessions'&&Number.isFinite(Date.parse(r.capturedAt||''));
     const time=validTime?new Intl.DateTimeFormat('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/New_York'}).format(new Date(r.capturedAt)):'';
     return `<div class="history-row"><div class="history-date">${shortDate(r.date)}${time?` · ${esc(time)} detected`:''}</div><div class="history-text">${esc(r.snippet||'Recorded event')}</div><b>+${fmt(r.count||1)}</b></div>`;
   }).join(''):'<div class="muted">No exact dated events available. Imported totals may still be included above.</div>';
@@ -769,7 +769,7 @@ function trackersView(){
     return `<article class="tracker-row trk-ledger-row trk-ledger-row--${status} ${AUTO_TRACKER_IDS.has(t.id)?'trk-ledger-auto':''}" data-trk-status="${status}" data-trk-name="${esc(t.name.toLowerCase())}">
       <div class="tracker-name trk-ledger-name">
         <span class="trk-ledger-icon trk-ledger-icon--${status}">${trackerViewIcon(t.kind,status)}</span>
-        <span class="trk-ledger-name-text"><b>${esc(t.name)}</b><span class="tracker-status"><span class="trk-status-dot"></span>${status==='retired'?'Historical / retired':AUTO_TRACKER_IDS.has(t.id)?'Automatic · '+(t.id==='gaming-sessions'?'gaming refresh':'diary analysis'):'Active · saved occurrences'}</span></span>
+        <span class="trk-ledger-name-text"><b>${esc(t.name)}</b><span class="tracker-status"><span class="trk-status-dot"></span>${status==='retired'?'Historical / retired':AUTO_TRACKER_IDS.has(t.id)?'Automatic · '+'diary analysis':'Active · saved occurrences'}</span></span>
       </div>
       <div class="trk-ledger-metric"><div class="stat-label">Month</div><b>${fmt(month)}</b></div>
       <div class="trk-ledger-metric"><div class="stat-label">${selectedYear}</div><b>${fmt(year)}</b></div>
