@@ -191,6 +191,46 @@ function calendarView(){
   root.querySelector('#cal-holidays-toggle').onchange=e=>{showCalendarHolidays=e.target.checked;render()};
   root.querySelectorAll('.tide-calendar-stage [data-date]').forEach(b=>b.onclick=()=>openDay(b.dataset.date));
 }
+function openPersonalCalendarEditor(editId=''){
+  const userEvents=Object.values(state.calendarEvents||{}).filter(e=>!e.deleted).sort((a,b)=>a.date.localeCompare(b.date));
+  const editing=state.calendarEvents?.[editId]||null;
+  const defaultDate=selectedMonth===isoToday().slice(0,7)?isoToday():selectedMonth+'-01';
+  const suggestions=birthdaySuggestions(state);
+  if(modal.open)closeModal();
+  openModal('Personal Calendar',`
+    <p class="small muted">Add birthdays, releases, trips, celebrations or personal milestones. Events save privately and synchronize using your existing T.I.D.E. setup.</p>
+    <div class="tide-calendar-event-form">
+      <label class="tide-wide">Event name <input id="tide-event-name" class="input" maxlength="110" placeholder="CHAMPIONSHIP CELEBRATION" value="${esc(editing?.name||'')}"></label>
+      <label>Date <input id="tide-event-date" type="date" class="input" value="${esc(editing?.date||defaultDate)}"></label>
+      <label>Repeat <select id="tide-event-repeat" class="select"><option value="once" ${editing?.repeat!=='yearly'?'selected':''}>One time</option><option value="yearly" ${editing?.repeat==='yearly'?'selected':''}>Every year</option></select></label>
+      <label>Category <select id="tide-event-kind" class="select">${['personal','birthday','release','sports','celebration'].map(k=>`<option value="${k}" ${(editing?.kind||'personal')===k?'selected':''}>${k[0].toUpperCase()+k.slice(1)}</option>`).join('')}</select></label>
+      <label>Day theme <select id="tide-event-theme" class="select">${['none','knicks','gold','birthday','thanksgiving','christmas','st-patrick','independence','halloween','new-year','easter'].map(k=>`<option value="${k}" ${(editing?.theme||'none')===k?'selected':''}>${k==='none'?'Yearly default':k.replaceAll('-',' ')}</option>`).join('')}</select></label>
+      <label class="tide-wide"><span><input id="tide-event-prefill" type="checkbox" ${editing?.prefill===false?'':'checked'}> Suggest an UPPERCASE diary heading on an empty day</span></label>
+      <button type="button" class="button primary tide-wide" id="tide-event-save">${editing?'Save Changes':'Add Calendar Event'}</button>
+    </div>
+    <div class="section-title">YOUR SAVED EVENTS</div>
+    <div class="tide-personal-events">${userEvents.length?userEvents.map(e=>`<div class="tide-personal-event-row"><span><b>${esc(e.name)}</b><small class="muted"> · ${esc(e.date)}${e.repeat==='yearly'?' · yearly':''}</small></span><button type="button" class="button" data-edit-event="${esc(e.id)}">Edit</button><button type="button" class="button" data-delete-event="${esc(e.id)}">Remove</button></div>`).join(''):'<p class="muted small">No custom events yet. Confirmed diary birthdays and milestones are already shown automatically.</p>'}</div>
+    ${suggestions.length?`<details class="tide-birthday-suggestions"><summary>Birthday mentions to review (${suggestions.length})</summary><p class="muted small">These are unconfirmed candidates from your diary. Choose one to review before saving.</p>${suggestions.map((e,i)=>`<button type="button" class="button" data-birthday-suggestion="${i}">${esc(e.name)} · ${esc(e.date.slice(5))}</button>`).join('')}</details>`:''}
+  `,'PERSONAL DATES · PRIVATE');
+  const body=modal.querySelector('#modal-body');
+  body.querySelector('#tide-event-save').onclick=()=>{
+    try{
+      writeCalendarEvent(state,{id:editId||undefined,name:body.querySelector('#tide-event-name').value,date:body.querySelector('#tide-event-date').value,repeat:body.querySelector('#tide-event-repeat').value,kind:body.querySelector('#tide-event-kind').value,theme:body.querySelector('#tide-event-theme').value,prefill:body.querySelector('#tide-event-prefill').checked});
+      persist();closeModal();render();toast('Personal calendar event saved.');
+    }catch(e){toast(e.message,'bad')}
+  };
+  body.querySelectorAll('[data-edit-event]').forEach(b=>b.onclick=()=>openPersonalCalendarEditor(b.dataset.editEvent));
+  body.querySelectorAll('[data-delete-event]').forEach(b=>b.onclick=()=>{removeCalendarEvent(state,b.dataset.deleteEvent);persist();openPersonalCalendarEditor();toast('Event removed.')});
+  body.querySelectorAll('[data-birthday-suggestion]').forEach(b=>b.onclick=()=>{
+    const e=suggestions[Number(b.dataset.birthdaySuggestion)];if(!e)return;
+    body.querySelector('#tide-event-name').value=e.name;
+    body.querySelector('#tide-event-date').value=e.date;
+    body.querySelector('#tide-event-repeat').value='yearly';
+    body.querySelector('#tide-event-kind').value='birthday';
+    body.querySelector('#tide-event-theme').value='none';
+  });
+}
+
 function changeMonth(delta){let[y,m]=selectedMonth.split('-').map(Number);m+=delta;if(m<1){m=12;y--}if(m>12){m=1;y++}selectedMonth=`${y}-${String(m).padStart(2,'0')}`;selectedYear=y;render()}
 function openDay(date){selectedDate=date;selectedMonth=date.slice(0,7);selectedYear=yearOf(date);setView('today')}
 
