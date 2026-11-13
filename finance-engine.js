@@ -157,7 +157,7 @@ export function financeMonthComparison(state,month,group='all'){
 }
 export function upcomingFinance(state,{start=null,days=90,group='all',purchase=0,purchaseDate=null,openingCash=null}={}){
  const f=ensureFinances(state),today=start||new Date().toLocaleDateString('en-CA'),limit=isoNext(today,Math.max(1,Math.min(730,Number(days)||90)));
- const base=Number.isFinite(Number(openingCash))?Number(openingCash):financeBalanceSnapshot(state,group).value;
+ const base=openingCash!==null&&openingCash!==undefined&&Number.isFinite(Number(openingCash))?Number(openingCash):financeBalanceSnapshot(state,group).value;
  if(base==null)return{ready:false,reason:'No current cash balance is imported.',items:[],firstNegativeDate:null};
  const events=[];
  for(const r of [...Object.values(f.recurring),...Object.values(f.manualEvents)]){
