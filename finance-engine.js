@@ -129,7 +129,7 @@ export function financePeriod(state,scope={},group='all'){
  const cash=financeBalanceHistory(state,{group,start:scope.start||scope.month&&scope.month+'-01'||scope.year&&scope.year+'-01-01',end:scope.end||scope.month&&scope.month+'-31'||scope.year&&scope.year+'-12-31'});
  const bestCash=pick(cash,'balance'),worstCash=pick(cash,'balance',true);
  const first=cash[0]||null,last=cash.at(-1)||null,closing=last?.balance??null,opening=first?.balance??null;
- const negativeCashDays=cash.filter(r=>r.balance<0).length;
+ const negativeCashDays=cash.length?cash.filter(r=>r.balance<0).length:null;
  const cashDelta=first&&last?money(last.balance-first.balance):null;
  const months=new Map();
  for(const d of daily){
