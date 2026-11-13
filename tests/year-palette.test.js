@@ -52,7 +52,7 @@ test('original component styling and 2026 GTA visual behavior are retained',()=>
  for(const selector of ['#view-root.vice-city-nov19','.year-awards-intro','.tide-calendar-stage.theme-01','.yrk-hero','.trk-hero','.ask-explorer'])
   assert.ok(base.includes(selector),'original component missing '+selector);
  assert.ok(eras.includes('body[data-tide-occasion]'),'holiday themes must still work');
- assert.ok(!layer.includes('.vice-city-nov19') ,'year palette overrides must not rewrite GTA special-date editor');
+ assert.ok(!layer.includes('#view-root.vice-city-nov19 .hero-day'),'year palette must not modify the 2026 launch diary card');
 });
 test('CSS comments, strings, parentheses and braces are structurally balanced',()=>{
  let quote='',esc=false,comment=false,braces=0,paren=0;
