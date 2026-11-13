@@ -11,6 +11,7 @@ import {
 import { fetchPeriodMusic } from './spotify.js';
 import { activityRange, gamingRecordHighlights, hours as gamingHours, platformLabel } from './gaming-data.js';
 import { diarySignals } from './diary-insights.js';
+import { LIFE_TRACKER_IDS, ARCHIVED_GTA_IDS, AUTO_TRACKER_IDS, topTrackerMonth, topTrackerDay, derivedTrackerRows } from './life-trackers.js';
 import { holidaysForMonth, holidaysOnDate, monthIdentity } from './calendar-data.js';
 import { answerAsk, askScope, askMusicIntent } from './ask-intelligence.js';
 
@@ -236,7 +237,7 @@ function onThisDayView(){
 }
 
 function monthOptions(current){const years=[...new Set([2024,2025,2026,Number(isoToday().slice(0,4)),...Object.keys(state.entries||{}).map(d=>Number(d.slice(0,4)))])].sort();return years.flatMap(y=>MONTHS.map((m,i)=>{const k=`${y}-${String(i+1).padStart(2,'0')}`;return `<option value="${k}" ${k===current?'selected':''}>${m} ${y}</option>`})).join('')}
-function activeMonthTrackers(month){return allTrackerDefinitions(state).filter(t=>t.kind==='event'&&(t.status!=='retired'||trackerTotal(state,t.id,{month})>0||legacyTrackerTotal(state,t.id,month)!=null))}
+function activeMonthTrackers(month){return LIFE_TRACKER_IDS.map(id=>trackerDefinition(state,id))}
 function monthPickDisplay(date,tone){
   const best=tone==="best",kind=best?"Best Day":"Worst Day",chosen=Boolean(date),dayNum=chosen?String(Number(date.slice(-2))):"–";
   const title=chosen?shortDate(date):"Not selected yet";
@@ -294,7 +295,7 @@ function monthlyView(){
       <div class="section-title">DIARY INTELLIGENCE · THIS MONTH</div>
       ${diaryInsightPanel({month},"A fuller picture of this month")}
       <div class="section-title">MONTHLY TRACKERS</div>
-      <div class="month-trackers-grid">${trackers.length?trackers.map(t=>{const v=trackerTotal(state,t.id,{month});return`<div class="month-tracker-card"><div class="stat-label">${esc(t.name)}</div><div class="month-tracker-value">${fmt(v)}</div><div class="month-tracker-detail">${legacyTrackerTotal(state,t.id,month)!=null?"Includes your imported monthly total.":"Dated occurrences"}</div></div>`}).join(""):'<div class="card muted small">No tracked events have been recorded for this month.</div>'}</div>
+      <div class="month-trackers-grid">${trackers.length?trackers.map(t=>{const v=trackerTotal(state,t.id,{month});return`<div class="month-tracker-card"><div class="stat-label">${esc(t.name)}</div><div class="month-tracker-value">${fmt(v)}</div><div class="month-tracker-detail">${t.id==='gaming-sessions'?'Detected game playtime increases · not diary mentions':t.id==='editing-events'?'Explicit editing mentions in the diary':t.id==='social-days'?'Days with social diary activity':legacyTrackerTotal(state,t.id,month)!=null?'Includes imported monthly totals':'Tracked occurrences'}</div></div>`}).join(""):'<div class="card muted small">No tracked events have been recorded for this month.</div>'}</div>
     </div>`;
   root.querySelector("#month-select").onchange=e=>{selectedMonth=e.target.value;selectedYear=Number(selectedMonth.slice(0,4));render()};
   root.querySelector("#save-review").onclick=()=>{
@@ -400,11 +401,10 @@ function yearlyView(){
       <label class="label">Worst month<select id="year-worst-month" class="select"><option value="">—</option>${MONTHS.map((m,i)=>`<option value="${i+1}" ${worstMonth===i+1?"selected":""}>${m}</option>`).join("")}</select></label>
       <div class="year-picks-save">${button("Save Year Picks","save-year","primary")}</div></div>
     </details>
-    <div class="section-title">YEARLY QUICK STATS</div>
-    <div class="year-side-stats"><div class="year-side-stat"><div class="stat-label">Migraines · ${y}</div><b>${fmt(trackerTotal(state,"migraines",{year:y}))}</b></div><div class="year-side-stat"><div class="stat-label">Hong Kong Spawns · ${y}</div><b>${fmt(trackerTotal(state,"hong-kong",{year:y}))}</b></div></div>
+    <div class="section-title">YOUR FIVE TRACKERS · ${y}</div>
+    <div class="year-side-stats year-current-tracker-stats">${LIFE_TRACKER_IDS.map(id=>`<div class="year-side-stat"><div class="stat-label">${esc(trackerDefinition(state,id).name)} · ${y}</div><b>${fmt(trackerTotal(state,id,{year:y}))}</b></div>`).join('')}</div>
     <div class="section-title">GEOGUESSR · RECORD BOOK</div>
     <div class="records-grid year-geo-records">
-      <div class="record-card"><div class="stat-label">All-Time Hong Kong Spawns</div><div class="record-value">${fmt(trackerTotal(state,"hong-kong"))}</div></div>
       <div class="record-card"><div class="stat-label">Longest Daily Challenge Streak</div><div class="record-value">${dc.longest} days</div><div class="record-detail">${dc.longestStart?`${shortDate(dc.longestStart)} → ${shortDate(dc.longestEnd)}`:"No streak data yet."}</div></div>
       <div class="record-card"><div class="stat-label">Current Daily Challenge</div><div class="record-value">${dc.active?dc.current:0}</div><div class="record-detail">${dc.active?"Active":"Inactive"}</div></div>
       <div class="record-card"><div class="stat-label">Geoguessr 10K Record</div><div class="record-value">${geo?fmt(geo.value):"—"}</div><div class="record-detail">${geo?shortDate(geo.date):"No data yet."}</div></div>
