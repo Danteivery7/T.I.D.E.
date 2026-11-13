@@ -67,6 +67,12 @@ root.addEventListener('click',event=>{
   const day=event.target.closest('[data-health-day]');if(day)return openDay(day.dataset.healthDay);
   const setup=event.target.closest('[data-health-settings]');if(setup)return setView('settings');
 });
+root.addEventListener('click',event=>{
+  const day=event.target.closest('[data-insight-open-day]');if(day)return openDay(day.dataset.insightOpenDay);
+  const link=event.target.closest('[data-insight-hub]');if(link)return setView(link.dataset.insightHub);
+  const fin=event.target.closest('[data-fin-import]');if(fin)return setView('settings');
+  const health=event.target.closest('[data-health-import]');if(health)return setView('settings');
+});
 nav.addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 document.querySelector('.sidebar-bottom').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 document.querySelector('#mobile-menu').onclick=openSidebar;document.querySelector('#mobile-close').onclick=closeSidebar;scrim.onclick=closeSidebar;
@@ -352,6 +358,55 @@ function healthYearComparisonMarkup(){
   const from=2024,to=Math.max(2027,Number(isoToday().slice(0,4))),years=Array.from({length:to-from+1},(_,i)=>to-i);
   const reports=yearlyHealthOverview(state,years);
   return `<section class="health-year-comparison"><div class="health-eyebrow">SLEEP BY YEAR · HOURS PER RECORDED NIGHT</div><div class="health-year-comparison-grid">${reports.map(x=>`<div class="health-year-avg"><span>${x.year}</span><strong>${x.metrics.sleepHours.days?formatHealth('sleepHours',x.metrics.sleepHours.average):'—'}</strong><small>${x.metrics.sleepHours.days} recorded nights</small></div>`).join('')}</div></section>`;
+}
+
+function financeView(){
+ root.innerHTML=pageHead('Finances','A private view of your bank history, scheduled charges, cash-flow records and what-if projections.')+financeHubMarkup(state,{tab:financeTab,group:financeGroup,year:financeYear,search:financeSearch,whatIf:financeWhatIf});
+ root.querySelectorAll('[data-fin-tab]').forEach(b=>b.onclick=()=>{financeTab=b.dataset.finTab;render()});
+ root.querySelectorAll('[data-fin-group]').forEach(b=>b.onclick=()=>{financeGroup=b.dataset.finGroup;render()});
+ const year=root.querySelector('#fin-year');if(year)year.onchange=()=>{financeYear=Number(year.value);render()};
+ const purchase=root.querySelector('#fin-whatif-form');if(purchase)purchase.onsubmit=e=>{e.preventDefault();financeWhatIf=Math.max(0,Number(root.querySelector('#fin-whatif-value').value)||0);render()};
+ const filtering=root.querySelector('#fin-transactions-form');if(filtering)filtering.onsubmit=e=>{e.preventDefault();financeSearch=root.querySelector('#fin-transactions-search').value;render()};
+ root.querySelectorAll('[data-fin-add-schedule]').forEach(b=>b.onclick=()=>openFinanceScheduleEditor());
+ root.querySelectorAll('[data-fin-del-schedule]').forEach(b=>b.onclick=()=>{deleteFinanceSchedule(state,b.dataset.finDelSchedule);persist();render();toast('Scheduled item removed.')});
+ const form=root.querySelector('#fin-ask-form'),output=root.querySelector('#fin-ask-output'),input=root.querySelector('#fin-ask-question');
+ const search=q=>{
+  const answer=askFinance(state,q,{today:isoToday()});
+  if(!answer||!output)return;
+  output.innerHTML=`<div class="insight-search-answer"><span>${esc(answer.heading||'FINANCIAL RECORD')}</span><strong>${esc(answer.primary)}</strong><p>${esc(answer.detail||'')}</p>${answer.date?`<button class="insight-open-day" type="button" data-insight-open-day="${esc(answer.date)}">Open ${esc(shortDate(answer.date))} ↗</button>`:''}</div>`;
+ };
+ if(form)form.onsubmit=e=>{e.preventDefault();search(input.value.trim())};
+ root.querySelectorAll('[data-fin-suggest]').forEach(b=>b.onclick=()=>{input.value=b.dataset.finSuggest;search(input.value)});
+}
+
+function healthView(){
+ root.innerHTML=pageHead('Health','Explore your recorded sleep, exercise, steps, workouts, activity rings and migraine patterns.')+healthHubMarkup(state,{tab:healthTab,period:healthRange,month:healthMonth,year:healthYear});
+ root.querySelectorAll('[data-health-tab]').forEach(b=>b.onclick=()=>{healthTab=b.dataset.healthTab;render()});
+ root.querySelectorAll('[data-health-period]').forEach(b=>b.onclick=()=>{healthRange=b.dataset.healthPeriod;render()});
+ const m=root.querySelector('#health-month');if(m)m.onchange=()=>{if(/^\d{4}-\d{2}$/.test(m.value))healthMonth=m.value;render()};
+ const y=root.querySelector('#health-year');if(y)y.onchange=()=>{healthYear=Number(y.value);render()};
+}
+
+function openFinanceScheduleEditor(){
+ if(modal.open)closeModal();
+ const f=ensureFinances(state);
+ openModal('Add a financial event',`<p class="small muted">This is a planning entry, not a bank charge. It does not alter real balances. Add a confirmed future bill or expected deposit to your conditional runway.</p>
+ <div class="tide-calendar-event-form" style="margin-top:16px">
+ <label class="tide-wide">Description <input class="input" id="fin-schedule-name" maxlength="100" placeholder="Monthly subscription"></label>
+ <label>Amount (USD) <input class="input" id="fin-schedule-amount" type="number" min="0" max="1000000" step=".01" placeholder="15.00"></label>
+ <label>Next expected date <input class="input" id="fin-schedule-date" type="date" value="${isoToday()}"></label>
+ <label>Repeats <select class="select" id="fin-schedule-repeat">${['once','weekly','monthly','yearly'].map(v=>`<option value="${v}" ${v==='monthly'?'selected':''}>${v}</option>`).join('')}</select></label>
+ <label>Direction <select class="select" id="fin-schedule-direction"><option value="outflow">Money going out</option><option value="inflow">Money coming in</option></select></label>
+ <label class="tide-wide">Account <select class="select" id="fin-schedule-account">${Object.values(f.accounts).map(a=>`<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('')}</select></label>
+ <button id="fin-schedule-save" class="button primary tide-wide" type="button">Save Planning Event</button>
+ </div>`,'FINANCES · PRIVATE SCHEDULE');
+ const body=modal.querySelector('#modal-body');
+ body.querySelector('#fin-schedule-save').onclick=()=>{
+  try{
+   upsertFinanceSchedule(state,{name:body.querySelector('#fin-schedule-name').value,amount:Number(body.querySelector('#fin-schedule-amount').value),nextDate:body.querySelector('#fin-schedule-date').value,frequency:body.querySelector('#fin-schedule-repeat').value,direction:body.querySelector('#fin-schedule-direction').value,accountId:body.querySelector('#fin-schedule-account')?.value||''});
+   persist();closeModal();render();toast('Planning event saved.');
+  }catch(e){toast(e.message,'bad')}
+ };
 }
 
 function monthlyView(){
@@ -1165,7 +1220,7 @@ async function syncCloud(){if(!cloud.authenticated)return toast('Connect cloud s
 async function pullCloud(silent=false){try{const r=await cloudPull();state=mergeStates(state,r.state);cloud.etag=r.etag;persist();if(!silent)toast('Cloud data loaded.')}catch(e){if(!silent)toast(e.message,'bad')}}
 async function bootstrapCloud(){const status=await cloudStatus();cloud={...cloud,...status,checked:true};if(status.authenticated){cloud.authenticated=true;await pullCloud(true)}updateSyncPill();render()}
 function updateSyncPill(){const pill=document.querySelector('#sync-pill');pill.innerHTML=`<span class="sync-dot"></span><span>${cloud.authenticated?'Cloud ready · local-first':cloud.configured?'Cloud available · locked':'Local-first'}</span>`}
-function render(){setThemeForDate(root,presentationDate(),personalCalendarEvents(state,presentationDate()));updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'music':musicExplorerView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}document.dispatchEvent(new Event('tide:view-rendered'))}
+function render(){setThemeForDate(root,presentationDate(),personalCalendarEvents(state,presentationDate()));updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'finances':financeView();break;case'health':healthView();break;case'music':musicExplorerView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}document.dispatchEvent(new Event('tide:view-rendered'))}
 render();bootstrapCloud();
 // A new gaming snapshot can change session totals without changing diary entries.
 // Repaint only read-only reporting pages; never interrupt the Today editor.
