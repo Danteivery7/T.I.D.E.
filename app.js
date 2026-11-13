@@ -470,10 +470,10 @@ function trackersView(){
   const rows=defs.map(t=>{
     const month=trackerTotal(state,t.id,{month:selectedMonth}),year=trackerTotal(state,t.id,{year:selectedYear}),all=trackerTotal(state,t.id);
     const status=t.status==='retired'?'retired':t.status==='intermittent'?'intermittent':'active';
-    return `<article class="tracker-row trk-ledger-row trk-ledger-row--${status}" data-trk-status="${status}" data-trk-name="${esc(t.name.toLowerCase())}">
+    return `<article class="tracker-row trk-ledger-row trk-ledger-row--${status} ${AUTO_TRACKER_IDS.has(t.id)?'trk-ledger-auto':''}" data-trk-status="${status}" data-trk-name="${esc(t.name.toLowerCase())}">
       <div class="tracker-name trk-ledger-name">
         <span class="trk-ledger-icon trk-ledger-icon--${status}">${trackerViewIcon(t.kind,status)}</span>
-        <span class="trk-ledger-name-text"><b>${esc(t.name)}</b><span class="tracker-status"><span class="trk-status-dot"></span>${status==='retired'?'Historical / retired':status==='intermittent'?'Event-based':'Active'} · ${esc(t.kind)}</span></span>
+        <span class="trk-ledger-name-text"><b>${esc(t.name)}</b><span class="tracker-status"><span class="trk-status-dot"></span>${status==='retired'?'Historical / retired':AUTO_TRACKER_IDS.has(t.id)?'Automatic · '+(t.id==='gaming-sessions'?'gaming refresh':'diary analysis'):'Active · saved occurrences'}</span></span>
       </div>
       <div class="trk-ledger-metric"><div class="stat-label">Month</div><b>${fmt(month)}</b></div>
       <div class="trk-ledger-metric"><div class="stat-label">${selectedYear}</div><b>${fmt(year)}</b></div>
@@ -994,4 +994,9 @@ async function bootstrapCloud(){const status=await cloudStatus();cloud={...cloud
 function updateSyncPill(){const pill=document.querySelector('#sync-pill');pill.innerHTML=`<span class="sync-dot"></span><span>${cloud.authenticated?'Cloud ready · local-first':cloud.configured?'Cloud available · locked':'Local-first'}</span>`}
 function render(){const viceCityActive=selectedDate>='2026-11-19'&&selectedDate<='2026-12-31';root.classList.toggle('vice-city-nov19',viceCityActive);document.body.classList.toggle('vice-city-season',viceCityActive);updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'music':musicExplorerView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}document.dispatchEvent(new Event('tide:view-rendered'))}
 render();bootstrapCloud();
+// A new gaming snapshot can change session totals without changing diary entries.
+// Repaint only read-only reporting pages; never interrupt the Today editor.
+document.addEventListener('tide:gaming-updated',()=>{
+  if(['trackers','monthly','yearly','records'].includes(view))render();
+});
 if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
