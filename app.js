@@ -18,6 +18,10 @@ import { personalCalendarEvents, calendarEventsOnDate, calendarEventsForMonth, w
 import { favoriteDays, saveFavoriteDays, yearsWithFavoriteDays, favoriteDaysSuggestion } from './favorite-days.js';
 import { HEALTH_FIELDS, healthRows, healthPeriod, yearlyHealthOverview, mergeHealthImport, readHealthImportFile, formatHealth, metricLabel } from './health-activity.js';
 import { answerAsk, askScope, askMusicIntent } from './ask-intelligence.js';
+import { importFinances, ensureFinances, upsertFinanceSchedule, deleteFinanceSchedule, askFinance, financePeriod } from './finance-engine.js';
+import { financeHubMarkup, financeReviewMarkup, financeRecordsMarkup, financeTodayMarkup } from './finances-ui.js';
+import { healthHubMarkup, healthReviewMarkup, healthLifetimeMarkup, healthDailyCard } from './health-ui.js';
+import { healthAnswers, migraineSummary } from './health-insights.js';
 
 const root=document.querySelector('#view-root');
 const nav=document.querySelector('#primary-nav');
@@ -39,6 +43,8 @@ let askAnswer=null;
 let askLastQuestion='';
 let askRequestToken=0;
 let draftTimer=null;
+let financeTab='overview',financeGroup='all',financeYear=selectedYear,financeSearch='',financeWhatIf=0;
+let healthTab='overview',healthRange='month',healthMonth=selectedMonth,healthYear=selectedYear;
 
 const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const fmt=n=>new Intl.NumberFormat('en-US').format(Number(n)||0);
