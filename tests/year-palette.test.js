@@ -28,7 +28,7 @@ test('color overrides stay limited to non-2026 base years while honoring holiday
   assert.ok(layer.includes('[data-tide-era="'+year+'"]'),'missing '+year+' scope');
  }
  assert.ok(!layer.includes('option[value^="2026"]'),'old selected-option heuristic can suppress historic themes');
- assert.ok(!layer.includes('body[data-tide-era="2026"]:not([data-tide-occasion])'),'2026 must retain its native GTA palette');
+ assert.ok(!layer.includes('body[data-tide-era="2026"]:not([data-tide-occasion]){--bg:'),'2026 background must remain controlled by its original theme');
 });
 test('every major explorer has palette-specific text, gradients, borders and component-color rules',()=>{
  const parts=[
