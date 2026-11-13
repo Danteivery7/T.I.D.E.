@@ -488,18 +488,18 @@ function trackersView(){
       <div><div class="trk-section-eyebrow">THE TRACKER COLLECTION</div><h2>Browse your records</h2><p>Find a tracker, compare its dates and totals, or open it to add an occurrence.</p></div>
       <span class="trk-collection-count">${fmt(defs.length)} TRACKERS</span>
     </div>
-    <section class="trk-library-tools" aria-label="Browse tracker history">
+    <section class="card trk-ledger-section">
+      <div class="trk-ledger-heading"><div><span class="trk-section-eyebrow">EVENT TRACKER LIBRARY</span><h3>Events & archive</h3><p>Month, year, and lifetime figures from your existing saved records.</p></div><span class="trk-ledger-hint">SELECT TO VIEW OR ADD</span></div>
+    <div class="trk-library-tools" aria-label="Browse tracker history">
       <div class="trk-filter-tabs" role="group" aria-label="Filter trackers">
         <button type="button" class="trk-filter-tab is-selected" data-trk-filter="all" aria-pressed="true">All</button>
         <button type="button" class="trk-filter-tab" data-trk-filter="in-use" aria-pressed="false">In use</button>
         <button type="button" class="trk-filter-tab" data-trk-filter="retired" aria-pressed="false">Historical</button>
       </div>
       <label class="trk-search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.3 15.3 5 5"/></svg><span class="trk-sr-only">Search trackers</span><input type="search" id="trk-search" placeholder="Search trackers…" autocomplete="off"></label>
-    </section>
-    <section class="card trk-ledger-section">
-      <div class="trk-ledger-heading"><div><span class="trk-section-eyebrow">ALL TRACKER RECORDS</span><h3>Events & archive</h3><p>Month, year, and lifetime figures from your existing saved records.</p></div><span class="trk-ledger-hint">SELECT TO VIEW OR ADD</span></div>
+    </div>
       <div class="tracker-table trk-ledger-list">${rows}</div>
-      <div class="trk-library-empty" id="trk-library-empty" hidden><span aria-hidden="true">⌕</span><b>No matching trackers</b><p>Try a different name or switch your filter.</p></div>
+      <div class="trk-library-empty" id="trk-library-empty" hidden><span aria-hidden="true">⌕</span><b>No matching trackers</b><p>Try a different name or filter. Featured GeoGuessr trackers stay in their own section above.</p></div>
       <div class="trk-ledger-footnote">Historical trackers are kept for reference. Some older totals were imported without individual dates. The quick GeoGuessr controls above continue to use their existing counters.</div>
     </section>
   </div>`;
