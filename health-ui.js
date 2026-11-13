@@ -1,4 +1,5 @@
 import {healthRows,healthPeriod,formatHealth} from './health-activity.js';
+import {sleepCoachingMarkup} from './sleep-coach.js';
 import {migraineSummary,weeklyHealth,dailyHealthComparison} from './health-insights.js';
 function healthEsc(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
@@ -66,12 +67,13 @@ export function healthHubMarkup(state,{tab='overview',period='month',month='2026
  const tabs=[['overview','Overview'],['sleep','Sleep'],['steps','Steps & Distance'],['exercise','Exercise & Rings'],['workouts','Workouts'],['migraines','Migraines']];
  const recorded=healthRows(state).length;
  let body='';
- if(!recorded&&tab!=='migraines')body='<section class="insight-empty-hub"><h3>Connect your private wellness history</h3><p>Import your prepared Apple Health daily JSON in Settings. Missing nights and workouts will stay missing, never zero.</p><button type="button" class="button primary" data-health-import>Import Health data</button></section>';
+ if(!recorded&&tab!=='migraines')body='<section class="insight-empty-hub"><h3>Activate your Health and Finances history</h3><p>Your prepared private data is ready. Load the combined T.I.D.E. file here, without leaving the Health page. Missing nights remain missing, not zero.</p><button type="button" class="button primary" data-tide-private-activate>Activate Health + Finances</button></section>';
  else if(tab==='overview'){
   body=`<div class="insight-stat-grid">${healthKpi('Average nightly sleep',m.sleepHours.average!=null?formatHealth('sleepHours',m.sleepHours.average):'—',m.sleepHours.days+' recorded nights','primary')}
   ${healthKpi('Total recorded steps',m.steps.total!=null?Math.round(m.steps.total).toLocaleString('en-US'):'—',m.steps.days+' days','good')}
   ${healthKpi('Exercise time',m.exerciseMinutes.total!=null?Math.round(m.exerciseMinutes.total)+' min':'—',m.exerciseMinutes.days+' recorded days')}
   ${healthKpi('Migraine / headache days',String(mig.days),'Dated diary evidence')}</div>
+  ${sleepCoachingMarkup(state,scope)}
   <div class="insight-two-col"><section class="insight-surface"><h3>How you've been sleeping</h3>${healthGraph(rows,'sleepHours','Recorded nightly sleep (hours)',{bars:true})}</section><section class="insight-surface"><h3>Steps through your calendar</h3>${healthGraph(rows,'steps','Daily recorded steps',{bars:false})}</section></div>
   <div class="insight-two-col"><section class="insight-surface"><h3>Strongest days</h3><div class="insight-record-stack">${healthRecord('Longest sleep',m.sleepHours.best?formatHealth('sleepHours',m.sleepHours.best.value):'—',healthDateText(m.sleepHours.best?.date),m.sleepHours.best?.date)}${healthRecord('Most steps',m.steps.best?Math.round(m.steps.best.value).toLocaleString('en-US'):'—',healthDateText(m.steps.best?.date),m.steps.best?.date)}${healthRecord('Most exercise',m.exerciseMinutes.best?Math.round(m.exerciseMinutes.best.value)+' min':'—',healthDateText(m.exerciseMinutes.best?.date),m.exerciseMinutes.best?.date)}</div></section><section class="insight-surface"><h3>Weekly patterns · Sunday to Saturday</h3>${healthGraph(weeklyHealth(state,chosenMonth,'steps').map(x=>({...x,date:x.week})), 'total','Steps per recorded week',{bars:true})}<p class="insight-disclaimer">Week totals include available days only.</p></section></div>`;
  }else if(tab==='sleep'){
@@ -80,6 +82,7 @@ export function healthHubMarkup(state,{tab='overview',period='month',month='2026
    ${healthKpi('Longest night',sleep.best?formatHealth('sleepHours',sleep.best.value):'—',healthDateText(sleep.best?.date),'good')}
    ${healthKpi('Shortest night',sleep.worst?formatHealth('sleepHours',sleep.worst.value):'—',healthDateText(sleep.worst?.date))}
    ${healthKpi('Best month average',sleep.bestMonth?formatHealth('sleepHours',sleep.bestMonth.average):'—',healthMonthText(sleep.bestMonth?.month))}</div>
+  ${sleepCoachingMarkup(state,scope)}
   <section class="insight-surface"><h3>Night-by-night sleep</h3><p class="insight-subcopy">Sleep assigned to the waking date from recorded sleep stages. In-bed time and awake time excluded.</p>${healthGraph(rows,'sleepHours','Recorded sleep hours per night',{bars:true})}</section>
   <div class="insight-two-col">${healthMonthBars(sleep.months?.map(x=>({...x,value:x.average}))||[],'Average hours per night by month','value')}<section class="insight-surface"><h3>Sleep highlights</h3>${healthRecord('Best night',sleep.best?formatHealth('sleepHours',sleep.best.value):'—',healthDateText(sleep.best?.date),sleep.best?.date)}${healthRecord('Worst night',sleep.worst?formatHealth('sleepHours',sleep.worst.value):'—',healthDateText(sleep.worst?.date),sleep.worst?.date)}${healthRecord('Lowest qualifying month',sleep.worstMonth?formatHealth('sleepHours',sleep.worstMonth.average):'—',healthMonthText(sleep.worstMonth?.month))}<p class="insight-disclaimer">Best and worst months each require at least seven recorded nights.</p></section></div>
   <section class="insight-surface"><h3>Weekly sleep · Sunday to Saturday</h3>${healthGraph(weeklyHealth(state,chosenMonth,'sleepHours').map(x=>({date:x.week,average:x.average})), 'average','Average nightly hours by week',{bars:true})}</section>`;
