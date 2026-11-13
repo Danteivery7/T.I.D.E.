@@ -188,7 +188,8 @@ body[data-tide-occasion] .insight-hero{background:radial-gradient(ellipse at 91%
 
 
 /* T.I.D.E. COMPLETE YEAR PALETTE: year-scoped chromatic surface overrides.
-   Scope exclusively to the active body data-tide-era set by the date engine.\n   Never infer theme from hidden dropdowns or current-year input values.
+   Scope exclusively to the active body data-tide-era set by the date engine.
+   Never infer theme from hidden dropdowns or current-year input values.
    2026 and occasion themes keep their existing artwork. */
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season){background:radial-gradient(circle at 65% -10%,color-mix(in srgb,var(--accent-2) 13%,transparent),transparent 34%),var(--bg)}
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .sidebar{background:color-mix(in srgb,var(--bg) 94%,transparent)}
@@ -625,8 +626,8 @@ body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):no
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .tide-topbar .tide-topbar-today:hover{background:linear-gradient(120deg,var(--accent-2),var(--accent-2) 65%,var(--accent-2))}
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .tide-topbar .tide-topbar-action:focus-visible,body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .tide-topbar .tide-topbar-menu:focus-visible{outline:2px solid var(--accent-2)}
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .tide-topbar .tide-topbar-menu{border:1px solid color-mix(in srgb,var(--accent-2) 23%,transparent);background:color-mix(in srgb,var(--accent-2) 8.5%,transparent);color:color-mix(in srgb,var(--accent-2) 72%,var(--text) 28%)}
-body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) body:has(.nav-item[data-view="ask"].active) .tide-topbar .tide-topbar-ask{border-color:color-mix(in srgb,color-mix(in srgb,var(--accent-2) 72%,var(--text) 28%) 55%,transparent);background:linear-gradient(120deg,color-mix(in srgb,var(--accent-2) 39%,transparent),color-mix(in srgb,var(--accent-2) 25%,transparent))}
-body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) body:has(.nav-item[data-view="today"].active) .tide-topbar .tide-topbar-today{box-shadow:0 0 0 1px color-mix(in srgb,color-mix(in srgb,var(--accent-2) 72%,var(--text) 28%) 14%,transparent),0 4px 17px color-mix(in srgb,var(--accent-2) 25%,transparent)}
+body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season):has(.nav-item[data-view="ask"].active) .tide-topbar .tide-topbar-ask{border-color:color-mix(in srgb,color-mix(in srgb,var(--accent-2) 72%,var(--text) 28%) 55%,transparent);background:linear-gradient(120deg,color-mix(in srgb,var(--accent-2) 39%,transparent),color-mix(in srgb,var(--accent-2) 25%,transparent))}
+body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season):has(.nav-item[data-view="today"].active) .tide-topbar .tide-topbar-today{box-shadow:0 0 0 1px color-mix(in srgb,color-mix(in srgb,var(--accent-2) 72%,var(--text) 28%) 14%,transparent),0 4px 17px color-mix(in srgb,var(--accent-2) 25%,transparent)}
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .trk-page{--trk-pink:color-mix(in srgb,var(--accent-2) 72%,var(--text) 28%);--trk-purple:color-mix(in srgb,var(--accent-2) 72%,var(--text) 28%);--trk-blue:var(--accent-2);--trk-mint:var(--accent-2)}
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .trk-hero{border:1px solid color-mix(in srgb,var(--accent-2) 34%,transparent);background:radial-gradient(circle at 86% 9%,color-mix(in srgb,color-mix(in srgb,var(--accent-2) 72%,var(--text) 28%) 24%,transparent),transparent 40%),
     radial-gradient(circle at 7% 102%,color-mix(in srgb,var(--accent-2) 16%,transparent),transparent 46%),
@@ -782,29 +783,12 @@ body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):no
 body[data-tide-era="2024"]:not([data-tide-occasion]){--era-vector-filter:grayscale(1) sepia(1) saturate(3.5) hue-rotate(69deg) brightness(1.05)}
 body[data-tide-era="2025"]:not([data-tide-occasion]){--era-vector-filter:grayscale(1) sepia(1) saturate(3.3) hue-rotate(-13deg) brightness(1.05)}
 body[data-tide-era="2027"]:not([data-tide-occasion]){--era-vector-filter:grayscale(1) sepia(1) saturate(2.4) hue-rotate(2deg) brightness(1.07)}
-/* The selected period, rather than the current calendar year, controls visual colors in date-based explorers. */
-body:has(#g-year[value="2024"],#g-month[value^="2024-"],#otd-date-picker[value^="2024-"],.yrk-row[data-index="0"][data-year="2024"]),
-body:has(:is(#health-month,#music-explorer-end)[value^="2024"],:is(#fin-year,#health-year,#music-explorer-year,#music-explorer-month) option[value^="2024"]:checked){
- --bg:#08120e;--panel:#0c1b15;--panel-2:#12271c;--panel-3:#193625;--line:#264936;--text:#f0f7ef;--muted:#afc8b6;--subtle:#7a9987;--accent:#75c394;--accent-2:#c0d6a9;
- --tide-ink:#07120c;--tide-pane:#12251b;--tide-glow:rgba(65,183,112,.22);--tide-grad:linear-gradient(132deg,#142b1e,#0a1c16 65%,#15281f);
- --era-vector-filter:grayscale(1) sepia(1) saturate(3.5) hue-rotate(69deg) brightness(1.05);
-}
-body:has(#g-year[value="2025"],#g-month[value^="2025-"],#otd-date-picker[value^="2025-"],.yrk-row[data-index="0"][data-year="2025"]),
-body:has(:is(#health-month,#music-explorer-end)[value^="2025"],:is(#fin-year,#health-year,#music-explorer-year,#music-explorer-month) option[value^="2025"]:checked){
- --bg:#160e0b;--panel:#21160f;--panel-2:#2b1d14;--panel-3:#422a1c;--line:#5c3625;--text:#fff4ea;--muted:#d0b9a5;--subtle:#ab8675;--accent:#f2a05b;--accent-2:#ffd6a3;
- --tide-ink:#140c0a;--tide-pane:#322015;--tide-glow:rgba(232,119,56,.22);--tide-grad:linear-gradient(132deg,#402417,#231813 60%,#342014);
- --era-vector-filter:grayscale(1) sepia(1) saturate(3.3) hue-rotate(-13deg) brightness(1.05);
-}
-body:has(#g-year[value="2027"],#g-month[value^="2027-"],#otd-date-picker[value^="2027-"],.yrk-row[data-index="0"][data-year="2027"]),
-body:has(:is(#health-month,#music-explorer-end)[value^="2027"],:is(#fin-year,#health-year,#music-explorer-year,#music-explorer-month) option[value^="2027"]:checked){
- --bg:#090a0c;--panel:#15140f;--panel-2:#211d12;--panel-3:#302716;--line:#5a4828;--text:#fffaee;--muted:#d0c2a3;--subtle:#a3916c;--accent:#efc66b;--accent-2:#d9ac4d;
- --tide-ink:#090909;--tide-pane:#221b0c;--tide-glow:rgba(234,184,77,.23);--tide-grad:linear-gradient(135deg,#332812,#16140f 66%,#241f13);
- --era-vector-filter:grayscale(1) sepia(1) saturate(2.4) hue-rotate(2deg) brightness(1.07);
-}
-body:has(#g-year[value="2026"],#g-month[value^="2026-"],#otd-date-picker[value^="2026-"],.yrk-row[data-index="0"][data-year="2026"]),
-body:has(:is(#health-month,#music-explorer-end)[value^="2026"],:is(#fin-year,#health-year,#music-explorer-year,#music-explorer-month) option[value^="2026"]:checked){
- --bg:#080c17;--panel:#0f1527;--panel-2:#131b31;--panel-3:#18223d;--line:#263250;--text:#f5f7ff;--muted:#97a4c2;--subtle:#687694;--accent:#7c9cff;--accent-2:#5ee0cc;--era-vector-filter:none;
-}
+/* Date/period colors are inherited from theme-engine's data-tide-era.
+   Never infer a year from a control or a hidden value: it overwrites the active theme. */
+body[data-tide-era="2024"]:not([data-tide-occasion]){--era-vector-filter:grayscale(1) sepia(1) saturate(3.5) hue-rotate(69deg) brightness(1.05)}
+body[data-tide-era="2025"]:not([data-tide-occasion]){--era-vector-filter:grayscale(1) sepia(1) saturate(3.3) hue-rotate(-13deg) brightness(1.05)}
+body[data-tide-era="2027"]:not([data-tide-occasion]){--era-vector-filter:grayscale(1) sepia(1) saturate(2.4) hue-rotate(2deg) brightness(1.07)}
+body[data-tide-era="2026"]:not([data-tide-occasion]){--era-vector-filter:none}
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) :is(.today-home-overview-eyebrow,.today-panel-eyebrow,.tide-cal-kicker,.tide-otd-kicker,.yrk-section-eyebrow,.trk-eyebrow,.month-hero-kicker,.year-awards-eyebrow,.record-hall-eyebrow){color:var(--accent-2)}
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) :is(.today-panel-header h3,.month-pick-label,.tide-cal-day-num,.tide-otd-memory h3,.yrk-podium-number,.year-award-winner){color:var(--text)}
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .today-dashboard .today-month-pick--best,body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .today-dashboard .today-month-pick--worst{
