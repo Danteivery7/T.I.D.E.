@@ -1145,7 +1145,9 @@ function askView(){
     {icon:'🎮',name:'Gaming',accent:'gaming',examples:[["What games did I play on September 5, 2026?","Games on a date"],["When did I last play The Crew Motorfest?","Last-played date"]]},
     {icon:'📓',name:'My life',accent:'life',examples:[["What happened on October 6, 2024?","Replay a day"],["Tell me about my life in October 2026","Month in review"]]},
     {icon:'🎧',name:'Music',accent:'music',examples:[["What was my top song in 2026?","Top song"],["Who was my top artist all time?","Lifetime artist"]]},
-    {icon:'💬',name:'Anything else',accent:'explore',examples:[["When did I last edit a video?","Creative history"],["What did I write about money this month?","Money diary notes"]]}
+    {icon:'💬',name:'Anything else',accent:'explore',examples:[["When did I last edit a video?","Creative history"],["What did I write about money this month?","Money diary notes"]]},
+    {icon:'🌙',name:'Health',accent:'life',examples:[["What was my longest sleep night in 2026?","Best night"],["How many migraines did I report in September 2026?","Migraine history"]]},
+    {icon:'💰',name:'Finances',accent:'music',examples:[["Which day did I receive the most money in 2026?","Biggest cash receipt"],["When is my next charge going to hit?","Upcoming bills"]]}
   ];
   const groupMarkup=groups.map(g=>`<div class="ask-suggestion-group ask-suggestion--${g.accent}"><div class="ask-suggestion-header"><span aria-hidden="true">${g.icon}</span><b>${g.name}</b></div><div class="ask-suggestion-items">${g.examples.map(([q,label])=>`<button type="button" class="ask-suggestion-button" data-ask-query="${esc(q)}"><span>${label}</span><span aria-hidden="true">↗</span></button>`).join('')}</div></div>`).join('');
   root.innerHTML=`${pageHead('Ask T.I.D.E.','Search the life you have recorded, from specific dates to big-picture patterns.')}
@@ -1162,7 +1164,7 @@ function askView(){
     <div class="ask-explorer-section-bar"><div><span>NEED SOME INSPIRATION?</span><h3>Explore your world</h3></div><span>Try a question below</span></div>
     <div class="ask-explorer-suggestions">${groupMarkup}</div>
     <div id="ask-results" class="ask-explorer-results" aria-live="polite">${askAnswer?renderAnswer(askAnswer):`<div class="ask-explorer-welcome"><span aria-hidden="true">✦</span><b>Your memories are one question away.</b><p>Choose an example or ask in your own words. Answers show their sources, and you can open matching diary dates.</p></div>`}</div>
-    <div class="ask-explorer-trust"><span>●</span> No outside AI is reading your diary. Search runs with on-device rules and only uses your saved sources. stats.fm rankings may be fetched when you ask about music. Money questions search diary mentions, not your bank accounts or Budget Tracker.</div>
+    <div class="ask-explorer-trust"><span>●</span> No outside AI is reading your diary. Search runs with on-device rules and only uses your saved sources. stats.fm rankings may be fetched when you ask about music. Money and Health questions use only your private imported records; this website has no direct ChatGPT bank or Watch connection.</div>
   </div>`;
   const input=root.querySelector('#ask-input'),form=root.querySelector('#ask-explorer-form'),results=root.querySelector('#ask-results');
   const run=async raw=>{
@@ -1174,7 +1176,13 @@ function askView(){
     let answer;
     try{
       const context={today:isoToday(),selectedDate};
-      if(askMusicIntent(contextualQuery)){
+      const financialQuestion=/\b(money|cash|bank|finances?|balance|bill|subscription|deposit|paycheck|income|earned|afford|purchase|run out|charge|spending on|spent on)\b|\$\d/i.test(contextualQuery);
+      const healthQuestion=/\b(sleep|slept|sleeping|steps?|health|workout|exercise|calories|standing|walked|migraine|headache)\b/i.test(contextualQuery);
+      if(financialQuestion&&!/\b(?:spent time|time spent|hours spent|minutes spent)\b/i.test(contextualQuery)){
+        answer=askFinance(state,contextualQuery,context);
+      }else if(healthQuestion&&!/\b(?:sleep playlist|sleep music)\b/i.test(contextualQuery)){
+        answer=healthAnswers(state,contextualQuery,context);
+      }else if(askMusicIntent(contextualQuery)){
         const scope=askScope(contextualQuery,context),start=scope.all?'2020-11-01':scope.start,end=scope.all?isoToday():scope.end;
         if(end<'2020-11-01'||start>isoToday())answer={kind:'music',heading:'Listening data unavailable for this period',primary:'Outside stats.fm history',detail:'The connected listening history starts November 1, 2020. Choose a date on or after then.',source:'stats.fm'};
         else{
