@@ -6,6 +6,8 @@ export const HEALTH_FIELDS=[
  {key:'exerciseMinutes',label:'Exercise',unit:'min',format:'integer'},
  {key:'activeCalories',label:'Active calories',unit:'kcal',format:'integer'},
  {key:'standMinutes',label:'Stand time',unit:'min',format:'integer'},
+ {key:'standHours',label:'Stand hours',unit:'hours',format:'integer'},
+ {key:'workoutMinutes',label:'Workout duration',unit:'min',format:'integer'},
  {key:'sleepHours',label:'Sleep',unit:'hours/night',format:'decimal'},
  {key:'workouts',label:'Workouts',unit:'recorded',format:'integer'}
 ];
@@ -26,6 +28,9 @@ export function normalizeHealthRow(raw){
     if(key==='sleepHours'&&n>18)continue;
     result[key]=round(n,key==='distanceMiles'||key==='sleepHours'?3:2);
   }
+  for(const extra of ['sleepSessions','napHours','standHoursGoal','exerciseGoalMinutes','moveGoalCalories'])if(raw[extra]!=null&&Number.isFinite(Number(raw[extra]))&&Number(raw[extra])>=0)result[extra]=round(Number(raw[extra]),3);
+  for(const extra of ['standGoalMet','exerciseGoalMet','moveGoalMet'])if(typeof raw[extra]==='boolean')result[extra]=raw[extra];
+  if(raw.workoutTypes&&typeof raw.workoutTypes==='object')result.workoutTypes=Object.fromEntries(Object.entries(raw.workoutTypes).filter(([k,v])=>/^[A-Za-z]{1,45}$/.test(k)&&Number.isInteger(Number(v))&&Number(v)>=0).slice(0,30));
   return Object.keys(result).length>1?result:null;
 }
 export function mergeHealthImport(state,payload){
@@ -56,7 +61,9 @@ export function healthPeriod(state,scope={}){
   for(const {key} of HEALTH_FIELDS){
     const recorded=known(rows,key),best=bestDay(rows,key);
     const total=recorded.length?sum(recorded,key):null;
-    metrics[key]={total,key,days:recorded.length,best:best?{date:best.date,value:best[key]}:null};
+    const worstEligible=recorded.filter(x=>x.date<new Date().toLocaleDateString('en-CA'));
+    const worst=worstEligible.slice().sort((a,b)=>Number(a[key])-Number(b[key])||a.date.localeCompare(b.date))[0]||null;
+    metrics[key]={total,key,days:recorded.length,best:best?{date:best.date,value:best[key]}:null,worst:worst?{date:worst.date,value:worst[key]}:null};
     if(key==='sleepHours')metrics[key].average=recorded.length?round(total/recorded.length,2):null;
     else metrics[key].average=recorded.length?round(total/recorded.length,2):null;
     const months=[...byMonth].map(([month,list])=>{
@@ -69,8 +76,14 @@ export function healthPeriod(state,scope={}){
       return av||a.month.localeCompare(b.month);
     })[0]||null;
     metrics[key].bestMonth=bestMonth;
+    metrics[key].worstMonth=choices.slice().sort((a,b)=>{
+      const av=key==='sleepHours'?a.average-b.average:a.total-b.total;
+      return av||a.month.localeCompare(b.month);
+    })[0]||null;
+    metrics[key].months=months.sort((a,b)=>a.month.localeCompare(b.month));
   }
-  return{rows:rows.length,metrics,firstDate:rows[0]?.date||null,lastDate:rows.at(-1)?.date||null};
+  const rings={};for(const k of ['standGoalMet','exerciseGoalMet','moveGoalMet']){const withGoal=rows.filter(r=>typeof r[k]==='boolean');rings[k]={recordedDays:withGoal.length,closedDays:withGoal.filter(r=>r[k]).length};}
+  return{rows:rows.length,metrics,rings,firstDate:rows[0]?.date||null,lastDate:rows.at(-1)?.date||null};
 }
 export function yearlyHealthOverview(state,years){
   return [...years].map(year=>({year,...healthPeriod(state,{year})}));
@@ -78,6 +91,8 @@ export function yearlyHealthOverview(state,years){
 export function formatHealth(key,value){
   if(value===null||value===undefined||!Number.isFinite(Number(value)))return '—';
   if(key==='sleepHours')return round(Number(value),2).toFixed(2)+' h';
+  if(key==='standHours')return Math.round(Number(value))+' h';
+  if(key==='workoutMinutes')return Math.round(Number(value))+' min';
   if(key==='distanceMiles')return round(Number(value),2).toFixed(2)+' mi';
   return Math.round(Number(value)).toLocaleString('en-US');
 }
