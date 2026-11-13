@@ -41,7 +41,7 @@ test('November 19 Vice City styling reuses existing theme state',()=>{
   const theme=readFileSync(new URL('../theme-engine.js',import.meta.url),'utf8');
   assert.ok(theme.includes("d>='2026-11-19'&&d<='2026-12-31'"));
   assert.ok(theme.includes("body.classList.toggle('vice-city-season',theme.viceCity)"));
-  assert.ok(app.includes('setThemeForDate(root,presentationDate(),personalCalendarEvents(state,presentationDate()))'));
+  assert.ok(app.includes('setThemeForDate(root,date,period?[]:personalCalendarEvents(state,date),{period})'));
   for(const marker of ['body.vice-city-season .tide-topbar{','body.vice-city-season .tide-topbar .tide-topbar-ask{','body.vice-city-season .tide-topbar .tide-topbar-today{','body.vice-city-season .tide-topbar .tide-topbar-menu{'])assert.ok(css.includes(marker),marker);
   assert.ok(!css.includes('body.vice-city-season body:has('));
   const version=Number(sw.match(/const CACHE='tide-shell-v(\d+)'/)?.[1]);
