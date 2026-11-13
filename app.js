@@ -448,8 +448,23 @@ function trackerViewIcon(kind,status){
   return `<svg class="trk-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${shapes[status==='retired'?'retired':kind]||shapes.event}</svg>`;
 }
 
+function showReadOnlyTracker(id){
+  const t=trackerDefinition(state,id),auto=AUTO_TRACKER_IDS.has(id),rows=occurrencesFor(state,id).slice().reverse();
+  const note=id==='gaming-sessions'?'One report per game with increased playtime on each successful gaming refresh. An earlier daily aggregate cannot reliably be split into sessions.':
+    id==='editing-events'?'Counts explicit diary editing activity mentions, one per separate diary segment. Existing notes are included.':
+    id==='social-days'?'One date with social diary activity counts as one day, even if multiple conversations are mentioned.':
+    'Historical GTA Online counter. Original totals are preserved, with tracking ending November 19, 2026.';
+  const history=rows.length?rows.slice(0,120).map(r=>`<div class="history-row"><div class="history-date">${shortDate(r.date)}</div><div class="history-text">${esc(r.snippet||'Recorded event')}</div><b>+${fmt(r.count||1)}</b></div>`).join(''):'<div class="muted">No exact dated events available. Imported totals may still be included above.</div>';
+  const html=`<div class="grid grid-3">
+    <div class="record-card"><div class="stat-label">This Month</div><div class="record-value">${fmt(trackerTotal(state,id,{month:selectedMonth}))}</div></div>
+    <div class="record-card"><div class="stat-label">${selectedYear}</div><div class="record-value">${fmt(trackerTotal(state,id,{year:selectedYear}))}</div></div>
+    <div class="record-card"><div class="stat-label">All Time</div><div class="record-value">${fmt(trackerTotal(state,id))}</div></div>
+  </div><p class="small muted" style="margin-top:15px;line-height:1.65">${esc(note)}</p><div class="section-title">${auto?'AUTOMATIC SOURCE HISTORY':'GTA ONLINE · HISTORICAL RECORDS'}</div><div class="history-list">${history}</div>`;
+  openModal(t.name,html,auto?'AUTOMATIC TRACKER':'HISTORICAL TRACKER');
+}
+
 function trackersView(){
-  const defs=allTrackerDefinitions(state);
+  const defs=[...LIFE_TRACKER_IDS,...ARCHIVED_GTA_IDS].map(id=>trackerDefinition(state,id));
   const active=defs.filter(t=>t.status!=='retired'),archived=defs.filter(t=>t.status==='retired');
   const monthWithEvents=defs.filter(t=>t.kind==='event'&&trackerTotal(state,t.id,{month:selectedMonth})>0).length;
   const rows=defs.map(t=>{
@@ -463,7 +478,7 @@ function trackersView(){
       <div class="trk-ledger-metric"><div class="stat-label">Month</div><b>${fmt(month)}</b></div>
       <div class="trk-ledger-metric"><div class="stat-label">${selectedYear}</div><b>${fmt(year)}</b></div>
       <div class="trk-ledger-metric"><div class="stat-label">All Time</div><b>${fmt(all)}</b></div>
-      <button type="button" class="button trk-ledger-action" data-tracker="${esc(t.id)}">View / Add <span aria-hidden="true">↗</span></button>
+      <button type="button" class="button trk-ledger-action" data-tracker="${esc(t.id)}">${AUTO_TRACKER_IDS.has(t.id)||status==='retired'?'View history':'View / Add'} <span aria-hidden="true">↗</span></button>
     </article>`;
   }).join('');
   root.innerHTML=`${pageHead('Trackers','Your ongoing streaks, event records, and personal history in one place.')}
@@ -471,8 +486,8 @@ function trackersView(){
     <header class="trk-hero">
       <div class="trk-hero-copy"><span class="trk-eyebrow">✦ YOUR NUMBERS · YOUR HISTORY</span>
         <h2>Every milestone <em>counts.</em></h2>
-        <p>A home for the things you actually track, from GeoGuessr streaks and wins to the smaller moments worth remembering.</p>
-        <div class="trk-hero-note"><span aria-hidden="true">✧</span> Saved counters and dated history, never estimated totals</div>
+        <p>Five main trackers: reported gaming sessions, editing activities, social days, migraines, and Hong Kong spawns.</p>
+        <div class="trk-hero-note"><span aria-hidden="true">✧</span> Five active trackers · three preserved GTA Online archives</div>
       </div>
       <div class="trk-hero-art" aria-hidden="true">
         <span class="trk-hero-ring trk-hero-ring--one"></span><span class="trk-hero-ring trk-hero-ring--two"></span>
@@ -485,33 +500,32 @@ function trackersView(){
       <div class="trk-dashboard-stat trk-dashboard-stat--month"><div class="trk-stat-top"><span>RECORDED THIS MONTH VIEW</span><span class="trk-stat-mark" aria-hidden="true">✦</span></div><strong>${fmt(monthWithEvents)}</strong><small>Event trackers with entries · ${esc(monthLabel(selectedMonth))}</small></div>
     </section>
     <div class="trk-collection-head">
-      <div><div class="trk-section-eyebrow">THE TRACKER COLLECTION</div><h2>Browse your records</h2><p>Find a tracker, compare its dates and totals, or open it to add an occurrence.</p></div>
+      <div><div class="trk-section-eyebrow">THE TRACKER COLLECTION</div><h2>Browse your records</h2><p>View your five active trackers or open the three retired GTA Online records under Historical.</p></div>
       <span class="trk-collection-count">${fmt(defs.length)} TRACKERS</span>
     </div>
     <section class="card trk-ledger-section">
-      <div class="trk-ledger-heading"><div><span class="trk-section-eyebrow">EVENT TRACKER LIBRARY</span><h3>Events & archive</h3><p>Month, year, and lifetime figures from your existing saved records.</p></div><span class="trk-ledger-hint">SELECT TO VIEW OR ADD</span></div>
+      <div class="trk-ledger-heading"><div><span class="trk-section-eyebrow">EVENT TRACKER LIBRARY</span><h3>Your five trackers</h3><p>Month, year, and lifetime figures from your existing saved records.</p></div><span class="trk-ledger-hint">SELECT TO VIEW OR ADD</span></div>
     <div class="trk-library-tools" aria-label="Browse tracker history">
       <div class="trk-filter-tabs" role="group" aria-label="Filter trackers">
-        <button type="button" class="trk-filter-tab is-selected" data-trk-filter="all" aria-pressed="true">All</button>
-        <button type="button" class="trk-filter-tab" data-trk-filter="in-use" aria-pressed="false">In use</button>
-        <button type="button" class="trk-filter-tab" data-trk-filter="retired" aria-pressed="false">Historical</button>
+        <button type="button" class="trk-filter-tab is-selected" data-trk-filter="in-use" aria-pressed="true">Active · 5</button>
+        <button type="button" class="trk-filter-tab" data-trk-filter="retired" aria-pressed="false">Historical · 3</button>
       </div>
       <label class="trk-search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.3 15.3 5 5"/></svg><span class="trk-sr-only">Search trackers</span><input type="search" id="trk-search" placeholder="Search trackers…" autocomplete="off"></label>
     </div>
       <div class="tracker-table trk-ledger-list">${rows}</div>
       <div class="trk-library-empty" id="trk-library-empty" hidden><span aria-hidden="true">⌕</span><b>No matching trackers</b><p>Try a different name or filter. Featured GeoGuessr trackers stay in their own section above.</p></div>
-      <div class="trk-ledger-footnote">Historical trackers are kept for reference. Some older totals were imported without individual dates. The quick GeoGuessr controls above continue to use their existing counters.</div>
+      <div class="trk-ledger-footnote">Gaming sessions are detected game-playtime increases, never diary mentions. Editing counts diary activity mentions and social counts distinct days. Retired GTA records remain accessible under Historical.</div>
     </section>
   </div>`;
-  root.querySelectorAll('[data-tracker]').forEach(b=>b.onclick=()=>showTracker(b.dataset.tracker));
+  root.querySelectorAll('[data-tracker]').forEach(b=>b.onclick=()=>AUTO_TRACKER_IDS.has(b.dataset.tracker)||ARCHIVED_GTA_IDS.includes(b.dataset.tracker)?showReadOnlyTracker(b.dataset.tracker):showTracker(b.dataset.tracker));
   const tabs=[...root.querySelectorAll('[data-trk-filter]')],search=root.querySelector('#trk-search');
-  let filter='all';
+  let filter='in-use';
   const apply=()=>{
     const term=search.value.trim().toLowerCase();
     let visible=0;
     root.querySelectorAll('.trk-ledger-row').forEach(row=>{
       const status=row.dataset.trkStatus;
-      const statusMatches=filter==='all'||filter==='retired'&&status==='retired'||filter==='in-use'&&status!=='retired';
+      const statusMatches=filter==='retired'?status==='retired':status!=='retired';
       const searchMatches=!term||row.dataset.trkName.includes(term)||row.textContent.toLowerCase().includes(term);
       const allowed=statusMatches&&searchMatches;
       row.classList.toggle('trk-is-filtered',!allowed);
@@ -525,6 +539,7 @@ function trackersView(){
     apply();
   });
   search.addEventListener('input',apply);
+  apply();
 }
 function showTracker(id){const t=trackerDefinition(state,id);const rows=occurrencesFor(state,id).slice().reverse();const gtaEnded=['mors-mutual','google-car'].includes(id);openModal(t.name,`<div class="grid grid-3"><div class="record-card"><div class="stat-label">This Month</div><div class="record-value">${trackerTotal(state,id,{month:selectedMonth})}</div></div><div class="record-card"><div class="stat-label">${selectedYear}</div><div class="record-value">${trackerTotal(state,id,{year:selectedYear})}</div></div><div class="record-card"><div class="stat-label">All Time</div><div class="record-value">${trackerTotal(state,id)}</div></div></div><div class="section-title">MANUAL OCCURRENCE</div><div class="grid grid-3"><label class="label">Date<input id="manual-date" class="input" type="date" value="${gtaEnded&&isoToday()>='2026-11-19'?'2026-11-18':isoToday()}" ${gtaEnded?'max="2026-11-18"':''}></label><label class="label">Count<input id="manual-count" class="input" type="number" min="0" value="1"></label><label class="label">Note<input id="manual-note" class="input" value="Manual ${esc(t.name)}"></label></div><button class="button primary" id="manual-add" style="margin-top:12px">Add occurrence</button><div class="section-title">DATED HISTORY</div><div class="history-list">${rows.length?rows.slice(0,100).map(r=>`<div class="history-row"><div class="history-date">${shortDate(r.date)}</div><div class="history-text">${esc(r.snippet||'Occurrence')}</div><b>${r.value!=null?fmt(r.value):r.result?esc(r.result):`+${r.count}`}</b></div>`).join(''):'<div class="muted">No dated occurrences yet.</div>'}</div>`,'TRACKER');modal.querySelector('#manual-add').onclick=()=>{if(gtaEnded&&modal.querySelector('#manual-date').value>='2026-11-19'){toast('This GTA Online tracker retired on November 19. Historical dates remain editable.','bad');return;}addManualOccurrence(state,{trackerId:id,date:modal.querySelector('#manual-date').value,count:modal.querySelector('#manual-count').value,snippet:modal.querySelector('#manual-note').value});persist();closeModal();render();toast('Tracker occurrence added.')}}
 
