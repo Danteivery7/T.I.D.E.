@@ -156,3 +156,78 @@ body[data-tide-occasion="my-birthday"] .topbar:before{
  body[data-tide-occasion="new-year"] .topbar:after,
  body[data-tide-occasion="my-birthday"] .topbar:before{animation:none;opacity:.13}
 }
+
+
+
+/* Private Health & Activity reports share the site's dated theme tokens. */
+.health-section{position:relative;overflow:hidden;margin:19px 0 25px;padding:24px 25px;border-radius:20px;min-width:0;border:1px solid color-mix(in srgb,var(--accent),transparent 72%);background:radial-gradient(circle at 100% 0%,color-mix(in srgb,var(--accent),transparent 91%),transparent 48%),var(--panel)}
+.health-section:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent-2));opacity:.83}
+.health-section-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:18px;margin:2px 0 23px}
+.health-section-head>div{flex:1;min-width:0}
+.health-eyebrow{color:var(--accent);font-size:10px;font-weight:950;letter-spacing:.13em;line-height:1.4}
+.health-section-head h2{font-size:clamp(22px,2.5vw,30px);letter-spacing:-.045em;font-weight:950;line-height:1.15;margin:7px 0}
+.health-section-head p{font-size:11px;color:var(--muted);max-width:600px;line-height:1.65;margin:0}
+.health-section-head .health-manage{white-space:nowrap;background:color-mix(in srgb,var(--accent),transparent 88%);border-color:color-mix(in srgb,var(--accent),transparent 57%);font-weight:850;font-size:11px}
+.health-sleep-feature{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:12px;margin-bottom:14px}
+.health-sleep-highlight{display:flex;flex-direction:column;justify-content:center;min-height:146px;padding:19px 22px;border:1px solid color-mix(in srgb,var(--accent),transparent 62%);border-radius:16px;background:linear-gradient(120deg,color-mix(in srgb,var(--accent),transparent 85%),rgba(100,125,182,.09))}
+.health-sleep-highlight strong{font-size:clamp(30px,4vw,45px);letter-spacing:-.06em;line-height:1.1;margin:8px 0 7px;color:var(--text);font-variant-numeric:tabular-nums}
+.health-sleep-highlight small{font-size:10px;color:var(--muted);line-height:1.5}
+.health-sleep-highs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.health-sleep-highs>div{display:flex;flex-direction:column;justify-content:center;gap:11px;min-width:0;min-height:145px;padding:17px;border:1px solid color-mix(in srgb,var(--accent),transparent 80%);border-radius:15px;background:rgba(125,130,178,.065)}
+.health-sleep-highs span:first-child,.health-record-detail>span{font-size:9px;font-weight:900;letter-spacing:.08em;line-height:1.5;color:var(--muted)}
+.health-sleep-highs b{font-size:12px;line-height:1.55;overflow-wrap:anywhere;color:var(--text)}
+.health-date-link{appearance:none;padding:0;border:0;background:transparent;color:var(--accent);text-align:left;cursor:pointer;font-size:12px;font-weight:800;line-height:1.55}
+.health-date-link:hover,.health-date-link:focus-visible{text-decoration:underline;text-underline-offset:3px}
+.health-metric-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.health-metric-card{min-width:0;padding:19px;border:1px solid color-mix(in srgb,var(--accent),transparent 82%);border-radius:15px;background:linear-gradient(139deg,rgba(115,119,158,.11),rgba(65,93,137,.06))}
+.health-metric-label{font-size:10px;font-weight:950;letter-spacing:.11em;text-transform:uppercase;color:var(--accent)}
+.health-metric-card>strong{display:block;font-size:clamp(23px,3vw,35px);letter-spacing:-.055em;font-weight:950;line-height:1.13;margin:11px 0 4px;color:var(--text);overflow-wrap:anywhere}
+.health-metric-card>small{font-size:10px;color:var(--muted)}
+.health-record-detail{display:flex;flex-direction:column;gap:6px;padding-top:13px;margin-top:13px;border-top:1px solid color-mix(in srgb,var(--accent),transparent 87%);min-width:0}
+.health-record-detail+.health-record-detail{padding-top:11px;margin-top:9px}
+.health-record-detail b{font-size:11px;font-weight:800;line-height:1.55;overflow-wrap:anywhere;color:var(--text)}
+.health-footnote{font-size:10px;color:var(--muted);line-height:1.75;padding-top:13px;margin:13px 0 0;border-top:1px solid var(--line)}
+.health-year-comparison{margin:10px 0 22px;padding:18px;border:1px solid var(--line);border-radius:15px;background:rgba(122,115,168,.05)}
+.health-year-comparison-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:9px;margin-top:13px}
+.health-year-avg{display:grid;gap:8px;align-content:start;padding:14px;border:1px solid color-mix(in srgb,var(--accent),transparent 78%);border-radius:12px;background:rgba(120,113,160,.09)}
+.health-year-avg span{color:var(--accent);font-size:11px;font-weight:900;letter-spacing:.1em}
+.health-year-avg strong{font-size:23px;letter-spacing:-.04em;font-weight:950;font-variant-numeric:tabular-nums;color:var(--text)}
+.health-year-avg small{font-size:10px;color:var(--muted)}
+.health-settings-section{border-color:color-mix(in srgb,var(--accent),transparent 72%)}
+.tide-favorite-panel{margin:15px 0 25px;padding:22px}
+.tide-favorite-panel .card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px}
+.tide-favorite-panel .card-header h2{font-size:clamp(20px,2.5vw,27px);letter-spacing:-.04em;margin:5px 0}
+.tide-favorite-panel .card-header p{max-width:650px;line-height:1.6}
+.tide-favorite-eyebrow{color:var(--accent);font-size:10px;letter-spacing:.13em;font-weight:900}
+.tide-favorite-row:first-of-type{border-color:color-mix(in srgb,var(--accent),transparent 40%);background:color-mix(in srgb,var(--accent),transparent 90%)}
+.tide-favorite-row>div{min-width:0}
+.tide-favorite-row b{font-size:13px;line-height:1.45}
+.tide-favorite-row p{font-size:11px;line-height:1.55;margin:5px 0 0;color:var(--muted);max-width:760px}
+.tide-favorite-row button{font-size:11px;font-weight:850;background:color-mix(in srgb,var(--accent),transparent 90%);border-color:color-mix(in srgb,var(--accent),transparent 60%)}
+.tide-favorite-empty{border:1px dashed color-mix(in srgb,var(--accent),transparent 64%);border-radius:13px;padding:21px;color:var(--muted);font-size:12px;line-height:1.6;background:rgba(120,130,170,.035)}
+.tide-favorites-history{display:grid;gap:12px;margin-bottom:26px}
+.tide-favorites-history .tide-favorite-panel{margin:0}
+.tide-favorites-history .tide-favorite-panel .card-header h2{margin-top:6px}
+.tide-fav-editor-row b{font-size:11px;color:var(--accent)}
+.tide-birthday-suggestions{margin-top:20px;padding:13px;border:1px solid var(--line);border-radius:12px}
+.tide-birthday-suggestions summary{font-weight:850;font-size:12px;cursor:pointer}
+.tide-birthday-suggestions .button{margin:5px}
+@media(max-width:950px){
+ .health-metric-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .health-sleep-feature{grid-template-columns:1fr}
+}
+@media(max-width:560px){
+ .health-section{padding:17px 15px;margin:14px 0}
+ .health-metric-grid{gap:8px}
+ .health-metric-card{padding:13px 11px}
+ .health-metric-card>strong{font-size:24px}
+ .health-sleep-highs{grid-template-columns:1fr}
+ .health-sleep-highs>div{min-height:96px}
+ .health-record-detail{padding-top:9px;margin-top:9px}
+ .health-sleep-highlight{min-height:126px}
+ .tide-favorite-panel{padding:15px}
+ .tide-favorite-panel .card-header{flex-wrap:wrap}
+}
+@media(max-width:340px){
+ .health-metric-grid{grid-template-columns:1fr}
+}
