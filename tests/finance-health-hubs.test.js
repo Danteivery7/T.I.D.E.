@@ -32,7 +32,7 @@ test('posted deposit classification is receipts, not earned income or own-accoun
  assert.equal(p.highestReceiptDay.date,'2026-01-23');
  assert.equal(p.highestReceiptDay.receipts,4110);
  assert.equal(p.confirmedIncome,300);
- assert.equal(p.received,8525);
+ assert.equal(p.received,8510); // 4,110 + 4,100 + 300; refunds tracked separately.
  assert.equal(p.expenses,180);
  assert.equal(transactionClass({name:'Transfer from Savings',category:'transfers',amount:50}),'internal_transfer');
  assert.equal(transactionClass({name:'Credit card payment',category:'transfers',amount:-100}),'card_payment');
