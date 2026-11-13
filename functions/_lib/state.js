@@ -64,6 +64,10 @@ export function mergeStates(remote,incoming){
   const imports=new Map();for(const x of [...(remote.rawImports||[]),...(incoming.rawImports||[])])imports.set(x.id||`${x.importedAt}:${x.characters}`,x);out.rawImports=[...imports.values()];
   out.tideCounters=mergeCounters(remote.tideCounters,incoming.tideCounters);
   out.yearRankings=newer(remote.yearRankings,incoming.yearRankings)||incoming.yearRankings||remote.yearRankings||null;
+  out.calendarEvents=mergeMapByTime(remote.calendarEvents||{},incoming.calendarEvents||{});
+  out.favoriteDays=mergeMapByTime(remote.favoriteDays||{},incoming.favoriteDays||{});
+  const healthMeta=newer(remote.healthActivity,incoming.healthActivity)||incoming.healthActivity||remote.healthActivity||{};
+  out.healthActivity={...healthMeta,days:mergeMapByTime(remote.healthActivity?.days||{},incoming.healthActivity?.days||{})};
   out.settings={...(remote.settings||{}),...(incoming.settings||{}),migrations:{...(remote.settings?.migrations||{}),...(incoming.settings?.migrations||{})}};
   out.updatedAt=new Date().toISOString();
   return out;
