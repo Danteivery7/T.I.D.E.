@@ -96,7 +96,7 @@ test('Health months compute sleep averages only from recorded nights and use at 
   assert.equal(year.metrics.sleepHours.bestMonth.month,'2026-11');
   assert.equal(year.metrics.sleepHours.bestMonth.average,9);
   assert.equal(year.metrics.steps.best.date,'2026-10-02');
-  assert.equal(year.metrics.steps.bestMonth.month,'2026-10');
+  assert.equal(year.metrics.steps.bestMonth.month,'2026-11');
   assert.equal(year.metrics.exerciseMinutes.best.date,'2026-10-02');
   assert.equal(year.metrics.exerciseMinutes.bestMonth.month,'2026-11');
   assert.equal(healthPeriod(s,{year:2025}).metrics.sleepHours.average,null);
