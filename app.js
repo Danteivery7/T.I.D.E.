@@ -783,7 +783,8 @@ function recordsView(){
   const bestDay=gamingRecords.bestDay,bestMonth=gamingRecords.bestMonth,bestGameDay=gamingRecords.bestGameDay,bestGameMonth=gamingRecords.bestGameMonth;
   const dates=Object.entries(state.entries||{}).filter(([,entry])=>entry?.text?.trim());
   const busiest=dates.map(([date,entry])=>({date,events:splitEvents(entry.text).length})).sort((a,b)=>b.events-a.events||a.date.localeCompare(b.date))[0];
-  const top=activityStats(state).counts[0],editing=mostActivityDay(state,"Editing");
+  const top=activityStats(state).counts[0],editing=topTrackerDay(state,"editing-events");
+  const sessionPeak=topTrackerMonth(state,"gaming-sessions"),editingPeak=topTrackerMonth(state,"editing-events"),socialPeak=topTrackerMonth(state,"social-days");
   const streak=loggingStreak(state),daily=dailyChallengeStreaks(state),monty=montyRecord(state);
   const geo=geoguessr10kRecord(state);
   const lifeRecords=diarySignals(state);
@@ -826,12 +827,18 @@ function recordsView(){
         </div>`).join(""):'<p class="muted small">As gaming data is recorded, your biggest months will appear here.</p>'}
       </div>
       <div class="record-hall-source-note">${recordHallIcon("target")}<span>Gaming day records come from changes detected between account snapshots; they are <b>not exact session timers</b>. Monthly records can also include recovered historical playtime. Older lifetime playtime without date evidence is never assigned to a specific day or month.</span></div>
+      <div class="section-title">LIFE'S BIGGEST TRACKED MOMENTS</div>
+      <div class="record-hall-card-grid">
+        ${recordHallCard("total","gamepad","Most reported gaming sessions in a month",sessionPeak?`${fmt(sessionPeak.count)} sessions`:"—",sessionPeak?`${monthLabel(sessionPeak.month)} · reported game increases`:"Session reports are counted from new gaming refreshes")}
+        ${recordHallCard("edit","edit","Most editing events in a month",editingPeak?`${fmt(editingPeak.count)} edits`:"—",editingPeak?`${monthLabel(editingPeak.month)} · explicit diary edits`:"No saved editing entries")}
+        ${recordHallCard("activity","sparkle","Most social days in a month",socialPeak?`${fmt(socialPeak.count)} days`:"—",socialPeak?`${monthLabel(socialPeak.month)} · diary-identified social days`:"No social diary mentions")}
+      </div>
       <div class="section-title">YOUR LIFE · DIARY MILESTONES</div>
       <div class="record-hall-card-grid record-hall-diary">
         ${recordHallCard("activity","sparkle","Most common activity",top?.[0]||"—",top?`${fmt(top[1])} recognized diary events`:"No activities recognized yet")}
         ${recordHallCard("writing","diary","Most events in one day",busiest?`${fmt(busiest.events)} events`:"—",busiest?shortDate(busiest.date):"No saved diary entries yet")}
         ${recordHallCard("streak","fire","Longest diary streak",`${fmt(streak.longest)} days`,streak.last?`Last saved ${shortDate(streak.last)}`:"No diary streak data yet")}
-        ${recordHallCard("edit","edit","Most editing in a day",editing?`${fmt(editing.count)} events`:"—",editing?shortDate(editing.date):"No editing events recognized yet")}
+        ${recordHallCard("edit","edit","Most editing in a day",editing?`${fmt(editing.count)} edits`:"—",editing?shortDate(editing.date):"No explicit editing entries yet")}
       </div>
       <div class="section-title">LIFE RECORDS · ACTUAL DIARY PATTERNS</div>
       <div class="record-hall-card-grid">
@@ -854,14 +861,13 @@ function recordsView(){
         ${recordHallCard("geoguessr","flag","Hong Kong spawns",fmt(trackerTotal(state,"hong-kong")),"Lifetime tracker total")}
       </div>
       <details class="record-hall-history">
-        <summary><span>${recordHallIcon("diary")} Other historical counters</span><span class="record-hall-history-hint">View less-used totals <span aria-hidden="true">⌄</span></span></summary>
+        <summary><span>${recordHallIcon("diary")} Historical GTA Online counters</span><span class="record-hall-history-hint">View retired totals <span aria-hidden="true">⌄</span></span></summary>
         <div class="record-hall-history-grid">
-          <div><span>Diary days saved</span><b>${fmt(dates.length)}</b></div>
           <div><span>Mors Mutual calls</span><b>${fmt(trackerTotal(state,"mors-mutual"))}</b></div>
+          <div><span>GTA Google Car casualties</span><b>${fmt(trackerTotal(state,"google-car"))}</b></div>
           <div><span>Collisions</span><b>${fmt(trackerTotal(state,"apartment-collisions"))}</b></div>
-          <div><span>Migraines</span><b>${fmt(trackerTotal(state,"migraines"))}</b></div>
         </div>
-        <div class="record-hall-history-foot">These totals are preserved rather than deleted, but they don't take space from your main records.</div>
+        <div class="record-hall-history-foot">These GTA Online totals are preserved for historical reference, with retirement effective November 19, 2026. Your five current trackers appear in the main monthly and yearly sections.</div>
       </details>
     </div>`;
   root.querySelectorAll("[data-record-day]").forEach(button=>button.onclick=()=>openDay(button.dataset.recordDay));
