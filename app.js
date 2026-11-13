@@ -742,7 +742,7 @@ function trackerViewIcon(kind,status){
 
 function showReadOnlyTracker(id){
   const t=trackerDefinition(state,id),auto=AUTO_TRACKER_IDS.has(id),rows=(id==='apartment-collisions'?[...occurrencesFor(state,'apartment-collisions'),...occurrencesFor(state,'collision-count')]:occurrencesFor(state,id)).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  const note=id==='gaming-sessions'?'Each distinct time you wrote that you played a game counts as one diary session. 'Played again' counts another, but 'continued playing' does not. Sessions from 2024 onward are reconstructed from saved diary entries; gaming account refreshes track hours separately.':
+  const note=id==='gaming-sessions'?"Each distinct time you wrote that you played a game counts as one diary session. Played again counts another, but continued playing does not. Sessions from 2024 onward are reconstructed from saved diary entries; gaming account refreshes track hours separately.":
     id==='editing-events'?'Counts explicit diary editing activity mentions, one per separate diary segment. Existing notes are included.':
     id==='social-days'?'One date with social diary activity counts as one day, even if multiple conversations are mentioned.':
     'Historical GTA Online counter. Original totals are preserved, with tracking ending November 19, 2026.';
