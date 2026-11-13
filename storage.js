@@ -32,6 +32,7 @@ function migrate(input){
     calendarEvents:s.calendarEvents&&typeof s.calendarEvents==='object'?s.calendarEvents:{},
     favoriteDays:s.favoriteDays&&typeof s.favoriteDays==='object'?s.favoriteDays:{},
     healthActivity:{...(s.healthActivity||{}),days:s.healthActivity?.days||{}},
+    finances:{...(s.finances||{}),accounts:s.finances?.accounts||{},transactions:s.finances?.transactions||{},recurring:s.finances?.recurring||{},manualEvents:s.finances?.manualEvents||{}},
     settings:{...base.settings,...(s.settings||{}),migrations:{...(base.settings?.migrations||{}),...(s.settings?.migrations||{})}},
   };
 }
@@ -127,6 +128,8 @@ export function mergeStates(local,remote){
   const healthDays=mergeMapByTime(l.healthActivity?.days,r.healthActivity?.days);
   const healthMeta=newer(l.healthActivity,r.healthActivity)||l.healthActivity||r.healthActivity||{};
   out.healthActivity={...healthMeta,days:healthDays};
+  const financeMeta=newer(l.finances,r.finances)||l.finances||r.finances||{};
+  out.finances={...financeMeta,accounts:mergeMapByTime(l.finances?.accounts,r.finances?.accounts),transactions:mergeMapByTime(l.finances?.transactions,r.finances?.transactions),recurring:mergeMapByTime(l.finances?.recurring,r.finances?.recurring),manualEvents:mergeMapByTime(l.finances?.manualEvents,r.finances?.manualEvents)};
   out.settings={...(r.settings||{}),...(l.settings||{}),migrations:{...(r.settings?.migrations||{}),...(l.settings?.migrations||{})}};
   out.updatedAt=new Date().toISOString();
   return out;
