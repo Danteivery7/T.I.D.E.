@@ -46,15 +46,27 @@
     <div id="sidebar-scrim" class="sidebar-scrim"></div>
 
     <main class="main-area">
-      <header class="topbar">
-        <div class="topbar-left">
-          <button id="mobile-menu" class="icon-button desktop-hide" aria-label="Open menu">☰</button>
-          <div id="view-eyebrow" class="eyebrow">TODAY</div>
+      <header class="topbar tide-topbar">
+        <div class="topbar-left tide-topbar-context">
+          <button id="mobile-menu" class="icon-button desktop-hide tide-topbar-menu" aria-label="Open menu">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
+          <span class="tide-topbar-context-mark" aria-hidden="true">T</span>
+          <div class="tide-topbar-location">
+            <span class="tide-topbar-kicker">YOUR T.I.D.E.</span>
+            <div id="view-eyebrow" class="eyebrow tide-topbar-current">TODAY</div>
+          </div>
         </div>
-        <div class="topbar-right">
-          <button id="quick-ask" class="top-action">⌕ Ask T.I.D.E.</button>
-          <button id="jump-today" class="top-action">Today</button>
-        </div>
+        <nav class="topbar-right tide-topbar-actions" aria-label="Quick navigation">
+          <button id="quick-ask" class="top-action tide-topbar-action tide-topbar-ask" type="button" aria-label="Open Ask T.I.D.E.">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.8" cy="10.8" r="6.6"/><path d="m15.7 15.7 4.5 4.5"/><path d="M10.8 7.9v5.8M7.9 10.8h5.8" stroke-width="1.2"/></svg>
+            <span class="tide-topbar-label-full">Ask T.I.D.E.</span><span class="tide-topbar-label-short" aria-hidden="true">Ask</span>
+          </button>
+          <button id="jump-today" class="top-action tide-topbar-action tide-topbar-today" type="button" aria-label="Go to today">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4M17 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/></svg>
+            <span>Today</span>
+          </button>
+        </nav>
       </header>
 
       <div id="view-root" class="view-root" aria-live="polite"></div>
