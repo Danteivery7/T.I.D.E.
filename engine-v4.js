@@ -140,9 +140,9 @@ export function askTide(state,question){
     const location=scope.month?v3.monthLabel(scope.month):scope.year?String(scope.year):'all time';
     if(/what days|which days|what dates|which dates|when did|show (?:me )?(?:every|all)/.test(lower)){
       const events=occurrencesFor(state,match.id,scope);
-      return{type:'dates',primary:`${total} ${match.name.toLowerCase()} · ${location}`,items:events.slice(-100).map(row=>({date:row.date,label:v3.dateLabel(row.date,{weekday:false}),meta:row.snippet})),detail:'Derived from positive gaming account refreshes or your dated diary entries. Gaming sessions never come from diary mentions.'};
+      return{type:'dates',primary:`${total} ${match.name.toLowerCase()} · ${location}`,items:events.slice(-100).map(row=>({date:row.date,label:v3.dateLabel(row.date,{weekday:false}),meta:row.snippet})),detail:'Gaming sessions come from distinct play starts written in your diary, including repeated plays on one date. Continuations are not additional sessions. Game playtime is tracked separately.'};
     }
-    return{type:'count',primary:String(total),detail:`${match.name} · ${location}. No manual session count or estimated historical sessions.`};
+    return{type:'count',primary:String(total),detail:`${match.name} · ${location}. Sessions are counted from dated diary play starts, including historical years. Continued playing is not an extra session.`};
   }
   if(isHong||isCollision){
     const id=isHong?'hong-kong':CANONICAL_COLLISIONS,name=isHong?'Hong Kong Spawns':'Collisions',scope=scopedQuestion(q);
