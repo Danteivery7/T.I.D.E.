@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {themeForDate,ERA_THEMES} from '../theme-engine.js';
-import {KNOWN_BIRTHDAYS,personalCalendarEvents,calendarEventsOnDate,calendarEventsForMonth,writeCalendarEvent,removeCalendarEvent,proposedDiaryHeading,birthdaySuggestions} from '../personal-calendar.js';
+import {birthdayRegistry,personalCalendarEvents,calendarEventsOnDate,calendarEventsForMonth,writeCalendarEvent,removeCalendarEvent,proposedDiaryHeading,birthdaySuggestions} from '../personal-calendar.js';
 import {favoriteDays,saveFavoriteDays,yearsWithFavoriteDays,favoriteDaysSuggestion} from '../favorite-days.js';
 import {mergeHealthImport,healthRows,healthPeriod,yearlyHealthOverview,csvHealthRows,readHealthImportFile,formatHealth} from '../health-activity.js';
 import {mergeStates as mergeLocal} from '../storage.js';
@@ -39,7 +39,9 @@ test('Knicks championship and parade have contextual colors; birthdays stay norm
 });
 test('known birthdays repeat annually and official holidays remain visible',()=>{
   const s=state();
-  assert.equal(KNOWN_BIRTHDAYS.length,10);
+  s.entries['2026-04-06']={text:"GRANDPA MIKES BIRTHDAY, Woke up"};
+  s.entries['2025-01-21']={text:"MOM'S BIRTHDAY, Went home"};
+  assert.equal(birthdayRegistry(s).length,2);
   assert.ok(calendarEventsOnDate(s,'2027-04-06').some(e=>e.name.includes('Grandpa Mike')));
   assert.ok(calendarEventsOnDate(s,'2024-01-21').some(e=>e.name.includes('Mom')));
   assert.ok(calendarEventsForMonth(s,'2026-11').some(e=>e.name==='Thanksgiving'));
@@ -58,13 +60,15 @@ test('private custom calendar events can repeat, be edited and be tombstoned acr
 });
 test('diary headings are uppercase suggestions, with no implicit Save Day call',()=>{
   const s=state();
+  s.entries['2026-07-31']={text:'MY BIRTHDAY, Had fun'};
+  s.entries['2026-07-11']={text:"CARTER'S BIRTHDAY, Called him"};
   assert.equal(proposedDiaryHeading(s,'2026-11-19'),'GTA VI RELEASE DAY, ');
   assert.equal(proposedDiaryHeading(s,'2026-12-25'),'CHRISTMAS DAY, ');
   assert.equal(proposedDiaryHeading(s,'2026-07-31'),'MY BIRTHDAY, ');
   assert.equal(proposedDiaryHeading(s,'2026-06-13'),'KNICKS NBA CHAMPIONSHIP, ');
   assert.match(proposedDiaryHeading(s,'2027-07-11'),/CARTER'S BIRTHDAY/);
   assert.equal(proposedDiaryHeading(s,'2026-06-16'),'');
-  s.entries['2026-08-29']={text:"TIM'S BIRTHDAY, Woke up"};
+  s.entries['2026-08-29']={text:"Went to TIM'S BIRTHDAY, had a party"};
   assert.ok(birthdaySuggestions(s).some(e=>e.name.includes('TIM')));
 });
 test('top-five days belong to the user and never fabricate the ordered 2024 or 2025 list',()=>{
