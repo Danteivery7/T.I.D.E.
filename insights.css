@@ -830,3 +830,35 @@ body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):no
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .toast{background:var(--panel-2);color:var(--text)}
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) :is(.sidebar,.topbar){border-color:var(--line);color:var(--text)}
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]):not(.vice-city-season) .tide-theme-banner{background:color-mix(in srgb,var(--accent) 9%,var(--panel));border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+
+
+/* Year-color continuity: visual-only finishing rules, shared by desktop and mobile.
+   Era colors come from theme-engine. No responsive positioning is changed. */
+body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]) #view-root:not(.vice-city-nov19) .today-dashboard>.card{
+  --today-panel-accent:var(--accent) !important;
+}
+body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]) #view-root:not(.vice-city-nov19) .today-dashboard>.card::before{
+  background:linear-gradient(90deg,var(--accent),var(--accent-2)) !important;
+}
+body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]) #view-root .today-dashboard :is(.today-panel-eyebrow,.today-month-panel .today-panel-eyebrow,.today-records-panel .today-panel-eyebrow,.today-otd-panel .today-panel-eyebrow){
+  color:var(--accent-2);
+}
+body:is([data-tide-era="2024"],[data-tide-era="2025"]):not([data-tide-occasion]) #view-root:not(.vice-city-nov19) .today-dashboard :is(.today-month-panel,.today-records-panel,.today-otd-panel,#geo-controls){
+  background:var(--tide-grad);
+  border-color:color-mix(in srgb,var(--accent),transparent 58%);
+}
+body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not([data-tide-occasion]) #view-root :is(.trk-hero,.yrk-hero)::before{
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+}
+/* Some browsers paint background-clip:text as a rectangular bar behind this
+   headline when CSS palette overrides replace the gradient. Use readable,
+   era-colored text instead of a gradient fill for these two subtitles. */
+#view-root .yrk-hero h2 em,
+#view-root .trk-hero h2 em{
+  background:none !important;
+  background-image:none !important;
+  background-clip:initial !important;
+  -webkit-background-clip:initial !important;
+  color:var(--accent-2) !important;
+  -webkit-text-fill-color:var(--accent-2);
+}
