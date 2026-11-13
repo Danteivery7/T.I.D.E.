@@ -62,12 +62,13 @@ test('editing counts distinct explicit diary activities and re-evaluates all his
   state.entries['2026-10-06']={text:'Edited a video, exported the video, edited a thumbnail, did not edit another video'};
   state.entries['2026-11-13']={text:'Did an editing session; re-edited the VGC thumbnail; I talked to Carter'};
   state.entries['2026-11-14']={text:'Watched a video, uploaded it, played a game'};
+  state.entries['2026-11-15']={text:'Did not edit a video, but edited a clip and edited a second clip'};
   assert.equal(derivedTrackerTotal(state,'editing-events',{month:'2026-10'}),2);
-  assert.equal(derivedTrackerTotal(state,'editing-events',{month:'2026-11'}),2);
-  assert.equal(engine.trackerTotal(state,'editing-events',{year:2026}),4);
+  assert.equal(derivedTrackerTotal(state,'editing-events',{month:'2026-11'}),4);
+  assert.equal(engine.trackerTotal(state,'editing-events',{year:2026}),6);
   assert.deepEqual(topTrackerDay(state,'editing-events'),{date:'2026-11-13',count:2});
   state.entries['2026-11-13'].text='Played a game, took a walk';
-  assert.equal(engine.trackerTotal(state,'editing-events',{month:'2026-11'}),0,'editing history updates when diary is corrected');
+  assert.equal(engine.trackerTotal(state,'editing-events',{month:'2026-11'}),2,'editing history updates when diary is corrected');
 });
 
 test('social days count dates, not the number of conversations on a date',()=>{
