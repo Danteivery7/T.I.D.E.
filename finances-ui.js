@@ -66,7 +66,7 @@ export function financeHubMarkup(state,{tab='overview',group='all',year=2026,sea
  const tabs=[['overview','Overview'],['history','Cash History'],['runway','Runway & Bills'],['transactions','Transactions'],['records','Personal Bests']];
  const yList=[2024,2025,2026,2027,Number(today.slice(0,4))].filter((y,i,all)=>all.indexOf(y)===i).sort();
  let body='';
- if(!has)body=`<div class="insight-empty-hub"><div>◈</div><h2>Build your private financial timeline.</h2><p>Import the prepared T.I.D.E. Finances file from Settings. It contains sanitized linked-account records, never bank credentials. Automatic connection to ChatGPT's Finances data is not available to this website.</p><button type="button" class="button primary" data-fin-import>Import Private Finances</button></div>`;
+ if(!has)body=`<div class="insight-empty-hub"><div>◈</div><h2>Build your private financial timeline.</h2><p>Import the prepared T.I.D.E. Finances file from Settings. It contains sanitized linked-account records, never bank credentials. Automatic connection to ChatGPT's Finances data is not available to this website.</p><button type="button" class="button primary" data-tide-private-activate>Import Private Finances</button></div>`;
  else if(tab==='overview'){
   const current=financePeriod(state,{month:today.slice(0,7)},group),comparison=financeMonthComparison(state,today.slice(0,7),group);
   body=`<div class="insight-stat-grid">${financeStat('Imported cash snapshot',moneyLabel(snap.value),snap.status==='date_unknown'?'Source balance date unknown':'Source-dated balance','primary')}
