@@ -437,7 +437,95 @@ function yearlyView(){
   if(!cached)loadYearMusic(start,end,false,y);
 }
 
-function trackersView(){const defs=allTrackerDefinitions(state);root.innerHTML=`${pageHead('Trackers','Retired trackers stay historical. Intermittent events only count when they happen. Lifetime records keep every dated occurrence.')}<section class="card"><div class="tracker-table">${defs.map(t=>{const month=trackerTotal(state,t.id,{month:selectedMonth}),year=trackerTotal(state,t.id,{year:selectedYear}),all=trackerTotal(state,t.id);return `<div class="tracker-row"><div class="tracker-name"><b>${esc(t.name)}</b><span class="tracker-status">${esc(t.status)} · ${esc(t.kind)}</span></div><div><div class="stat-label">Month</div><b>${fmt(month)}</b></div><div><div class="stat-label">${selectedYear}</div><b>${fmt(year)}</b></div><div><div class="stat-label">All Time</div><b>${fmt(all)}</b></div><button class="button" data-tracker="${t.id}">View / Add</button></div>`}).join('')}</div></section>`;root.querySelectorAll('[data-tracker]').forEach(b=>b.onclick=()=>showTracker(b.dataset.tracker))}
+function trackerViewIcon(kind,status){
+  const shapes={
+    streak:'<path d="M12 3c2 4 6 5 6 11a6 6 0 0 1-12 0c0-3.4 1.8-5.8 4-8 .1 3 1 4.4 2 5 .7-2 .6-5 0-8Z"/><path d="M12 20c-2 0-3.5-1.4-3.5-3.4 0-1.5 1.2-2.7 2.7-4 .2 1.6.8 2.2 1.8 3.2.3-.9.5-1.4.6-2.1 1 1.2 1.9 2.1 1.9 3A3.4 3.4 0 0 1 12 20Z"/>',
+    versus:'<path d="M7 4h10v7a5 5 0 0 1-10 0V4Z"/><path d="M7 6H4v3a4 4 0 0 0 4 4m9-7h3v3a4 4 0 0 1-4 4M12 16v5m-4 0h8"/>',
+    record:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    event:'<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 12h8m-4-4v8"/>',
+    retired:'<rect x="4" y="6" width="16" height="14" rx="2"/><path d="M3 6h18V3H3v3Zm6 6h6"/>'
+  };
+  return `<svg class="trk-type-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${shapes[status==='retired'?'retired':kind]||shapes.event}</svg>`;
+}
+
+function trackersView(){
+  const defs=allTrackerDefinitions(state);
+  const active=defs.filter(t=>t.status!=='retired'),archived=defs.filter(t=>t.status==='retired');
+  const monthWithEvents=defs.filter(t=>t.kind==='event'&&trackerTotal(state,t.id,{month:selectedMonth})>0).length;
+  const rows=defs.map(t=>{
+    const month=trackerTotal(state,t.id,{month:selectedMonth}),year=trackerTotal(state,t.id,{year:selectedYear}),all=trackerTotal(state,t.id);
+    const status=t.status==='retired'?'retired':t.status==='intermittent'?'intermittent':'active';
+    return `<article class="tracker-row trk-ledger-row trk-ledger-row--${status}" data-trk-status="${status}" data-trk-name="${esc(t.name.toLowerCase())}">
+      <div class="tracker-name trk-ledger-name">
+        <span class="trk-ledger-icon trk-ledger-icon--${status}">${trackerViewIcon(t.kind,status)}</span>
+        <span class="trk-ledger-name-text"><b>${esc(t.name)}</b><span class="tracker-status"><span class="trk-status-dot"></span>${status==='retired'?'Historical / retired':status==='intermittent'?'Event-based':'Active'} · ${esc(t.kind)}</span></span>
+      </div>
+      <div class="trk-ledger-metric"><div class="stat-label">Month</div><b>${fmt(month)}</b></div>
+      <div class="trk-ledger-metric"><div class="stat-label">${selectedYear}</div><b>${fmt(year)}</b></div>
+      <div class="trk-ledger-metric"><div class="stat-label">All Time</div><b>${fmt(all)}</b></div>
+      <button type="button" class="button trk-ledger-action" data-tracker="${esc(t.id)}">View / Add <span aria-hidden="true">↗</span></button>
+    </article>`;
+  }).join('');
+  root.innerHTML=`${pageHead('Trackers','Your ongoing streaks, event records, and personal history in one place.')}
+  <div class="trk-page">
+    <header class="trk-hero">
+      <div class="trk-hero-copy"><span class="trk-eyebrow">✦ YOUR NUMBERS · YOUR HISTORY</span>
+        <h2>Every milestone <em>counts.</em></h2>
+        <p>A home for the things you actually track, from GeoGuessr streaks and wins to the smaller moments worth remembering.</p>
+        <div class="trk-hero-note"><span aria-hidden="true">✧</span> Saved counters and dated history, never estimated totals</div>
+      </div>
+      <div class="trk-hero-art" aria-hidden="true">
+        <span class="trk-hero-ring trk-hero-ring--one"></span><span class="trk-hero-ring trk-hero-ring--two"></span>
+        <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="m8 24 10 10 22-22"/><circle cx="24" cy="24" r="21" stroke-width="1.2" opacity=".3"/></svg>
+      </div>
+    </header>
+    <section class="trk-dashboard-stats" aria-label="Tracker overview">
+      <div class="trk-dashboard-stat trk-dashboard-stat--active"><div class="trk-stat-top"><span>IN USE</span><span class="trk-stat-mark" aria-hidden="true">↗</span></div><strong>${fmt(active.length)}</strong><small>Active and event-based trackers</small></div>
+      <div class="trk-dashboard-stat trk-dashboard-stat--archive"><div class="trk-stat-top"><span>HISTORICAL</span><span class="trk-stat-mark" aria-hidden="true">◷</span></div><strong>${fmt(archived.length)}</strong><small>Retired records preserved</small></div>
+      <div class="trk-dashboard-stat trk-dashboard-stat--month"><div class="trk-stat-top"><span>RECORDED THIS MONTH VIEW</span><span class="trk-stat-mark" aria-hidden="true">✦</span></div><strong>${fmt(monthWithEvents)}</strong><small>Event trackers with entries · ${esc(monthLabel(selectedMonth))}</small></div>
+    </section>
+    <div class="trk-collection-head">
+      <div><div class="trk-section-eyebrow">THE TRACKER COLLECTION</div><h2>Browse your records</h2><p>Find a tracker, compare its dates and totals, or open it to add an occurrence.</p></div>
+      <span class="trk-collection-count">${fmt(defs.length)} TRACKERS</span>
+    </div>
+    <section class="trk-library-tools" aria-label="Browse tracker history">
+      <div class="trk-filter-tabs" role="group" aria-label="Filter trackers">
+        <button type="button" class="trk-filter-tab is-selected" data-trk-filter="all" aria-pressed="true">All</button>
+        <button type="button" class="trk-filter-tab" data-trk-filter="in-use" aria-pressed="false">In use</button>
+        <button type="button" class="trk-filter-tab" data-trk-filter="retired" aria-pressed="false">Historical</button>
+      </div>
+      <label class="trk-search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.3 15.3 5 5"/></svg><span class="trk-sr-only">Search trackers</span><input type="search" id="trk-search" placeholder="Search trackers…" autocomplete="off"></label>
+    </section>
+    <section class="card trk-ledger-section">
+      <div class="trk-ledger-heading"><div><span class="trk-section-eyebrow">ALL TRACKER RECORDS</span><h3>Events & archive</h3><p>Month, year, and lifetime figures from your existing saved records.</p></div><span class="trk-ledger-hint">SELECT TO VIEW OR ADD</span></div>
+      <div class="tracker-table trk-ledger-list">${rows}</div>
+      <div class="trk-library-empty" id="trk-library-empty" hidden><span aria-hidden="true">⌕</span><b>No matching trackers</b><p>Try a different name or switch your filter.</p></div>
+      <div class="trk-ledger-footnote">Historical trackers are kept for reference. Some older totals were imported without individual dates. The quick GeoGuessr controls above continue to use their existing counters.</div>
+    </section>
+  </div>`;
+  root.querySelectorAll('[data-tracker]').forEach(b=>b.onclick=()=>showTracker(b.dataset.tracker));
+  const tabs=[...root.querySelectorAll('[data-trk-filter]')],search=root.querySelector('#trk-search');
+  let filter='all';
+  const apply=()=>{
+    const term=search.value.trim().toLowerCase();
+    let visible=0;
+    root.querySelectorAll('.trk-ledger-row').forEach(row=>{
+      const status=row.dataset.trkStatus;
+      const statusMatches=filter==='all'||filter==='retired'&&status==='retired'||filter==='in-use'&&status!=='retired';
+      const searchMatches=!term||row.dataset.trkName.includes(term)||row.textContent.toLowerCase().includes(term);
+      const allowed=statusMatches&&searchMatches;
+      row.classList.toggle('trk-is-filtered',!allowed);
+      if(allowed&&row.style.display!=='none')visible++;
+    });
+    root.querySelector('#trk-library-empty').hidden=visible>0;
+  };
+  tabs.forEach(tab=>tab.onclick=()=>{
+    filter=tab.dataset.trkFilter;
+    tabs.forEach(b=>{const active=b===tab;b.classList.toggle('is-selected',active);b.setAttribute('aria-pressed',String(active))});
+    apply();
+  });
+  search.addEventListener('input',apply);
+}
 function showTracker(id){const t=trackerDefinition(state,id);const rows=occurrencesFor(state,id).slice().reverse();const gtaEnded=['mors-mutual','google-car'].includes(id);openModal(t.name,`<div class="grid grid-3"><div class="record-card"><div class="stat-label">This Month</div><div class="record-value">${trackerTotal(state,id,{month:selectedMonth})}</div></div><div class="record-card"><div class="stat-label">${selectedYear}</div><div class="record-value">${trackerTotal(state,id,{year:selectedYear})}</div></div><div class="record-card"><div class="stat-label">All Time</div><div class="record-value">${trackerTotal(state,id)}</div></div></div><div class="section-title">MANUAL OCCURRENCE</div><div class="grid grid-3"><label class="label">Date<input id="manual-date" class="input" type="date" value="${gtaEnded&&isoToday()>='2026-11-19'?'2026-11-18':isoToday()}" ${gtaEnded?'max="2026-11-18"':''}></label><label class="label">Count<input id="manual-count" class="input" type="number" min="0" value="1"></label><label class="label">Note<input id="manual-note" class="input" value="Manual ${esc(t.name)}"></label></div><button class="button primary" id="manual-add" style="margin-top:12px">Add occurrence</button><div class="section-title">DATED HISTORY</div><div class="history-list">${rows.length?rows.slice(0,100).map(r=>`<div class="history-row"><div class="history-date">${shortDate(r.date)}</div><div class="history-text">${esc(r.snippet||'Occurrence')}</div><b>${r.value!=null?fmt(r.value):r.result?esc(r.result):`+${r.count}`}</b></div>`).join(''):'<div class="muted">No dated occurrences yet.</div>'}</div>`,'TRACKER');modal.querySelector('#manual-add').onclick=()=>{if(gtaEnded&&modal.querySelector('#manual-date').value>='2026-11-19'){toast('This GTA Online tracker retired on November 19. Historical dates remain editable.','bad');return;}addManualOccurrence(state,{trackerId:id,date:modal.querySelector('#manual-date').value,count:modal.querySelector('#manual-count').value,snippet:modal.querySelector('#manual-note').value});persist();closeModal();render();toast('Tracker occurrence added.')}}
 
 function musicCached(start,end){for(const category of ['songs','artists','albums'])if(!state.musicCache?.[`${category}:${start}:${end}`])return null;return Object.fromEntries(['songs','artists','albums'].map(c=>[c,state.musicCache[`${c}:${start}:${end}`].items]))}
