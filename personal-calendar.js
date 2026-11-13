@@ -1,12 +1,25 @@
 import { holidaysOnDate, holidaysForMonth } from './calendar-data.js';
 const DAY=/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const titleCase=s=>String(s||'').trim().replace(/\s+/g,' ').slice(0,110);
-export const KNOWN_BIRTHDAYS=[
-  ['01-21',"Mom's Birthday"],['04-06',"Grandpa Mike's Birthday"],['04-08',"Dad's Birthday"],
-  ['05-09',"T's Birthday"],['06-29',"Bema's Birthday"],['07-11',"Carter's Birthday"],
-  ['07-21',"Rocco's Birthday"],['07-27',"Smitty's Birthday"],['07-31',"My Birthday"],
-  ['08-05',"Dylan's Birthday"]
-];
+// Birthday names are read from the user's private diary, never hardcoded into
+// a public source file. Explicit first-clause "NAME'S BIRTHDAY" is confirmed.
+export function birthdayRegistry(state){
+  const found=new Map();
+  for(const [date,row] of Object.entries(state?.entries||{})){
+    if(!validDate(date))continue;
+    const first=String(row?.text||'').split(/[,;\n]/)[0].trim();
+    const match=first.match(/^((?:my|mom(?:'s|s)?|dad(?:'s|s)?|grandpa\s+[\w'’]+|[\w'’.-]+(?:\s+[\w'’.-]+){0,2}))\s+(?:birthday|b[- ]day)\b/i);
+    if(!match)continue;
+    let name=match[1].replace(/[\u2019']/g,"'");
+    if(/^my$/i.test(name))name='My';
+    else if(/^mom(?:s|'s)?$/i.test(name))name='Mom';
+    else if(/^dad(?:s|'s)?$/i.test(name))name='Dad';
+    else name=name.replace(/'s$/i,'').replace(/^(grandpa\s+\w+)s$/i,'$1').toLowerCase().replace(/\b[a-z]/g,m=>m.toUpperCase());
+    const label=name==='My'?'My Birthday':name+"'s Birthday";
+    found.set(date.slice(5)+':'+label.toLowerCase(),{date,name:label,kind:'birthday',repeat:'yearly',source:'diary-confirmed'});
+  }
+  return [...found.values()];
+}
 export const LANDMARK_DATES=[
   {date:'2026-06-13',name:'KNICKS NBA CHAMPIONSHIP',kind:'personal',theme:'knicks',prefill:true,id:'landmark-knicks-2026'},
   {date:'2026-06-18',name:'KNICKS CHAMPIONSHIP PARADE',kind:'personal',theme:'knicks',prefill:true,id:'landmark-knicks-parade-2026'}
@@ -16,7 +29,7 @@ const validDate=date=>DAY.test(date)&&new Date(date+'T12:00:00Z').toISOString().
 export function personalCalendarEvents(state,date){
   if(!validDate(String(date)))return [];
   const md=date.slice(5),result=[];
-  for(const [day,name] of KNOWN_BIRTHDAYS)if(day===md)result.push({id:'birthday-'+day,date,name,kind:'birthday',repeat:'yearly',source:'diary-confirmed'});
+  for(const birthday of birthdayRegistry(state))if(birthday.date.slice(5)===md)result.push({...birthday,id:'birthday-'+md+':'+birthday.name.toLowerCase(),date});
   for(const item of LANDMARK_DATES)if(item.date===date)result.push({...item,source:'diary-confirmed'});
   for(const row of Object.values(state?.calendarEvents||{})){
     if(!row||row.deleted||!row.name||!validDate(String(row.date||'')))continue;
@@ -60,7 +73,7 @@ export function proposedDiaryHeading(state,date){
   return chosen?headingName(chosen)+', ':'';
 }
 export function birthdaySuggestions(state){
-  const known=new Set(KNOWN_BIRTHDAYS.map(([md])=>md));
+  const known=new Set(birthdayRegistry(state).map(x=>x.date.slice(5)));
   for(const event of Object.values(state?.calendarEvents||{}))if(!event.deleted&&event.kind==='birthday')known.add(String(event.date||'').slice(5));
   const found=new Map();
   for(const [date,row] of Object.entries(state?.entries||{})){
