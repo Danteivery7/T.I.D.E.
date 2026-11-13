@@ -21,7 +21,7 @@ test('Daily Challenge is a literal manual ticker',()=>{
 
 test('Monty win increments month, year and all-time with no tie or score logic',()=>{
   const state=freshState();ensureSimpleCounters(state);
-  recordMontyResult(state,'win');
+  recordMontyResult(state,'win',{month:'2026-08',year:2026});
   assert.deepEqual(montyRecord(state,{month:'2026-08'}),{wins:1,losses:3,ties:0});
   assert.deepEqual(montyRecord(state,{year:2026}),{wins:29,losses:103,ties:0});
   assert.deepEqual(montyRecord(state),{wins:29,losses:103,ties:0});
@@ -29,7 +29,7 @@ test('Monty win increments month, year and all-time with no tie or score logic',
 
 test('Monty loss increments month, year and all-time',()=>{
   const state=freshState();ensureSimpleCounters(state);
-  recordMontyResult(state,'loss');
+  recordMontyResult(state,'loss',{month:'2026-08',year:2026});
   assert.deepEqual(montyRecord(state,{month:'2026-08'}),{wins:0,losses:4,ties:0});
   assert.deepEqual(montyRecord(state),{wins:28,losses:104,ties:0});
 });
