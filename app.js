@@ -51,13 +51,42 @@ const fmt=n=>new Intl.NumberFormat('en-US').format(Number(n)||0);
 const shortDate=d=>d?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(new Date(`${d}T12:00:00`)):'—';
 
 function toast(message,type='good'){const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=message;toastRegion.append(el);setTimeout(()=>el.remove(),3200)}
+// One date context for every link into the time capsule, including past years.
+function periodDay(month,reference=selectedDate){
+  const y=Number(month.slice(0,4)),m=Number(month.slice(5,7));
+  const max=new Date(Date.UTC(y,m,0)).getUTCDate();
+  const dd=String(Math.min(Math.max(1,Number(reference.slice(8,10))||1),max)).padStart(2,'0');
+  return month+'-'+dd;
+}
+function contextualDay(){
+  if(view==='today')return selectedDate;
+  if(view==='on-this-day')return onThisDayDate;
+  if(view==='calendar'||view==='monthly')return periodDay(selectedMonth);
+  if(view==='finances')return periodDay(String(financeYear)+selectedMonth.slice(4));
+  if(view==='health')return periodDay(healthRange==='year'?String(healthYear)+healthMonth.slice(4):healthMonth);
+  if(view==='music')return periodDay(musicPeriod==='month'?musicMonth:musicPeriod==='year'?String(musicYear)+selectedMonth.slice(4):selectedMonth);
+  return periodDay(selectedMonth);
+}
 function setView(next){
-  // Keep the year being explored when moving from the time capsule or data hubs.
-  if(view==='on-this-day'){selectedYear=yearOf(onThisDayDate);selectedMonth=onThisDayDate.slice(0,7);}
+  // A sidebar/dock jump must keep the date and palette of the selected year.
+  if(next==='on-this-day'&&view!=='on-this-day')onThisDayDate=contextualDay();
+  if(view==='on-this-day'){
+    selectedDate=onThisDayDate;
+    selectedYear=yearOf(onThisDayDate);
+    selectedMonth=onThisDayDate.slice(0,7);
+  }
   if(view==='finances'){selectedYear=financeYear;selectedMonth=String(financeYear)+selectedMonth.slice(4);}
   if(view==='health'){selectedYear=healthRange==='year'?healthYear:Number(healthMonth.slice(0,4));selectedMonth=healthRange==='year'?String(healthYear)+selectedMonth.slice(4):healthMonth;}
   if(next==='finances')financeYear=selectedYear;
   if(next==='health'){healthYear=selectedYear;healthMonth=selectedMonth;}
+  if(next==='music'&&view!=='music'){
+    musicYear=selectedYear;
+    musicMonth=selectedMonth;
+    musicPeriod='year'; // Historical years must show January 1–December 31 by default.
+  }
+  if(next==='gaming'&&view!=='gaming'){
+    document.dispatchEvent(new CustomEvent('tide:gaming-context',{detail:{year:selectedYear,month:selectedMonth}}));
+  }
   const changed=view!==next;
   view=next;
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
@@ -119,7 +148,7 @@ function entryText(date){return state.entries?.[date]?.text||''}
 function entryExists(date){return Boolean(entryText(date).trim())}
 // An annual/monthly report represents an entire period, not New Year's Day.
  // Use holiday-free anchor dates for reports so Jan 1 never paints a whole year gold.
-const annualThemeDate=year=>Number(year)===2026?'2026-11-20':String(year)+'-06-15';
+const annualThemeDate=year=>String(year)+'-08-15';
 function presentationDate(){
   if(view==='today')return selectedDate;
   if(view==='on-this-day')return onThisDayDate;
@@ -127,7 +156,7 @@ function presentationDate(){
   if(view==='yearly'||view==='trackers'||view==='records')return annualThemeDate(selectedYear);
   if(view==='finances')return annualThemeDate(financeYear);
   if(view==='health')return healthRange==='year'?annualThemeDate(healthYear):healthMonth+'-15';
-  if(view==='music')return musicPeriod==='year'?annualThemeDate(musicYear):musicPeriod==='month'?musicMonth+'-15':annualThemeDate(selectedYear);
+  if(view==='music')return musicPeriod==='year'?annualThemeDate(musicYear):musicPeriod==='month'?musicMonth+'-15':musicPeriod==='custom'?musicCustomStart:annualThemeDate(selectedYear);
   return annualThemeDate(selectedYear);
 }
 function specialDateBanner(date){
@@ -295,7 +324,7 @@ function openPersonalCalendarEditor(editId=''){
 }
 
 function changeMonth(delta){let[y,m]=selectedMonth.split('-').map(Number);m+=delta;if(m<1){m=12;y--}if(m>12){m=1;y++}selectedMonth=`${y}-${String(m).padStart(2,'0')}`;selectedYear=y;render()}
-function openDay(date){selectedDate=date;selectedMonth=date.slice(0,7);selectedYear=yearOf(date);setView('today')}
+function openDay(date){onThisDayDate=date;selectedDate=date;selectedMonth=date.slice(0,7);selectedYear=yearOf(date);setView('today')}
 
 function onThisDayRows(date=isoToday()){const md=date.slice(5);return Object.entries(state.entries||{}).filter(([d,e])=>d.slice(5)===md&&e.text?.trim()).sort((a,b)=>b[0].localeCompare(a[0])).map(([d,e])=>({date:d,year:d.slice(0,4),summary:daySummary(e.text),story:buildStory(e.text,{maxEvents:12})}))}
 function otdNearbyRows(date){
@@ -815,7 +844,8 @@ function musicExplorerRange(){
   const today=isoToday(),first="2020-11-01";
   if(musicPeriod==="all")return{start:first,end:today,label:"All Time",note:`November 1, 2020 – ${shortDate(today)}`};
   if(musicPeriod==="year"){
-    if(!Number.isInteger(musicYear)||musicYear<2020||musicYear>Number(today.slice(0,4)))return{error:"Choose a valid year."};
+    if(!Number.isInteger(musicYear)||musicYear<2020||musicYear>2027)return{error:"Choose a valid year."};
+    if(musicYear>Number(today.slice(0,4)))return{error:`No music listening history exists for ${musicYear} yet.`,label:String(musicYear),note:'Future year · no listening records yet.'};
     const start=musicYear===2020?first:`${musicYear}-01-01`,end=String(musicYear)===today.slice(0,4)?today:`${musicYear}-12-31`;
     return{start,end,label:`${musicYear}`,note:musicYear===2020?"November 1 – December 31, 2020":`${shortDate(start)} – ${shortDate(end)}`};
   }
@@ -918,7 +948,7 @@ function musicExplorerView(){
   const today=isoToday(),range=musicExplorerRange(),first="2020-11-01",currentYear=Number(today.slice(0,4));
   const opts=[["month","Monthly"],["year","Yearly"],["all","All Time"],["custom","Custom Range"]];
   const controls=musicPeriod==="month"?`<label class="music-explorer-picker"><span>Choose month</span><select id="music-explorer-month" class="select" aria-label="Choose month">${Array.from({length:(currentYear-2020)*12+Number(today.slice(5,7))-10},(_,i)=>{const d=new Date(2020,10+i,1),key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;return `<option value="${key}" ${musicMonth===key?"selected":""}>${MONTHS[d.getMonth()]} ${d.getFullYear()}</option>`}).reverse().join("")}</select></label>`:
-    musicPeriod==="year"?`<label class="music-explorer-picker"><span>Choose year</span><select id="music-explorer-year" class="select" aria-label="Choose year">${Array.from({length:currentYear-2019},(_,i)=>currentYear-i).map(y=>`<option value="${y}" ${y===musicYear?"selected":""}>${y}${y===2020?" (Nov–Dec)":""}</option>`).join("")}</select></label>`:
+    musicPeriod==="year"?`<label class="music-explorer-picker"><span>Choose year</span><select id="music-explorer-year" class="select" aria-label="Choose year">${Array.from({length:Math.max(currentYear,2027)-2019},(_,i)=>Math.max(currentYear,2027)-i).map(y=>`<option value="${y}" ${y===musicYear?"selected":""}>${y}${y===2020?" (Nov–Dec)":""}</option>`).join("")}</select></label>`:
     musicPeriod==="custom"?`<div class="music-explorer-custom"><label class="music-explorer-picker"><span>From</span><input id="music-explorer-start" class="input" type="date" min="${first}" max="${today}" value="${esc(musicCustomStart)}"></label><label class="music-explorer-picker"><span>To (inclusive)</span><input id="music-explorer-end" class="input" type="date" min="${first}" max="${today}" value="${esc(musicCustomEnd)}"></label><button id="music-explorer-apply" type="button" class="button primary">Apply dates</button></div>`:
     `<div class="music-explorer-alltime"><b>Lifetime listening window</b><span>Nov 1, 2020 → today</span></div>`;
   const cached=!range.error?musicCached(range.start,range.end):null;
@@ -935,18 +965,18 @@ function musicExplorerView(){
   root.querySelectorAll("[data-music-period]").forEach(btn=>btn.onclick=()=>{
     const next=btn.dataset.musicPeriod;
     if(next===musicPeriod)return;
-    musicPeriod=next;musicExplorerView();
+    musicPeriod=next;render();
   });
   const mo=root.querySelector("#music-explorer-month");
-  if(mo)mo.onchange=e=>{musicMonth=e.target.value;musicExplorerView()};
+  if(mo)mo.onchange=e=>{musicMonth=e.target.value;render()};
   const yr=root.querySelector("#music-explorer-year");
-  if(yr)yr.onchange=e=>{musicYear=Number(e.target.value);musicExplorerView()};
+  if(yr)yr.onchange=e=>{musicYear=Number(e.target.value);render()};
   const apply=root.querySelector("#music-explorer-apply");
   if(apply)apply.onclick=()=>{
     const from=root.querySelector("#music-explorer-start").value,to=root.querySelector("#music-explorer-end").value;
     const note=root.querySelector("#music-explorer-status");
     if(!from||!to||from>to||from<first||to>today){if(note)note.textContent=`Choose a valid range between Nov 1, 2020 and ${shortDate(today)} (start before end).`;return;}
-    musicCustomStart=from;musicCustomEnd=to;musicExplorerView();
+    musicCustomStart=from;musicCustomEnd=to;render();
   };
   const refresh=root.querySelector("#music-explorer-refresh");
   if(range.error){refresh.disabled=true;return;}
@@ -1330,7 +1360,7 @@ async function syncCloud(){if(!cloud.authenticated)return toast('Connect cloud s
 async function pullCloud(silent=false){try{const r=await cloudPull();state=mergeStates(state,r.state);cloud.etag=r.etag;persist();if(!silent)toast('Cloud data loaded.')}catch(e){if(!silent)toast(e.message,'bad')}}
 async function bootstrapCloud(){const status=await cloudStatus();cloud={...cloud,...status,checked:true};if(status.authenticated){cloud.authenticated=true;await pullCloud(true)}updateSyncPill();render()}
 function updateSyncPill(){const pill=document.querySelector('#sync-pill');pill.innerHTML=`<span class="sync-dot"></span><span>${cloud.authenticated?'Cloud ready · local-first':cloud.configured?'Cloud available · locked':'Local-first'}</span>`}
-function render(){setThemeForDate(root,presentationDate(),personalCalendarEvents(state,presentationDate()));updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'finances':financeView();break;case'health':healthView();break;case'music':musicExplorerView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}document.dispatchEvent(new Event('tide:view-rendered'))}
+function render(){const date=presentationDate(),period=!['today','on-this-day'].includes(view);setThemeForDate(root,date,period?[]:personalCalendarEvents(state,date),{period});updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'finances':financeView();break;case'health':healthView();break;case'music':musicExplorerView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}document.dispatchEvent(new Event('tide:view-rendered'))}
 render();bootstrapCloud();
 // A new gaming snapshot can change session totals without changing diary entries.
 // Repaint only read-only reporting pages; never interrupt the Today editor.
