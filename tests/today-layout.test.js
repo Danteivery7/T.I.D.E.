@@ -50,7 +50,9 @@ test('the clean supporting-card layout is separate from the full-width diary edi
 });
 
 test('special November 19 through December 31 styling and navigation remain in place',()=>{
-  assert.ok(source.includes("selectedDate>='2026-11-19'&&selectedDate<='2026-12-31'"));
+  const theme=readFileSync(new URL('../theme-engine.js',import.meta.url),'utf8');
+  assert.ok(theme.includes("d>='2026-11-19'&&d<='2026-12-31'"));
+  assert.ok(source.includes('setThemeForDate(root,presentationDate(),personalCalendarEvents(state,presentationDate()))'));
   assert.ok(styles.includes('#view-root.vice-city-nov19 .hero-day .day-card'));
   assert.ok(styles.includes('#view-root.vice-city-nov19 .hero-day .right-stack>.card:nth-child(1)'));
   assert.ok(styles.includes('#view-root.vice-city-nov19 .hero-day .right-stack>.card:nth-child(2)'));
