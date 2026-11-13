@@ -119,6 +119,9 @@ function todayView(){
         <section class="card today-otd-panel"><div class="card-header today-panel-header"><div><div class="today-panel-eyebrow">✧ TIME CAPSULE</div><h3>On This Day</h3><p class="today-panel-description">Memories from this date in previous years.</p></div><button class="button ghost" id="open-otd">View all</button></div>${otd.length?otd.map(r=>`<div class="otd-item today-otd-item" data-date="${r.date}"><div class="otd-year">${r.year}</div><div class="otd-summary">${esc(r.summary)}</div></div>`).join(''):`<div class="today-otd-empty"><span aria-hidden="true">✧</span><b>Your time capsule is growing.</b><p>When you have diary entries for this date in earlier years, they’ll appear here.</p></div>`}</section>
         <section class="card today-month-panel"><div class="card-header today-panel-header"><div><div class="today-panel-eyebrow">✦ MONTHLY HIGHLIGHTS</div><h3>This Month</h3><p class="today-panel-description">The days you personally chose.</p></div><button class="button ghost" id="open-month">Review</button></div><div class="grid grid-2 today-metrics-grid"><div class="today-month-pick today-month-pick--best"><div class="stat-label">Best Day</div><div class="big-stat" style="font-size:23px">${review.bestDay?shortDate(review.bestDay):'—'}</div></div><div class="today-month-pick today-month-pick--worst"><div class="stat-label">Worst Day</div><div class="big-stat" style="font-size:23px">${review.worstDay?shortDate(review.worstDay):'—'}</div></div></div></section>
         <section class="card today-records-panel"><div class="card-header today-panel-header"><div><div class="today-panel-eyebrow">↗ ACTIVE RECORDS</div><h3>Live Records</h3><p class="today-panel-description">A quick snapshot of your tracked milestones.</p></div><button class="button ghost" id="open-records">Records</button></div><div class="grid grid-2 today-metrics-grid"><div class="today-record-tile today-record-tile--dc"><div class="stat-label">DC Streak</div><div class="big-stat" style="font-size:26px">${streak.active?streak.current:0}</div><div class="tiny subtle">${streak.active?'ACTIVE':'INACTIVE'}</div></div><div class="today-record-tile today-record-tile--geo"><div class="stat-label">Geoguessr 10K</div><div class="big-stat" style="font-size:26px">${geo?fmt(geo.value):'—'}</div><div class="tiny subtle">${geo?shortDate(geo.date):'NO DATA'}</div></div></div></section>
+        ${healthDailyCard(state,date,'sleepHours')}
+        ${healthDailyCard(state,date,'steps')}
+        ${financeTodayMarkup(state,date)}
       </aside>
     </div>`;
   if(specialDateBanner(date))root.insertAdjacentHTML('afterbegin',specialDateBanner(date));
@@ -437,7 +440,9 @@ function monthlyView(){
       </div>
       <div id="gaming-month-review"><div class="section-title">GAMING · ${esc(period)}</div><section class="card"><div class="muted small">Loading monthly gaming recap…</div></section></div>
       <div class="section-title">HEALTH & ACTIVITY · ${esc(period)}</div>
-      ${healthReportMarkup({month},period+" · Health & Activity")}
+      ${healthReviewMarkup(state,{month})}
+      <div class="section-title">YOUR MONEY · ${esc(period)}</div>
+      ${financeReviewMarkup(state,{month})}
       <div class="section-title">MUSIC · MONTHLY RANKINGS</div>
       <section class="card month-music-section"><div class="card-header"><div><h2>Top songs, artists & albums</h2><div class="small muted">Actual stats.fm streams for ${esc(period)}. Ties are preserved.</div></div>${button("Refresh music","refresh-music")}</div><div id="monthly-music">${cached?renderMusicSections(cached):'<div class="muted small">Loading music…</div>'}</div></section>
       <div class="section-title">DAILY CHALLENGE · MONTHLY SCORECARD</div>
@@ -596,7 +601,9 @@ function yearlyView(){
     <div class="section-title">YOUR FIVE TRACKERS · ${y}</div>
     <div class="year-side-stats year-current-tracker-stats">${LIFE_TRACKER_IDS.map(id=>`<div class="year-side-stat"><div class="stat-label">${esc(trackerDefinition(state,id).name)} · ${y}</div><b>${fmt(trackerTotal(state,id,{year:y}))}</b></div>`).join('')}</div>
     <div class="section-title">HEALTH & ACTIVITY · ${y}</div>
-    ${healthReportMarkup({year:y},y+" · Health & Activity")}
+    ${healthReviewMarkup(state,{year:y})}
+    <div class="section-title">FINANCIAL YEAR IN REVIEW · ${y}</div>
+    ${financeReviewMarkup(state,{year:y})}
     ${healthYearComparisonMarkup()}
     <div class="section-title">GEOGUESSR · RECORD BOOK</div>
     <div class="records-grid year-geo-records">
@@ -703,7 +710,9 @@ function trackersView(){
       <span class="trk-collection-count">${fmt(defs.length)} TRACKERS</span>
     </div>
     <div class="section-title">HEALTH & ACTIVITY · ${esc(monthLabel(selectedMonth))}</div>
-    ${healthReportMarkup({month:selectedMonth},"Health & Activity · Monthly Snapshot")}
+    ${healthReviewMarkup(state,{month:selectedMonth})}
+    <div class="section-title">FINANCIAL TRACKING · ${esc(monthLabel(selectedMonth))}</div>
+    ${financeReviewMarkup(state,{month:selectedMonth})}
     <section class="card trk-ledger-section">
       <div class="trk-ledger-heading"><div><span class="trk-section-eyebrow">EVENT TRACKER LIBRARY</span><h3 id="trk-list-title">Your five trackers</h3><p id="trk-list-description">Month, year, and lifetime figures from your source records.</p></div><span class="trk-ledger-hint">SELECT TO VIEW OR ADD</span></div>
     <div class="trk-library-tools" aria-label="Browse tracker history">
@@ -1034,7 +1043,9 @@ function recordsView(){
       </div>
       <div class="record-hall-source-note">${recordHallIcon("target")}<span>Gaming day records come from changes detected between account snapshots; they are <b>not exact session timers</b>. Monthly records can also include recovered historical playtime. Older lifetime playtime without date evidence is never assigned to a specific day or month.</span></div>
       <div class="section-title">LIFETIME HEALTH & ACTIVITY RECORDS</div>
-      ${healthReportMarkup({},"Lifetime Health Records")}
+      ${healthLifetimeMarkup(state)}
+      <div class="section-title">FINANCIAL LIFETIME RECORDS</div>
+      ${financeRecordsMarkup(state)}
       ${healthYearComparisonMarkup()}
       <div class="section-title">FAVORITE DAYS · 2024 ONWARD</div>
       ${favoriteDaysByYearPanel()}
