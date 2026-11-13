@@ -30,11 +30,12 @@ export const isPcPlatform=p=>['steam','ubisoft','ea','gog','epic','windows','pc'
 export function filterAllows(p,filter='all'){if(filter==='all')return true;if(filter==='pc')return isPcPlatform(p);if(filter==='console')return ['ps4','ps5','playstation','xbox','nintendo'].includes(p);if(filter==='playstation')return ['ps4','ps5','playstation'].includes(p);return p===filter;}
 function ignoreGamePlatform(title,platform){return String(platform||'').toLowerCase()==='xbox'&&clean(title)==='forza horizon 6';}
 
-function blank(){return{latestSources:[],activity:{},recoveredMonths:{},baselineDate:null,liveStatus:{},updatedAt:''};}
+function blank(){return{latestSources:[],activity:{},sessions:[],recoveredMonths:{},baselineDate:null,liveStatus:{},updatedAt:''};}
 function shape(x){
   x=x&&typeof x==='object'?x:blank();
   x.latestSources=Array.isArray(x.latestSources)?x.latestSources:[];
   x.activity=x.activity&&typeof x.activity==='object'?x.activity:{};
+  x.sessions=Array.isArray(x.sessions)?x.sessions:[];
   x.recoveredMonths=x.recoveredMonths&&typeof x.recoveredMonths==='object'?x.recoveredMonths:{};
   x.liveStatus=x.liveStatus||{};
   return x;
@@ -43,19 +44,32 @@ export function loadGaming(){try{return shape(JSON.parse(localStorage.getItem(KE
 let cache=loadGaming();
 export function gaming(){return cache;}
 function newerRecord(a,b){if(!a)return b;if(!b)return a;return String(b.updatedAt||'')>=String(a.updatedAt||'')?b:a;}
+export function mergeReportedSessions(a=[],b=[]){
+  const events=new Map();
+  for(const event of [...a,...b]){
+    if(!event||typeof event.id!=='string'||!event.id||!/^\d{4}-\d{2}-\d{2}$/.test(String(event.date||''))||!(Number(event.minutes)>0))continue;
+    if(!events.has(event.id))events.set(event.id,event);
+    else if(String(event.capturedAt||'')<String(events.get(event.id).capturedAt||''))events.set(event.id,event);
+  }
+  return [...events.values()].sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.capturedAt||'').localeCompare(String(b.capturedAt||''))||a.id.localeCompare(b.id));
+}
+function notifyGamingChanged(){
+  if(typeof document!=='undefined'&&typeof CustomEvent!=='undefined')document.dispatchEvent(new CustomEvent('tide:gaming-updated'));
+}
 export function mergeGaming(a={},b={}){
   a=shape(a);b=shape(b);
   const latest=String(b.updatedAt||'')>=String(a.updatedAt||'')?b:a,older=latest===b?a:b,out=shape({...older,...latest});
   out.activity={...(older.activity||{})};
   for(const [d,r] of Object.entries(latest.activity||{}))out.activity[d]=newerRecord(out.activity[d],r);
+  out.sessions=mergeReportedSessions(a.sessions,b.sessions);
   out.recoveredMonths={...(older.recoveredMonths||{})};
   for(const [m,r] of Object.entries(latest.recoveredMonths||{}))out.recoveredMonths[m]=newerRecord(out.recoveredMonths[m],r);
   out.baselineDate=[a.baselineDate,b.baselineDate].filter(Boolean).sort()[0]||null;
   out.latestSources=Array.isArray(latest.latestSources)?latest.latestSources:[];
   return out;
 }
-export async function pullGaming(){try{const r=await fetch('/api/gaming/state',{credentials:'same-origin'});if(!r.ok)return cache;const body=await r.json();cache=mergeGaming(cache,body.gaming||{});localStorage.setItem(KEY,JSON.stringify(cache));return cache;}catch{return cache;}}
-export function saveGaming(g,{sync=true}={}){g=shape(g);g.updatedAt=now();cache=g;localStorage.setItem(KEY,JSON.stringify(g));if(sync)fetch('/api/gaming/state',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({gaming:g})}).catch(()=>{});return g;}
+export async function pullGaming(){try{const r=await fetch('/api/gaming/state',{credentials:'same-origin'});if(!r.ok)return cache;const body=await r.json();cache=mergeGaming(cache,body.gaming||{});localStorage.setItem(KEY,JSON.stringify(cache));notifyGamingChanged();return cache;}catch{return cache;}}
+export function saveGaming(g,{sync=true}={}){g=shape(g);g.updatedAt=now();cache=g;localStorage.setItem(KEY,JSON.stringify(g));notifyGamingChanged();if(sync)fetch('/api/gaming/state',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify({gaming:g})}).catch(()=>{});return g;}
 
 function shownPlatform(title,platform){return keyTitle(title)==='the crew motorfest'&&platform==='unattributed'?'nintendo':platform;}
 export function currentSources(){return[...LEGACY_GAMES,...gaming().latestSources].filter(s=>!ignoreGamePlatform(s.title,s.platform)).map(s=>shownPlatform(s.title,s.platform)===s.platform?s:{...s,platform:'nintendo'});}
