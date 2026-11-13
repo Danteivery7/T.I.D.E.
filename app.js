@@ -449,7 +449,7 @@ function trackerViewIcon(kind,status){
 }
 
 function showReadOnlyTracker(id){
-  const t=trackerDefinition(state,id),auto=AUTO_TRACKER_IDS.has(id),rows=occurrencesFor(state,id).slice().reverse();
+  const t=trackerDefinition(state,id),auto=AUTO_TRACKER_IDS.has(id),rows=(id==='apartment-collisions'?[...occurrencesFor(state,'apartment-collisions'),...occurrencesFor(state,'collision-count')]:occurrencesFor(state,id)).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   const note=id==='gaming-sessions'?'One report per game with increased playtime on each successful gaming refresh. An earlier daily aggregate cannot reliably be split into sessions.':
     id==='editing-events'?'Counts explicit diary editing activity mentions, one per separate diary segment. Existing notes are included.':
     id==='social-days'?'One date with social diary activity counts as one day, even if multiple conversations are mentioned.':
