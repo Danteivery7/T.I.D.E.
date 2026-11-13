@@ -68,6 +68,8 @@ export function mergeStates(remote,incoming){
   out.favoriteDays=mergeMapByTime(remote.favoriteDays||{},incoming.favoriteDays||{});
   const healthMeta=newer(remote.healthActivity,incoming.healthActivity)||incoming.healthActivity||remote.healthActivity||{};
   out.healthActivity={...healthMeta,days:mergeMapByTime(remote.healthActivity?.days||{},incoming.healthActivity?.days||{})};
+  const financeMeta=newer(remote.finances,incoming.finances)||incoming.finances||remote.finances||{};
+  out.finances={...financeMeta,accounts:mergeMapByTime(remote.finances?.accounts||{},incoming.finances?.accounts||{}),transactions:mergeMapByTime(remote.finances?.transactions||{},incoming.finances?.transactions||{}),recurring:mergeMapByTime(remote.finances?.recurring||{},incoming.finances?.recurring||{}),manualEvents:mergeMapByTime(remote.finances?.manualEvents||{},incoming.finances?.manualEvents||{})};
   out.settings={...(remote.settings||{}),...(incoming.settings||{}),migrations:{...(remote.settings?.migrations||{}),...(incoming.settings?.migrations||{})}};
   out.updatedAt=new Date().toISOString();
   return out;
