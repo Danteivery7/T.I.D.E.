@@ -254,6 +254,7 @@ scheduleDecorate();
 document.addEventListener('click',event=>{
   if(event.target.closest('[data-view="trackers"],[data-view="records"],[data-view="yearly"],[data-view="music"]'))scheduleDecorate();
 });
+document.addEventListener('tide:view-rendered',scheduleDecorate);
 
 document.addEventListener('change',event=>{
   if(event.target?.id==='year-select'&&event.target.value==='all-time'){
