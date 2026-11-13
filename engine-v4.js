@@ -1,10 +1,16 @@
 import * as v3 from './engine-v3.js';
+import { LIFE_TRACKER_IDS, ARCHIVED_GTA_IDS, GTA_RETIREMENT_DATE, AUTO_TRACKER_IDS, derivedTrackerRows, derivedTrackerTotal } from './life-trackers.js';
 export * from './engine-v3.js';
 
 const CANONICAL_COLLISIONS='apartment-collisions';
 const DUPLICATE_COLLISIONS='collision-count';
-const GTA_ONLINE_END='2026-11-19';
-const GTA_ONLINE_IDS=new Set(['mors-mutual','google-car']);
+const GTA_ONLINE_END=GTA_RETIREMENT_DATE;
+const GTA_ONLINE_IDS=new Set(ARCHIVED_GTA_IDS);
+const ACTIVE_AUTO_DEFS=[
+  {id:'gaming-sessions',name:'Gaming Sessions',kind:'event',status:'active',automatic:true,aliases:['gaming sessions','gaming session','reported game sessions']},
+  {id:'editing-events',name:'Editing',kind:'event',status:'active',automatic:true,aliases:['editing sessions','editing events','video edits','editing']},
+  {id:'social-days',name:'Social Days',kind:'event',status:'active',automatic:true,aliases:['social days','social interactions','social activity']}
+];
 
 const num=value=>Number.isFinite(Number(value))?Math.max(0,Number(value)):null;
 const canonical=id=>id===DUPLICATE_COLLISIONS?CANONICAL_COLLISIONS:id;
@@ -24,16 +30,27 @@ function manualTotal(state,id,scope={}){
 export function trackerDefinition(state,id){
   const key=canonical(id);
   const base=v3.trackerDefinition(state,key);
+  const auto=ACTIVE_AUTO_DEFS.find(x=>x.id===key);
+  if(auto)return auto;
   if(key===CANONICAL_COLLISIONS){
-    return {...base,id:CANONICAL_COLLISIONS,name:'Collisions',kind:'event',status:'active',
+    return {...base,id:CANONICAL_COLLISIONS,name:'Collisions',kind:'event',retiredOn:GTA_ONLINE_END,status:'retired',
       aliases:[...(base.aliases||[]),'collision','collisions','collision count','walked into an object','walked into something']};
   }
-  if(GTA_ONLINE_IDS.has(key))return {...base,retiredOn:GTA_ONLINE_END,status:v3.isoToday()>=GTA_ONLINE_END?'retired':base.status};
+  if(GTA_ONLINE_IDS.has(key))return {...base,retiredOn:GTA_ONLINE_END,status:'retired'};
+  if(key==='hong-kong'||key==='migraines')return {...base,status:'active'};
   return base;
 }
 
 export function allTrackerDefinitions(state){
-  return v3.allTrackerDefinitions(state).filter(t=>t.id!==DUPLICATE_COLLISIONS).map(t=>trackerDefinition(state,t.id));
+  return [...ACTIVE_AUTO_DEFS,...v3.allTrackerDefinitions(state).filter(t=>t.id!==DUPLICATE_COLLISIONS)].map(t=>trackerDefinition(state,t.id));
+}
+
+
+// Generated history for automatic trackers is derived from the authoritative data.
+// Historical and manual occurrence records retain their existing behavior.
+export function occurrencesFor(state,id,scope={}){
+  if(AUTO_TRACKER_IDS.has(id))return derivedTrackerRows(state,id,scope);
+  return v3.occurrencesFor(state,id,scope);
 }
 
 // Preserve all historic totals, but never automatically count post-retirement GTA Online diary text.
@@ -45,6 +62,7 @@ export function saveEntry(state,date,text){
 
 export function trackerTotal(state,id,scope={}){
   const key=canonical(id);
+  if(AUTO_TRACKER_IDS.has(key))return derivedTrackerTotal(state,key,scope);
   const exact=manualTotal(state,key,scope);
   if(exact!=null)return exact;
   if(key===CANONICAL_COLLISIONS){
@@ -55,6 +73,8 @@ export function trackerTotal(state,id,scope={}){
 
 export function addManualOccurrence(state,args={}){
   const key=canonical(args.trackerId);
+  if(AUTO_TRACKER_IDS.has(key))throw new Error('This tracker updates automatically from gaming reports or diary entries.');
+  if(GTA_ONLINE_IDS.has(key)&&String(args.date||v3.isoToday())>=GTA_ONLINE_END)throw new Error('Historical GTA trackers ended on November 19, 2026.');
   v3.addManualOccurrence(state,{...args,trackerId:key});
   if(key!==CANONICAL_COLLISIONS)return;
   state.tideCounters||={};state.tideCounters.authoritativeTrackerTotals||={};
