@@ -504,7 +504,7 @@ function trackersView(){
       <span class="trk-collection-count">${fmt(defs.length)} TRACKERS</span>
     </div>
     <section class="card trk-ledger-section">
-      <div class="trk-ledger-heading"><div><span class="trk-section-eyebrow">EVENT TRACKER LIBRARY</span><h3>Your five trackers</h3><p>Month, year, and lifetime figures from your existing saved records.</p></div><span class="trk-ledger-hint">SELECT TO VIEW OR ADD</span></div>
+      <div class="trk-ledger-heading"><div><span class="trk-section-eyebrow">EVENT TRACKER LIBRARY</span><h3 id="trk-list-title">Your five trackers</h3><p id="trk-list-description">Month, year, and lifetime figures from your source records.</p></div><span class="trk-ledger-hint">SELECT TO VIEW OR ADD</span></div>
     <div class="trk-library-tools" aria-label="Browse tracker history">
       <div class="trk-filter-tabs" role="group" aria-label="Filter trackers">
         <button type="button" class="trk-filter-tab is-selected" data-trk-filter="in-use" aria-pressed="true">Active · 5</button>
@@ -521,6 +521,9 @@ function trackersView(){
   const tabs=[...root.querySelectorAll('[data-trk-filter]')],search=root.querySelector('#trk-search');
   let filter='in-use';
   const apply=()=>{
+    const heading=root.querySelector('#trk-list-title'),description=root.querySelector('#trk-list-description');
+    if(heading)heading.textContent=filter==='retired'?'Historical GTA Online records':'Your five trackers';
+    if(description)description.textContent=filter==='retired'?'Retired November 19, 2026. All old totals are preserved and viewable.':'Month, year, and lifetime figures from your original source records.';
     const term=search.value.trim().toLowerCase();
     let visible=0;
     root.querySelectorAll('.trk-ledger-row').forEach(row=>{
