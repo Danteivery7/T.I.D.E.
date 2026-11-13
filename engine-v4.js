@@ -77,7 +77,7 @@ export function trackerTotal(state,id,scope={}){
 
 export function addManualOccurrence(state,args={}){
   const key=canonical(args.trackerId);
-  if(AUTO_TRACKER_IDS.has(key))throw new Error('This tracker updates automatically from gaming reports or diary entries.');
+  if(AUTO_TRACKER_IDS.has(key))throw new Error('This tracker updates automatically from dated diary activity.');
   if(GTA_ONLINE_IDS.has(key)&&String(args.date||v3.isoToday())>=GTA_ONLINE_END)throw new Error('Historical GTA trackers ended on November 19, 2026.');
   v3.addManualOccurrence(state,{...args,trackerId:key});
   if(key!==CANONICAL_COLLISIONS)return;
