@@ -113,16 +113,17 @@ function showVersions(date){const revisions=state.entries?.[date]?.revisions||[]
 
 function tideCalendarCell(date,isCurrentMonth,holidays,review){
   const entry=entryExists(date),day=Number(date.slice(-2)),today=date===isoToday(),best=review?.bestDay===date,worst=review?.worstDay===date;
-  const special=holidays.find(h=>h.kind==='special');
+  const special=holidays.find(h=>['special','personal','birthday','release','sports','celebration'].includes(h.kind));
   const primary=special||holidays.find(h=>h.kind==='federal')||holidays.find(h=>h.kind==='observed')||holidays[0];
-  const classes=['tide-cal-day',isCurrentMonth?'':'is-adjacent',entry?'has-diary':'',today?'is-today':'',best?'is-best':'',worst?'is-worst':'',primary?'has-holiday':'',special?'is-special':''].filter(Boolean).join(' ');
+  const ranked=favoriteDays(state,date.slice(0,4)).includes(date);
+  const classes=['tide-cal-day',isCurrentMonth?'':'is-adjacent',entry?'has-diary':'',today?'is-today':'',best?'is-best':'',worst?'is-worst':'',primary?'has-holiday':'',special?'is-special':'',special?'has-personal':'',ranked?'is-ranked':''].filter(Boolean).join(' ');
   const count=entry?eventCount(date):0,note=entry?daySummary(entryText(date)).slice(0,110):'';
   const markers=[best?'BEST DAY':'',worst?'WORST DAY':''].filter(Boolean);
   const label=`${shortDate(date)}${today?', today':''}${holidays.length?', '+holidays.map(h=>h.name).join(', '):''}${entry?`, ${count} diary event${count===1?'':'s'}`:', no diary entry'}${best?', monthly best day':''}${worst?', monthly worst day':''}`;
   return `<button type="button" class="${classes}" data-date="${esc(date)}" title="${esc(label)}" aria-label="${esc(label)}">
-    <span class="tide-cal-day-top"><span class="tide-cal-day-num">${day}</span>${today?'<span class="tide-cal-today-label">TODAY</span>':''}</span>
+    <span class="tide-cal-day-top"><span class="tide-cal-day-num">${day}</span>${today?'<span class="tide-cal-today-label">TODAY</span>':''}${ranked?'<span class="tide-cal-rank-star" title="Yearly favorite day">★</span>':''}</span>
     <span class="tide-cal-day-body">
-      ${primary?`<span class="tide-cal-holiday tide-cal-holiday--${primary.kind}">${esc(primary.name)}</span>`:''}
+      ${primary?`<span class="tide-cal-holiday tide-cal-holiday--${primary.kind}">${primary.kind==='birthday'?'🎂 ':''}${esc(primary.name)}</span>`:''}
       ${entry?`<span class="tide-cal-note">${esc(note)}</span>`:''}
     </span>
     <span class="tide-cal-day-bottom">${entry?`<span class="tide-cal-diary-dot"></span><span class="tide-cal-diary-label">${count} ${count===1?'EVENT':'EVENTS'}</span>`:''}${markers.length?`<span class="tide-cal-pick-label">${markers.join(' · ')}</span>`:''}${primary?'<span class="tide-cal-holiday-dot" aria-hidden="true"></span>':''}</span>
@@ -133,8 +134,8 @@ function calendarView(){
   const [year,month]=selectedMonth.split('-').map(Number),first=new Date(Date.UTC(year,month-1,1)).getUTCDay();
   const days=daysInMonth(selectedMonth),totalCells=Math.ceil((first+days)/7)*7;
   const theme=monthIdentity(selectedMonth),monthNum=String(month).padStart(2,'0'),review=monthReview(selectedMonth);
-  const everyHoliday=holidaysForMonth(selectedMonth);
-  const holidays=showCalendarHolidays?everyHoliday:everyHoliday.filter(x=>x.kind==='special');
+  const everyHoliday=calendarEventsForMonth(state,selectedMonth);
+  const holidays=showCalendarHolidays?everyHoliday:everyHoliday.filter(x=>x.source!=='calendar'||x.kind==='special');
   const byDate=new Map();
   for(const h of holidays){if(!byDate.has(h.date))byDate.set(h.date,[]);byDate.get(h.date).push(h);}
   let recordedDays=0,recordedEvents=0;
@@ -142,13 +143,13 @@ function calendarView(){
   const cells=Array.from({length:totalCells},(_,i)=>{
     const date=new Date(Date.UTC(year,month-1,1-first+i)).toISOString().slice(0,10);
     const isCurrent=date.startsWith(selectedMonth+'-');
-    const events=isCurrent?byDate.get(date)||[]:showCalendarHolidays?holidaysOnDate(date):holidaysOnDate(date).filter(h=>h.kind==='special');
+    const events=isCurrent?byDate.get(date)||[]:showCalendarHolidays?calendarEventsOnDate(state,date):calendarEventsOnDate(state,date).filter(h=>h.source!=='calendar'||h.kind==='special');
     return tideCalendarCell(date,isCurrent,events,isCurrent?review:null);
   });
   const weekDays=['SUNDAY','MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'];
   const holidayList=holidays.map(h=>`<button type="button" class="tide-cal-agenda-event tide-cal-agenda--${h.kind}" data-date="${esc(h.date)}">
     <span class="tide-cal-agenda-day"><span>${MONTHS[month-1].slice(0,3).toUpperCase()}</span><b>${Number(h.date.slice(-2))}</b></span>
-    <span class="tide-cal-agenda-info"><b>${esc(h.name)}</b><span>${h.kind==='special'?'Featured event':h.kind==='federal'?'U.S. federal holiday':h.kind==='observed'?'Federal holiday observed':'Cultural observance'}</span></span>
+    <span class="tide-cal-agenda-info"><b>${esc(h.name)}</b><span>${h.kind==='birthday'?'🎂 Recurring birthday':h.source==='user'?'Your calendar event':h.kind==='personal'?'Personal milestone':h.kind==='special'?'Featured event':h.kind==='federal'?'U.S. federal holiday':h.kind==='observed'?'Federal holiday observed':'Cultural observance'}</span></span>
     <span class="tide-cal-agenda-arrow" aria-hidden="true">↗</span>
   </button>`).join('');
   root.innerHTML=`${pageHead('Calendar','A clearer view of every day, diary memory, and U.S. holiday.')}
@@ -162,7 +163,7 @@ function calendarView(){
           <div class="tide-cal-current"><b>${esc(monthLabel(selectedMonth))}</b><small>Sunday through Saturday</small></div>
           <button type="button" id="cal-next" class="tide-cal-nav" aria-label="Next month">›</button></div>
         <div class="tide-cal-controls"><label class="tide-cal-month-chooser">Jump to <input id="cal-jump" type="month" value="${selectedMonth}" min="2020-01" max="2100-12" aria-label="Choose calendar month"></label>
-          <button type="button" id="cal-today" class="tide-cal-action">Today</button><button type="button" id="cal-to-otd" class="tide-cal-action tide-cal-action--soft">On This Day</button></div>
+          <button type="button" id="cal-today" class="tide-cal-action">Today</button><button type="button" id="cal-to-otd" class="tide-cal-action tide-cal-action--soft">On This Day</button><button type="button" id="cal-edit-event" class="tide-cal-action tide-cal-action--edit" aria-label="Edit personal calendar events" title="Add or edit calendar events">✎ Events</button></div>
       </div>
       <div class="tide-cal-stat-strip">
         <div><span class="tide-cal-stat-number">${recordedDays}</span><span>DAYS LOGGED</span></div>
@@ -181,6 +182,7 @@ function calendarView(){
         <p class="tide-cal-disclaimer">U.S. federal holidays, federal observed dates, and selected cultural observances are labeled separately. Holiday names do not imply that offices or businesses are closed.</p>
       </div>
     </div>`;
+  root.querySelector('#cal-edit-event').onclick=()=>openPersonalCalendarEditor();
   root.querySelector('#cal-prev').onclick=()=>changeMonth(-1);
   root.querySelector('#cal-next').onclick=()=>changeMonth(1);
   root.querySelector('#cal-today').onclick=()=>{selectedMonth=isoToday().slice(0,7);selectedYear=Number(selectedMonth.slice(0,4));render()};
