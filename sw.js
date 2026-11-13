@@ -1,5 +1,5 @@
-const CACHE='tide-shell-v39';
-const CORE=['/','/index.html','/styles.css','/app.js','/voice-dictation.js','/engine.js','/engine-v2.js','/engine-v3.js','/engine-v4.js','/enhancements.js','/history-bootstrap.js','/migraine-fix.js','/tracker-upgrades.js','/shared-save.js','/year-rankings.js','/year-ranking-utils.js','gaming.js','gaming-data.js','gaming-live.js','gaming-view.js','gaming-ask.js','diary-insights.js','ask-intelligence.js','calendar-data.js','storage.js','spotify.js','shortcut-resume-sync.js','icon.svg','manifest.webmanifest'].map(x=>x.startsWith('/')?x:`/${x}`);
+const CACHE='tide-shell-v40';
+const CORE=['/','/index.html','/styles.css','/app.js','/voice-dictation.js','/engine.js','/engine-v2.js','/engine-v3.js','/engine-v4.js','/enhancements.js','/history-bootstrap.js','/migraine-fix.js','/tracker-upgrades.js','/shared-save.js','/year-rankings.js','/year-ranking-utils.js','gaming.js','gaming-data.js','gaming-live.js','gaming-view.js','gaming-ask.js','diary-insights.js','life-trackers.js','ask-intelligence.js','calendar-data.js','storage.js','spotify.js','shortcut-resume-sync.js','icon.svg','manifest.webmanifest'].map(x=>x.startsWith('/')?x:`/${x}`);
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
