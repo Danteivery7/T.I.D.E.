@@ -192,7 +192,7 @@ function process(data){
   for(const x of exoSteam){if(mf?.source&&isMotorfest(x))continue;const k=keyTitle(x.title);if(!steamAdded.has(k)&&(Number(x.minutes)||0)>0){next.push(steamFallbackSource(x));steamAdded.add(k);}}
   if(!data.steam?.ok&&!exoSteam.length)next.push(...(g.latestSources||[]).filter(x=>x.sourceFamily==='steam'));
 
-  const first=!g.baselineDate,date=localToday(),deltaGames={};
+  const first=!g.baselineDate,date=localToday(),deltaGames={},verifiedReportKeys=new Set();
   if(!first){
     for(const cur of next){
       if(cur.sourceKey===MOTORFEST_PC_SOURCE_KEY)continue;
@@ -200,7 +200,7 @@ function process(data){
          // Motorfest did not exist on Nintendo before 2026-10-08, so its first Nintendo reading is entirely new time.
          if(cur.platform==='nintendo'&&isMotorfest(cur)&&!g.motorfestNintendoInitialized)addDeltaGame(deltaGames,cur.title,cur.platform,Number(cur.minutes)||0,cur.lastPlayed,cur.image);
          continue;
-       }const delta=(Number(cur.minutes)||0)-(Number(old.minutes)||0);if(delta<=0)continue;addDeltaGame(deltaGames,cur.title,cur.platform,delta,cur.lastPlayed,cur.image);
+       }const delta=(Number(cur.minutes)||0)-(Number(old.minutes)||0);if(delta<=0)continue;addDeltaGame(deltaGames,cur.title,cur.platform,delta,cur.lastPlayed,cur.image);verifiedReportKeys.add(keyTitle(cur.title));
     }
     reconcileMotorfestActivity(g,mf,date,deltaGames);
   }else if(mf?.ok){
@@ -221,7 +221,9 @@ function process(data){
   if(next.some(x=>x.platform==='nintendo'&&isMotorfest(x)))g.motorfestNintendoInitialized=true;
   recoverBaselineMonth(g,next,date,data);
   if(!first&&Object.keys(deltaGames).length){
-    const reports=reportedSessionEvents(deltaGames,next,data.capturedAt||now(),date);
+    // Initial source imports and delayed Motorfest corrections are not new sessions.
+    const actualIncreases=Object.fromEntries(Object.entries(deltaGames).filter(([key])=>verifiedReportKeys.has(key)));
+    const reports=reportedSessionEvents(actualIncreases,next,data.capturedAt||now(),date);
     const byId=new Map((g.sessions||[]).filter(x=>x?.id).map(x=>[x.id,x]));
     for(const report of reports)if(!byId.has(report.id))byId.set(report.id,report);
     g.sessions=[...byId.values()];
