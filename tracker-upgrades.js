@@ -4,6 +4,8 @@ import {
   loggingStreak,mostActivityDay,trackerTotal
 } from './engine-v4.js';
 import { fetchPeriodMusic } from './spotify.js';
+import { LIFE_TRACKER_IDS, topTrackerDay } from './life-trackers.js';
+import { trackerDefinition } from './engine-v4.js';
 
 const root=document.querySelector('#view-root');
 const MIGRATION='authoritative-hk-collisions-alltime-v1';
@@ -134,14 +136,12 @@ function decorateTrackers(){
   const s=ensureState(),date=isoToday(),month=date.slice(0,7),year=Number(date.slice(0,4));
   const dc=s.tideCounters?.dailyChallenge||{},mo=s.monthlyReviews?.[month]?.versusTotals?.['monty-dc']||{},yr=s.tideCounters?.montyYears?.[year]||{},all=s.tideCounters?.montyOverall||{};
   const wl=r=>String(Math.max(0,Number(r?.wins)||0))+'–'+String(Math.max(0,Number(r?.losses)||0));
-  const ids=new Set(['daily-challenge','monty-dc','geoguessr-10k','hong-kong','apartment-collisions','collision-count']);
+  const ids=new Set(['daily-challenge','monty-dc','geoguessr-10k']);
   table.querySelectorAll('.tracker-row').forEach(row=>{if(ids.has(row.querySelector('[data-tracker]')?.dataset.tracker)){row.dataset.tideSpecialHidden='true';row.style.display='none'}});
   const rows=[
     showcaseRow('Daily Challenge','streak · manually updated',[['Current',Math.max(0,Number(dc.current)||0)],['Longest',Math.max(0,Number(dc.longest)||0)],['Status',(Number(dc.current)||0)>0?'Active':'Inactive']],'dc'),
     showcaseRow('Daily Challenge vs Monty','wins–losses',[['This Month',wl(mo)],[String(year),wl(yr)],['All Time',wl(all)]],'monty'),
-    showcaseRow('GeoGuessr 10K Streak','current consecutive total',[['Current',fmt(current10k(s))],['Last Updated',short(s.tideCounters?.geoguessr10k?.lastUpdated)],['Measure','Streak']],'tenk'),
-    showcaseRow('Hong Kong Spawns','event totals',[['This Month',fmt(trackerTotal(s,HK,{month}))],[String(year),fmt(trackerTotal(s,HK,{year}))],['All Time',fmt(trackerTotal(s,HK))]],'hk'),
-    showcaseRow('Collisions','event totals',[['This Month',fmt(trackerTotal(s,COLLISIONS,{month}))],[String(year),fmt(trackerTotal(s,COLLISIONS,{year}))],['All Time',fmt(trackerTotal(s,COLLISIONS))]],'collisions')
+    showcaseRow('GeoGuessr 10K Streak','current consecutive total',[['Current',fmt(current10k(s))],['Last Updated',short(s.tideCounters?.geoguessr10k?.lastUpdated)],['Measure','Streak']],'tenk')
   ];
   const section=document.createElement('section');section.id='tracker-showcase';section.className='card trk-featured-section';
   section.innerHTML='<div class="card-header trk-featured-heading"><div><span class="trk-section-eyebrow">✦ YOUR FEATURED RECORDS</span><h2>GeoGuessr & Performance</h2><div class="small muted">Live streaks, Monty results, and performance totals. Open any record to edit it.</div></div><span class="trk-featured-live"><span aria-hidden="true">●</span> LIVE TRACKING</span></div>'+
@@ -168,11 +168,7 @@ function decorateYear(){
   const title=root.querySelector('.page-head h1')?.textContent||'';
   if(!/^\d{4}\s*·\s*Year in Review$/.test(title))return;
   const year=Number(select.value);if(!year)return;
-  const topGrid=root.querySelector('.grid.grid-4');if(topGrid&&!topGrid.querySelector('[data-authoritative="year-collisions"]')){
-    const s=ensureState(),card=document.createElement('div');card.className='card';card.dataset.authoritative='year-collisions';
-    card.innerHTML=`<div class="stat-label">Collisions</div><div class="big-stat">${fmt(trackerTotal(s,COLLISIONS,{year}))}</div>`;
-    topGrid.append(card);
-  }
+  // Retired GTA counters remain accessible through Trackers → Historical, not Year in Review.
 }
 
 function pageHead(title,sub,years){
@@ -201,21 +197,17 @@ async function loadAllTimeMusic(target,force=false){
 function renderAllTimeReview(){
   const s=ensureState(),dates=Object.entries(s.entries||{}).filter(([,e])=>e?.text?.trim()).map(([d])=>d).sort();
   const start=dates[0]||isoToday(),end=isoToday(),years=[...new Set(dates.map(d=>Number(d.slice(0,4))))].sort();
-  const log=loggingStreak(s),dc=dailyChallengeStreaks(s),geo=current10k(s),top=activityStats(s).counts.slice(0,5),edit=mostActivityDay(s,'Editing');
+  const log=loggingStreak(s),dc=dailyChallengeStreaks(s),geo=current10k(s),top=activityStats(s).counts.slice(0,5),edit=topTrackerDay(s,'editing-events');
   root.innerHTML=`${pageHead('ALL TIME · Year in Review',`Life and tracker history from ${short(start)} through ${short(end)}. Music uses Nov 1, 2020 through today.`,years)}
     <div class="records-grid">
       ${recordCard('Diary Days',fmt(dates.length),'Total saved days')}
-      ${recordCard('Mors Mutual',fmt(trackerTotal(s,'mors-mutual')),'All time')}
-      ${recordCard('Migraines',fmt(trackerTotal(s,'migraines')),'All time')}
-      ${recordCard('Hong Kong Spawns',fmt(trackerTotal(s,HK)),'Authoritative all time')}
-      ${recordCard('Collisions',fmt(trackerTotal(s,COLLISIONS)),'Authoritative all time')}
+      ${LIFE_TRACKER_IDS.map(id=>recordCard(trackerDefinition(s,id).name,fmt(trackerTotal(s,id)),'Lifetime current tracker')).join('')}
     </div>
     <div class="section-title">GEOGUESSR</div>
     <div class="records-grid">
       ${recordCard('Longest Daily Challenge',`${dc.longest} days`)}
       ${recordCard('Current Daily Challenge',String(dc.active?dc.current:0),dc.active?'Active':'Inactive')}
       ${recordCard('Geoguessr 10K Streak',fmt(geo),'Current')}
-      ${recordCard('Hong Kong Spawns',fmt(trackerTotal(s,HK)),'All time')}
     </div>
     <div class="section-title">LIFETIME RECORDS</div>
     <div class="records-grid">
