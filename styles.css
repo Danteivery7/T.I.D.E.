@@ -2315,3 +2315,75 @@ body.vice-city-season .trk-filter-tab.is-selected{background:linear-gradient(120
   #view-root .trk-ledger-list>.trk-ledger-row{transition:none}
   #view-root .trk-ledger-list>.trk-ledger-row:hover{transform:none}
 }
+
+
+
+/* Five current life trackers and separate GTA history */
+#view-root .trk-ledger-list>.trk-ledger-row.trk-ledger-auto{
+  border-color:rgba(132,204,244,.32);
+  background:radial-gradient(circle at 96% 0,rgba(91,168,243,.11),transparent 42%),linear-gradient(133deg,rgba(36,64,99,.72),rgba(40,34,73,.69));
+}
+#view-root .trk-ledger-list>.trk-ledger-row.trk-ledger-auto .trk-ledger-icon{
+  background:linear-gradient(130deg,rgba(106,200,249,.16),rgba(174,122,249,.12));
+  color:#a6e0ff;border-color:rgba(148,206,249,.31);
+}
+#view-root .trk-ledger-list>.trk-ledger-row.trk-ledger-auto .trk-status-dot{
+  background:#87edce;box-shadow:0 0 10px rgba(98,231,204,.34);
+}
+#view-root .trk-ledger-list>.trk-ledger-row--retired{
+  border-style:dashed;border-color:rgba(171,165,197,.26);
+  background:linear-gradient(130deg,rgba(94,95,132,.12),rgba(54,72,108,.08));
+}
+#view-root .trk-ledger-list>.trk-ledger-row--retired .trk-ledger-name-text>b{color:#dcdced}
+#view-root .trk-ledger-list>.trk-ledger-row--retired .trk-ledger-action{
+  background:rgba(123,122,159,.09);border-color:rgba(174,172,207,.23);color:#d6d4e5;
+}
+#view-root .trk-ledger-list>.trk-ledger-row--retired .trk-ledger-action:hover{border-color:rgba(199,190,224,.44)!important}
+#tracker-showcase .tracker-spotlight-table{grid-template-columns:repeat(3,minmax(0,1fr))}
+#tracker-showcase .tracker-spotlight-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+#tracker-showcase .tracker-spotlight-row .tracker-spotlight-cell:nth-of-type(4){grid-column:1/-1}
+.year-current-tracker-stats{
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;
+}
+.year-current-tracker-stats .year-side-stat{
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:9px;
+  min-height:118px;padding:16px 13px;
+  background:radial-gradient(circle at 100% 0,rgba(168,138,238,.12),transparent 66%),linear-gradient(140deg,rgba(95,76,161,.13),rgba(54,114,168,.08));
+  border-color:rgba(186,159,228,.28);
+}
+.year-current-tracker-stats .year-side-stat .stat-label{font-size:10px;line-height:1.4;font-weight:850;color:#c3b4df}
+.year-current-tracker-stats .year-side-stat b{font-size:clamp(23px,2.7vw,34px);font-weight:950;line-height:1.1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.month-trackers-grid .month-tracker-card:nth-child(1){
+  border-color:rgba(139,210,251,.35);background:linear-gradient(135deg,rgba(66,148,223,.15),rgba(84,91,172,.09));
+}
+.month-trackers-grid .month-tracker-card:nth-child(2){
+  border-color:rgba(216,150,249,.3);background:linear-gradient(135deg,rgba(159,95,207,.14),rgba(84,91,172,.08));
+}
+.month-trackers-grid .month-tracker-card:nth-child(3){
+  border-color:rgba(148,228,195,.29);background:linear-gradient(135deg,rgba(78,164,128,.13),rgba(85,103,155,.07));
+}
+.month-trackers-grid .month-tracker-card:nth-child(4){
+  border-color:rgba(254,171,199,.25);background:linear-gradient(135deg,rgba(199,91,142,.10),rgba(85,103,155,.07));
+}
+.month-trackers-grid .month-tracker-card:nth-child(5){
+  border-color:rgba(243,201,138,.26);background:linear-gradient(135deg,rgba(184,139,75,.11),rgba(85,103,155,.07));
+}
+@media(max-width:1160px){
+  #tracker-showcase .tracker-spotlight-table{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #tracker-showcase .tracker-spotlight-row:nth-child(3){grid-column:1/-1}
+  .year-current-tracker-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:900px){
+  #tracker-showcase .tracker-spotlight-table{grid-template-columns:1fr}
+  #tracker-showcase .tracker-spotlight-row:nth-child(3){grid-column:auto}
+  .year-current-tracker-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:560px){
+  .year-current-tracker-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .year-current-tracker-stats .year-side-stat{min-height:102px;padding:13px 11px}
+  #tracker-showcase .tracker-spotlight-row .tracker-spotlight-cell:nth-of-type(4){grid-column:1/-1}
+}
+@media(max-width:370px){
+  .year-current-tracker-stats{grid-template-columns:1fr}
+  #tracker-showcase .tracker-spotlight-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
