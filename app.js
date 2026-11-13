@@ -454,7 +454,11 @@ function showReadOnlyTracker(id){
     id==='editing-events'?'Counts explicit diary editing activity mentions, one per separate diary segment. Existing notes are included.':
     id==='social-days'?'One date with social diary activity counts as one day, even if multiple conversations are mentioned.':
     'Historical GTA Online counter. Original totals are preserved, with tracking ending November 19, 2026.';
-  const history=rows.length?rows.slice(0,120).map(r=>`<div class="history-row"><div class="history-date">${shortDate(r.date)}</div><div class="history-text">${esc(r.snippet||'Recorded event')}</div><b>+${fmt(r.count||1)}</b></div>`).join(''):'<div class="muted">No exact dated events available. Imported totals may still be included above.</div>';
+  const history=rows.length?rows.slice(0,120).map(r=>{
+    const validTime=id==='gaming-sessions'&&Number.isFinite(Date.parse(r.capturedAt||''));
+    const time=validTime?new Intl.DateTimeFormat('en-US',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/New_York'}).format(new Date(r.capturedAt)):'';
+    return `<div class="history-row"><div class="history-date">${shortDate(r.date)}${time?` · ${esc(time)} detected`:''}</div><div class="history-text">${esc(r.snippet||'Recorded event')}</div><b>+${fmt(r.count||1)}</b></div>`;
+  }).join(''):'<div class="muted">No exact dated events available. Imported totals may still be included above.</div>';
   const html=`<div class="grid grid-3">
     <div class="record-card"><div class="stat-label">This Month</div><div class="record-value">${fmt(trackerTotal(state,id,{month:selectedMonth}))}</div></div>
     <div class="record-card"><div class="stat-label">${selectedYear}</div><div class="record-value">${fmt(trackerTotal(state,id,{year:selectedYear}))}</div></div>
