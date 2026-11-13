@@ -42,7 +42,7 @@ test('November 19 Vice City styling reuses existing theme state',()=>{
   assert.ok(app.includes("document.body.classList.toggle('vice-city-season',viceCityActive)"));
   for(const marker of ['body.vice-city-season .tide-topbar{','body.vice-city-season .tide-topbar .tide-topbar-ask{','body.vice-city-season .tide-topbar .tide-topbar-today{','body.vice-city-season .tide-topbar .tide-topbar-menu{'])assert.ok(css.includes(marker),marker);
   assert.ok(!css.includes('body.vice-city-season body:has('));
-  const version=Number(sw.match(/const CACHE='tide-shell-v(\\d+)'/)?.[1]);
+  const version=Number(sw.match(/const CACHE='tide-shell-v(\d+)'/)?.[1]);
   assert.ok(Number.isInteger(version)&&version>=38,'Offline cache should retain or advance the topbar version');
 });
 
