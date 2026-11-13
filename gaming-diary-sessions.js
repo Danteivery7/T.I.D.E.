@@ -99,7 +99,7 @@ function unnamedGame(phrase){
 }
 function previousClause(text,start){
   const prefix=text.slice(Math.max(0,start-110),start).split(/[,;.!?\n]|\b(?:but|however|then|later|afterwards)\b/i).at(-1)||'';
-  return prefix.trimEnd();
+  return prefix; // Retain trailing spaces for continuation/negation detection.
 }
 function actionContext(text,match,nextStart){
   const after=text.slice(match.index+match[0].length,Math.min(text.length,nextStart,match.index+180));
