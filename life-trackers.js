@@ -36,8 +36,30 @@ export function derivedTrackerRows(state,id,scope={}){
       pieces.forEach((piece,index)=>{
         const hits=[...piece.matchAll(new RegExp(EDIT.source,'gi'))];
         hits.forEach((hit,actionIndex)=>{
-          const context=piece.slice(Math.max(0,hit.index-55),hit.index+hit[0].length);
-          if(NOT_EDIT.test(context))return;
+          const throughAction=piece.slice(0,hit.index+hit[0].length);
+          if(new RegExp(NOT_EDIT.source+'
+          rows.push({id:'diary-edit:'+date+':'+index+':'+actionIndex,trackerId:id,date,count:1,source:'diary-derived',snippet:piece});
+        });
+      });
+    }else{
+      const first=pieces.find(piece=>socialPattern?.test(piece)&&!NOT_SOCIAL.test(piece));
+      if(first)rows.push({id:'diary-social:'+date,trackerId:id,date,count:1,source:'diary-derived',snippet:first});
+    }
+  }
+  return rows.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+}
+export function derivedTrackerTotal(state,id,scope={}){return derivedTrackerRows(state,id,scope).reduce((n,x)=>n+x.count,0);}
+export function topTrackerMonth(state,id){
+  const totals=new Map();
+  for(const row of derivedTrackerRows(state,id))totals.set(row.date.slice(0,7),(totals.get(row.date.slice(0,7))||0)+row.count);
+  return [...totals].map(([month,count])=>({month,count})).sort((a,b)=>b.count-a.count||b.month.localeCompare(a.month))[0]||null;
+}
+export function topTrackerDay(state,id){
+  const totals=new Map();
+  for(const row of derivedTrackerRows(state,id))totals.set(row.date,(totals.get(row.date)||0)+row.count);
+  return [...totals].map(([date,count])=>({date,count})).sort((a,b)=>b.count-a.count||b.date.localeCompare(a.date))[0]||null;
+}
+,'i').test(throughAction))return;
           rows.push({id:'diary-edit:'+date+':'+index+':'+actionIndex,trackerId:id,date,count:1,source:'diary-derived',snippet:piece});
         });
       });
