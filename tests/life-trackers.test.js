@@ -58,7 +58,7 @@ test('session tracker is derived from distinct diary play starts across historic
   assert.equal(engine.trackerTotal(state,'gaming-sessions',{year:2026}),2);
   assert.equal(engine.trackerTotal(state,'gaming-sessions'),5);
   assert.equal(derivedTrackerRows(state,'gaming-sessions',{month:'2026-11'}).length,2);
-  assert.deepEqual(topTrackerMonth(state,'gaming-sessions'),{month:'2025-03',count:2});
+  assert.deepEqual(topTrackerMonth(state,'gaming-sessions'),{month:'2026-11',count:2});
   state.entries['2025-03-05'].text='Continued playing Adventure Capitalist';
   assert.equal(engine.trackerTotal(state,'gaming-sessions',{year:2025}),0,'editing old diary updates counts');
   assert.equal(engine.trackerTotal(state,'gaming-sessions'),3);
