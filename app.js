@@ -513,7 +513,7 @@ function yearlyView(){
   const monthChoice=(m)=>m>=1&&m<=12?`${MONTHS[m-1]} ${y}`:"Not selected";
   const dayNote=(d)=>d&&entryExists(d)?daySummary(entryText(d)):"You choose this. Your pick remains yours, not an algorithm.";
   const monthNote=(m)=>m>=1&&m<=12?`A chapter of ${y}, selected by you.`:"Choose a month to complete your year.";
-  root.innerHTML=`${pageHead(`${y} · Year in Review`,"The year's standout moments, music, gaming, and memories, presented like a personal awards night.",`<select id="year-select" class="select" aria-label="Select year">${[2024,2025,2026,...Object.keys(state.entries||{}).map(d=>yearOf(d))].filter((x,i,a)=>a.indexOf(x)===i).sort().map(x=>`<option ${x===y?"selected":""}>${x}</option>`).join("")}</select>`)}
+  root.innerHTML=`${pageHead(`${y} · Year in Review`,"The year's standout moments, music, gaming, and memories, presented like a personal awards night.",`<select id="year-select" class="select" aria-label="Select year">${[...Array.from({length:Math.max(4,Number(isoToday().slice(0,4))-2023)},(_,i)=>2024+i),...Object.keys(state.entries||{}).map(d=>yearOf(d))].filter((x,i,a)=>a.indexOf(x)===i).sort().map(x=>`<option ${x===y?"selected":""}>${x}</option>`).join("")}</select>`)}
     <div class="year-awards-intro"><div><div class="year-awards-eyebrow">✦ THE ${y} HONORS ✦</div><h2>The highlights that defined your year</h2><p>Six headline awards, selected from your saved picks and real activity.</p></div><span class="year-awards-trophy" aria-hidden="true">✧</span></div>
     <div id="year-awards">${yearAwardMarkup(y,cached)}</div>
     <div class="section-title">THE YEAR'S PERSONAL PICKS</div>
