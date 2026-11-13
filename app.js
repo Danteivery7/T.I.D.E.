@@ -18,7 +18,7 @@ import { personalCalendarEvents, calendarEventsOnDate, calendarEventsForMonth, w
 import { favoriteDays, saveFavoriteDays, yearsWithFavoriteDays, favoriteDaysSuggestion } from './favorite-days.js';
 import { HEALTH_FIELDS, healthRows, healthPeriod, yearlyHealthOverview, mergeHealthImport, readHealthImportFile, formatHealth, metricLabel } from './health-activity.js';
 import { answerAsk, askScope, askMusicIntent } from './ask-intelligence.js';
-import { importFinances, ensureFinances, upsertFinanceSchedule, deleteFinanceSchedule, askFinance, financePeriod } from './finance-engine.js';
+import { importFinances, ensureFinances, upsertFinanceSchedule, deleteFinanceSchedule, askFinance, financePeriod, moneyText } from './finance-engine.js';
 import { financeHubMarkup, financeReviewMarkup, financeRecordsMarkup, financeTodayMarkup } from './finances-ui.js';
 import { healthHubMarkup, healthReviewMarkup, healthLifetimeMarkup, healthDailyCard } from './health-ui.js';
 import { healthAnswers, migraineSummary } from './health-insights.js';
@@ -500,6 +500,9 @@ function yearAwardMarkup(y,music,failed=false){
   const gamePartial=!gameData.coverageStart||`${y}-01-01`<gameData.coverageStart;
   const song=music?.songs?.[0],artist=music?.artists?.[0];
   const musicStatus=failed?"Could not load; refresh below.":"Loading year-end rankings…";
+  const healthRecords=healthPeriod(state,{year:y}).metrics;
+  const stepChampion=healthRecords.steps.best,sleepChampion=healthRecords.sleepHours.best;
+  const financialYear=financePeriod(state,{year:y}),receiptChampion=financialYear.highestReceiptDay;
   const gameHours=game?`${Math.floor(game.minutes/60).toLocaleString("en-US")}h ${Math.round(game.minutes%60)}m recorded`:"Waiting for dated gaming data";
   return `<div class="year-awards-grid">
     ${yearAwardCard("day","Best day of the year",bestDay?shortDate(bestDay):"Awaiting your pick",bestDay&&entryExists(bestDay)?daySummary(entryText(bestDay)):"Your personal highlight of the year","/awards/best-day.svg","✷","Chosen by you")}
@@ -508,6 +511,10 @@ function yearAwardMarkup(y,music,failed=false){
     ${yearAwardCard("song","Song of the year",song?.name||(failed?"Music unavailable":musicStatus),song?`${song.artist||"Artist unavailable"} · ${fmt(song.streams)} streams`:musicStatus,song?.image,"♫","stats.fm · actual streams")}
     ${yearAwardCard("artist","Artist of the year",artist?.name||(failed?"Music unavailable":musicStatus),artist?`${fmt(artist.streams)} streams`:musicStatus,artist?.image,"♬","stats.fm · actual streams")}
     ${yearAwardCard("game","Video game of the year",game?.title||"No yearly leader yet",gameHours,game?.title?.trim().toLowerCase()==="the crew motorfest"?"/awards/crew-motorfest.jpg":game?.image,"🎮",gamePartial?"Known playtime · partial coverage":"Most played · yearly hours")}
+
+    ${yearAwardCard("steps","Best exercise day",stepChampion?shortDate(stepChampion.date):"No step day recorded",stepChampion?`${fmt(Math.round(stepChampion.value))} steps · highest in ${y}`:"Import dated Apple Health steps",null,"👟",stepChampion?"Highest recorded daily steps · Apple Health":"Recorded health data required")}
+    ${yearAwardCard("sleep","Longest sleep night",sleepChampion?shortDate(sleepChampion.date):"No recorded sleep",sleepChampion?`${Number(sleepChampion.value).toFixed(2)} hours slept`:"Import dated Apple Health sleep",null,"🌙",sleepChampion?"Actual asleep stages · waking date":"No measured nights for this year")}
+    ${yearAwardCard("income","Biggest money received day",receiptChampion?shortDate(receiptChampion.date):"No dated bank receipts",receiptChampion?`${moneyText(receiptChampion.receipts)} received on this date`:"Import private posted financial history",null,"💰",receiptChampion?"Posted receipts · deposits may not be earned income":"Private financial import required")}
   </div>`;
 }
 
@@ -580,7 +587,7 @@ function yearlyView(){
   const dayNote=(d)=>d&&entryExists(d)?daySummary(entryText(d)):"You choose this. Your pick remains yours, not an algorithm.";
   const monthNote=(m)=>m>=1&&m<=12?`A chapter of ${y}, selected by you.`:"Choose a month to complete your year.";
   root.innerHTML=`${pageHead(`${y} · Year in Review`,"The year's standout moments, music, gaming, and memories, presented like a personal awards night.",`<select id="year-select" class="select" aria-label="Select year">${[...Array.from({length:Math.max(4,Number(isoToday().slice(0,4))-2023)},(_,i)=>2024+i),...Object.keys(state.entries||{}).map(d=>yearOf(d))].filter((x,i,a)=>a.indexOf(x)===i).sort().map(x=>`<option ${x===y?"selected":""}>${x}</option>`).join("")}</select>`)}
-    <div class="year-awards-intro"><div><div class="year-awards-eyebrow">✦ THE ${y} HONORS ✦</div><h2>The highlights that defined your year</h2><p>Six headline awards, selected from your saved picks and real activity.</p></div><span class="year-awards-trophy" aria-hidden="true">✧</span></div>
+    <div class="year-awards-intro"><div><div class="year-awards-eyebrow">✦ THE ${y} HONORS ✦</div><h2>The highlights that defined your year</h2><p>Nine headline awards: your original six, plus steps, sleep and money received.</p></div><span class="year-awards-trophy" aria-hidden="true">✧</span></div>
     <div id="year-awards">${yearAwardMarkup(y,cached)}</div>
     <div class="section-title">THE YEAR'S PERSONAL PICKS</div>
     <div class="year-personal-grid">
