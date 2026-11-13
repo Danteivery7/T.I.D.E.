@@ -27,7 +27,7 @@ test('one reported session per game per actual positive refresh; retry does not 
   assert.equal(first[0].date,'2026-11-13');
   assert.equal(first[0].id,same[0].id,'same cumulative reading must dedupe across refreshes and devices');
   assert.notEqual(first[0].id,next[0].id,'later increase creates a new session report');
-  const another=reportedSessionEvents({rocket:{title:'Rocket League',platformMinutes:{ps5:20}},motorfest:{title:'The Crew Motorfest',platformMinutes:{ps5:15,nintendo:20}}},[
+  const another=reportedSessionEvents({rocket:{title:'Rocket League',platformMinutes:{ps5:20}},'the crew motorfest':{title:'The Crew Motorfest',platformMinutes:{ps5:15,nintendo:20}}},[
     source('Rocket League','ps5:rocket',520),
     source('The Crew Motorfest','ps5:crew',150),
     source('The Crew Motorfest','nintendo:crew',200,'nintendo')
