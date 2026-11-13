@@ -66,7 +66,7 @@ test('editing counts distinct explicit diary activities and re-evaluates all his
   assert.equal(derivedTrackerTotal(state,'editing-events',{month:'2026-10'}),2);
   assert.equal(derivedTrackerTotal(state,'editing-events',{month:'2026-11'}),4);
   assert.equal(engine.trackerTotal(state,'editing-events',{year:2026}),6);
-  assert.deepEqual(topTrackerDay(state,'editing-events'),{date:'2026-11-13',count:2});
+  assert.deepEqual(topTrackerDay(state,'editing-events'),{date:'2026-11-15',count:2});
   state.entries['2026-11-13'].text='Played a game, took a walk';
   assert.equal(engine.trackerTotal(state,'editing-events',{month:'2026-11'}),2,'editing history updates when diary is corrected');
 });
