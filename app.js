@@ -58,13 +58,30 @@ function setView(next){
   if(view==='health'){selectedYear=healthRange==='year'?healthYear:Number(healthMonth.slice(0,4));selectedMonth=healthRange==='year'?String(healthYear)+selectedMonth.slice(4):healthMonth;}
   if(next==='finances')financeYear=selectedYear;
   if(next==='health'){healthYear=selectedYear;healthMonth=selectedMonth;}
+  const changed=view!==next;
   view=next;
   document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  document.querySelectorAll('[data-mobile-view]').forEach(b=>{
+    const active=b.dataset.mobileView===view;
+    b.classList.toggle('is-active',active);
+    if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');
+  });
+  const more=document.querySelector('[data-mobile-more]');
+  if(more)more.classList.toggle('is-active',!['today','calendar','monthly','trackers'].includes(view));
   document.querySelector('#view-eyebrow').textContent=view==='ask'?'ASK T.I.D.E.':view.replaceAll('-',' ').toUpperCase();
   closeSidebar();render();
+  if(changed&&window.matchMedia('(max-width:980px)').matches)window.scrollTo(0,0);
 }
-function openSidebar(){sidebar.classList.add('open');scrim.classList.add('show')}
-function closeSidebar(){sidebar.classList.remove('open');scrim.classList.remove('show')}
+function openSidebar(){
+  sidebar.classList.add('open');scrim.classList.add('show');
+  document.body.classList.add('tide-nav-open');
+  document.querySelector('#mobile-menu')?.setAttribute('aria-expanded','true');
+}
+function closeSidebar(){
+  sidebar.classList.remove('open');scrim.classList.remove('show');
+  document.body.classList.remove('tide-nav-open');
+  document.querySelector('#mobile-menu')?.setAttribute('aria-expanded','false');
+}
 function openModal(title,body,eyebrow='T.I.D.E.'){document.querySelector('#modal-title').textContent=title;document.querySelector('#modal-eyebrow').textContent=eyebrow;document.querySelector('#modal-body').innerHTML=body;modal.showModal()}
 function closeModal(){modal.close()}
 function persist(){saveLocal(state)}
@@ -87,6 +104,12 @@ root.addEventListener('click',event=>{
 nav.addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 document.querySelector('.sidebar-bottom').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 document.querySelector('#mobile-menu').onclick=openSidebar;document.querySelector('#mobile-close').onclick=closeSidebar;scrim.onclick=closeSidebar;
+document.querySelector('#mobile-dock')?.addEventListener('click',event=>{
+  const jump=event.target.closest('[data-mobile-view]');
+  if(jump){setView(jump.dataset.mobileView);return;}
+  if(event.target.closest('[data-mobile-more]'))openSidebar();
+});
+document.addEventListener('keydown',event=>{if(event.key==='Escape'&&sidebar.classList.contains('open')){closeSidebar();document.querySelector('#mobile-menu')?.focus();}});
 document.querySelector('#quick-ask').onclick=()=>setView('ask');document.querySelector('#jump-today').onclick=()=>{selectedDate=isoToday();selectedMonth=selectedDate.slice(0,7);selectedYear=yearOf(selectedDate);setView('today')};
 document.querySelector('#modal-close').onclick=closeModal;
 
