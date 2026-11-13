@@ -57,6 +57,10 @@ root.addEventListener('click',event=>{
   const open=event.target.closest('[data-personal-day]');if(open)return openDay(open.dataset.personalDay);
   const edit=event.target.closest('[data-edit-favorites]');if(edit)return openFavoriteDaysEditor(Number(edit.dataset.editFavorites));
 });
+root.addEventListener('click',event=>{
+  const day=event.target.closest('[data-health-day]');if(day)return openDay(day.dataset.healthDay);
+  const setup=event.target.closest('[data-health-settings]');if(setup)return setView('settings');
+});
 nav.addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 document.querySelector('.sidebar-bottom').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(b)setView(b.dataset.view)});
 document.querySelector('#mobile-menu').onclick=openSidebar;document.querySelector('#mobile-close').onclick=closeSidebar;scrim.onclick=closeSidebar;
@@ -318,6 +322,32 @@ function monthPickDisplay(date,tone){
   </article>`;
 }
 
+function healthReportMarkup(scope={},title='Health & Activity'){
+  const report=healthPeriod(state,scope),metrics=report.metrics,sleep=metrics.sleepHours;
+  const source=state.healthActivity?.source||'Private import';
+  const dayLink=(item,key)=>item?`<button type="button" class="health-date-link" data-health-day="${esc(item.date)}">${esc(shortDate(item.date))} · ${esc(formatHealth(key,item.value))} ↗</button>`:'<span class="muted">No dated record</span>';
+  const monthText=(item,key)=>item?`${monthLabel(item.month)} · ${formatHealth(key,key==='sleepHours'?item.average:item.total)}${key==='sleepHours'?` · ${item.days} recorded nights`:''}`:'No qualifying month';
+  const cards=['steps','distanceMiles','exerciseMinutes','activeCalories','standMinutes','workouts'].map(key=>{
+    const metric=metrics[key],value=metric.days?formatHealth(key,metric.total):'—';
+    return `<article class="health-metric-card"><div class="health-metric-label">${esc(metricLabel(key))}</div><strong>${esc(value)}</strong><small>${metric.days} recorded ${metric.days===1?'day':'days'}</small>
+      <div class="health-record-detail"><span>BEST DAY</span>${dayLink(metric.best,key)}</div>
+      <div class="health-record-detail"><span>BEST MONTH · TOTAL</span><b>${esc(monthText(metric.bestMonth,key))}</b></div></article>`;
+  }).join('');
+  return `<section class="card health-section">
+    <div class="health-section-head"><div><span class="health-eyebrow">PRIVATE APPLE HEALTH DATA</span><h2>${esc(title)}</h2><p>Imported daily records are kept private. Activity and sleep coverage can differ between years.</p></div><button type="button" class="button health-manage" data-health-settings>Import / Sync</button></div>
+    <div class="health-sleep-feature"><div class="health-sleep-highlight"><span class="health-eyebrow">AVERAGE SLEEP PER RECORDED NIGHT</span><strong>${sleep.days?formatHealth('sleepHours',sleep.average):'—'}</strong><small>${sleep.days} nights with recorded sleep · not hours divided by calendar days</small></div>
+      <div class="health-sleep-highs"><div><span>LONGEST RECORDED NIGHT</span>${dayLink(sleep.best,'sleepHours')}</div><div><span>BEST SLEEP MONTH · HIGHEST NIGHTLY AVERAGE</span><b>${esc(monthText(sleep.bestMonth,'sleepHours'))}</b></div></div></div>
+    <div class="health-metric-grid">${cards}</div>
+    <p class="health-footnote">Sleep averages use nights with data only. Best sleep month requires at least 7 recorded nights. Missing Health data is shown as —, never as zero. Source: ${esc(source)}. ${report.lastDate?'Most recent imported day: '+esc(shortDate(report.lastDate))+'.':''}</p>
+  </section>`;
+}
+
+function healthYearComparisonMarkup(){
+  const from=2024,to=Math.max(2027,Number(isoToday().slice(0,4))),years=Array.from({length:to-from+1},(_,i)=>to-i);
+  const reports=yearlyHealthOverview(state,years);
+  return `<section class="health-year-comparison"><div class="health-eyebrow">SLEEP BY YEAR · HOURS PER RECORDED NIGHT</div><div class="health-year-comparison-grid">${reports.map(x=>`<div class="health-year-avg"><span>${x.year}</span><strong>${x.metrics.sleepHours.days?formatHealth('sleepHours',x.metrics.sleepHours.average):'—'}</strong><small>${x.metrics.sleepHours.days} recorded nights</small></div>`).join('')}</div></section>`;
+}
+
 function monthlyView(){
   const month=selectedMonth,review=monthReview(month),{start,end}=monthBounds(month),cached=musicCached(start,end);
   const trackers=activeMonthTrackers(month),activities=activityStats(state,{month}).counts.slice(0,5);
@@ -345,6 +375,8 @@ function monthlyView(){
         <div class="month-pulse-card month-pulse--busiest"><span class="month-pulse-icon" aria-hidden="true">↗</span><div class="stat-label">Busiest diary day</div><div class="month-pulse-value">${busiest?esc(shortDate(busiest.date)):"No entries yet"}</div><div class="month-pulse-note">${busiest?`${fmt(busiest.events)} recorded events`:"Add diary entries to see this highlight"}</div></div>
       </div>
       <div id="gaming-month-review"><div class="section-title">GAMING · ${esc(period)}</div><section class="card"><div class="muted small">Loading monthly gaming recap…</div></section></div>
+      <div class="section-title">HEALTH & ACTIVITY · ${esc(period)}</div>
+      ${healthReportMarkup({month},period+" · Health & Activity")}
       <div class="section-title">MUSIC · MONTHLY RANKINGS</div>
       <section class="card month-music-section"><div class="card-header"><div><h2>Top songs, artists & albums</h2><div class="small muted">Actual stats.fm streams for ${esc(period)}. Ties are preserved.</div></div>${button("Refresh music","refresh-music")}</div><div id="monthly-music">${cached?renderMusicSections(cached):'<div class="muted small">Loading music…</div>'}</div></section>
       <div class="section-title">DAILY CHALLENGE · MONTHLY SCORECARD</div>
@@ -502,6 +534,9 @@ function yearlyView(){
     ${favoriteDaysPanel(y)}
     <div class="section-title">YOUR FIVE TRACKERS · ${y}</div>
     <div class="year-side-stats year-current-tracker-stats">${LIFE_TRACKER_IDS.map(id=>`<div class="year-side-stat"><div class="stat-label">${esc(trackerDefinition(state,id).name)} · ${y}</div><b>${fmt(trackerTotal(state,id,{year:y}))}</b></div>`).join('')}</div>
+    <div class="section-title">HEALTH & ACTIVITY · ${y}</div>
+    ${healthReportMarkup({year:y},y+" · Health & Activity")}
+    ${healthYearComparisonMarkup()}
     <div class="section-title">GEOGUESSR · RECORD BOOK</div>
     <div class="records-grid year-geo-records">
       <div class="record-card"><div class="stat-label">Longest Daily Challenge Streak</div><div class="record-value">${dc.longest} days</div><div class="record-detail">${dc.longestStart?`${shortDate(dc.longestStart)} → ${shortDate(dc.longestEnd)}`:"No streak data yet."}</div></div>
@@ -606,6 +641,8 @@ function trackersView(){
       <div><div class="trk-section-eyebrow">THE TRACKER COLLECTION</div><h2>Browse your records</h2><p>View your five active trackers or open the three retired GTA Online records under Historical.</p></div>
       <span class="trk-collection-count">${fmt(defs.length)} TRACKERS</span>
     </div>
+    <div class="section-title">HEALTH & ACTIVITY · ${esc(monthLabel(selectedMonth))}</div>
+    ${healthReportMarkup({month:selectedMonth},"Health & Activity · Monthly Snapshot")}
     <section class="card trk-ledger-section">
       <div class="trk-ledger-heading"><div><span class="trk-section-eyebrow">EVENT TRACKER LIBRARY</span><h3 id="trk-list-title">Your five trackers</h3><p id="trk-list-description">Month, year, and lifetime figures from your source records.</p></div><span class="trk-ledger-hint">SELECT TO VIEW OR ADD</span></div>
     <div class="trk-library-tools" aria-label="Browse tracker history">
@@ -935,6 +972,9 @@ function recordsView(){
         </div>`).join(""):'<p class="muted small">As gaming data is recorded, your biggest months will appear here.</p>'}
       </div>
       <div class="record-hall-source-note">${recordHallIcon("target")}<span>Gaming day records come from changes detected between account snapshots; they are <b>not exact session timers</b>. Monthly records can also include recovered historical playtime. Older lifetime playtime without date evidence is never assigned to a specific day or month.</span></div>
+      <div class="section-title">LIFETIME HEALTH & ACTIVITY RECORDS</div>
+      ${healthReportMarkup({},"Lifetime Health Records")}
+      ${healthYearComparisonMarkup()}
       <div class="section-title">FAVORITE DAYS · 2024 ONWARD</div>
       ${favoriteDaysByYearPanel()}
       <div class="section-title">LIFE'S BIGGEST TRACKED MOMENTS</div>
