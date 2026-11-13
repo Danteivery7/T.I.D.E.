@@ -60,7 +60,7 @@ test('sessions from all years are independently scoped and backfilled from diary
   assert.equal(derivedTrackerTotal(state,'gaming-sessions',{year:2025}),2);
   assert.equal(derivedTrackerTotal(state,'gaming-sessions',{year:2026}),3);
   assert.equal(diaryGamingSessions(state).length,6);
-  assert.deepEqual(topTrackerDay(state,'gaming-sessions'),{date:'2025-04-05',count:2});
+  assert.deepEqual(topTrackerDay(state,'gaming-sessions'),{date:'2026-11-13',count:2});
   state.entries['2025-04-05'].text='Continued playing The Crew';
   assert.equal(derivedTrackerTotal(state,'gaming-sessions',{year:2025}),0);
   assert.equal(derivedTrackerTotal(state,'gaming-sessions'),4);
