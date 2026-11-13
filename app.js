@@ -13,6 +13,10 @@ import { activityRange, gamingRecordHighlights, hours as gamingHours, platformLa
 import { diarySignals } from './diary-insights.js';
 import { LIFE_TRACKER_IDS, ARCHIVED_GTA_IDS, AUTO_TRACKER_IDS, topTrackerMonth, topTrackerDay, derivedTrackerRows } from './life-trackers.js';
 import { holidaysForMonth, holidaysOnDate, monthIdentity } from './calendar-data.js';
+import { setThemeForDate } from './theme-engine.js';
+import { personalCalendarEvents, calendarEventsOnDate, calendarEventsForMonth, writeCalendarEvent, removeCalendarEvent, proposedDiaryHeading, birthdaySuggestions } from './personal-calendar.js';
+import { favoriteDays, saveFavoriteDays, yearsWithFavoriteDays, favoriteDaysSuggestion } from './favorite-days.js';
+import { HEALTH_FIELDS, healthRows, healthPeriod, yearlyHealthOverview, mergeHealthImport, readHealthImportFile, formatHealth, metricLabel } from './health-activity.js';
 import { answerAsk, askScope, askMusicIntent } from './ask-intelligence.js';
 
 const root=document.querySelector('#view-root');
@@ -59,12 +63,26 @@ function pageHead(title,sub='',actions=''){return `<div class="page-head"><div><
 function button(label,id,cls=''){return `<button class="button ${cls}" id="${id}">${label}</button>`}
 function entryText(date){return state.entries?.[date]?.text||''}
 function entryExists(date){return Boolean(entryText(date).trim())}
+function presentationDate(){
+  const today=isoToday();
+  if(view==='today')return selectedDate;
+  if(view==='calendar'||view==='monthly')return selectedMonth===today.slice(0,7)?today:selectedMonth+'-01';
+  if(view==='yearly')return selectedYear===Number(today.slice(0,4))?today:String(selectedYear)+'-01-01';
+  return today;
+}
+function specialDateBanner(date){
+  const events=personalCalendarEvents(state,date),holiday=holidaysOnDate(date).find(h=>/Christmas|Thanksgiving|New Year's|St. Patrick|Halloween|Easter|Independence/.test(h.name));
+  const chosen=events.find(e=>e.kind==='personal')||events.find(e=>e.kind==='birthday')||holiday;
+  if(!chosen)return '';
+  const icon=chosen.kind==='birthday'?'🎉':chosen.theme==='knicks'?'🏆':'✦';
+  return `<div class="tide-theme-banner"><span class="tide-theme-banner-icon" aria-hidden="true">${icon}</span><b>${esc(chosen.name)}</b><span>${chosen.kind==='birthday'?'A day worth celebrating':'A moment on your timeline'}</span></div>`;
+}
 function eventCount(date){return splitEvents(entryText(date)).length}
 function relevantDetections(date){return (state.occurrences||[]).filter(x=>x.date===date&&x.source==='detected')}
 function monthReview(key=selectedMonth){return state.monthlyReviews?.[key]||{}}
 
 function todayView(){
-  const date=selectedDate;const saved=entryText(date);const draft=loadDraft(date);const text=draft!==null?draft:saved;const isToday=date===isoToday();const det=relevantDetections(date);const review=monthReview(date.slice(0,7));const otd=onThisDayRows(date).filter(x=>x.date!==date).slice(0,3);const streak=dailyChallengeStreaks(state);const geo=geoguessr10kRecord(state);
+  const date=selectedDate;const saved=entryText(date);const draft=loadDraft(date);const suggested=!saved&&!draft&&date>=isoToday()&&!localStorage.getItem('tide:preamble-dismissed:'+date)?proposedDiaryHeading(state,date):'';const text=draft!==null?draft:(saved||suggested);const isToday=date===isoToday();const det=relevantDetections(date);const review=monthReview(date.slice(0,7));const otd=onThisDayRows(date).filter(x=>x.date!==date).slice(0,3);const streak=dailyChallengeStreaks(state);const geo=geoguessr10kRecord(state);
   root.innerHTML=`${pageHead(isToday?'Today':dateLabel(date,{weekday:false}),isToday?'Your day is the focus. Type naturally, use commas, and save whenever you want.':'Historical days stay fully editable and keep revision history.')}
     <div class="hero-day today-home">
       <section class="card day-card">
@@ -83,9 +101,11 @@ function todayView(){
         <section class="card today-records-panel"><div class="card-header today-panel-header"><div><div class="today-panel-eyebrow">↗ ACTIVE RECORDS</div><h3>Live Records</h3><p class="today-panel-description">A quick snapshot of your tracked milestones.</p></div><button class="button ghost" id="open-records">Records</button></div><div class="grid grid-2 today-metrics-grid"><div class="today-record-tile today-record-tile--dc"><div class="stat-label">DC Streak</div><div class="big-stat" style="font-size:26px">${streak.active?streak.current:0}</div><div class="tiny subtle">${streak.active?'ACTIVE':'INACTIVE'}</div></div><div class="today-record-tile today-record-tile--geo"><div class="stat-label">Geoguessr 10K</div><div class="big-stat" style="font-size:26px">${geo?fmt(geo.value):'—'}</div><div class="tiny subtle">${geo?shortDate(geo.date):'NO DATA'}</div></div></div></section>
       </aside>
     </div>`;
+  if(specialDateBanner(date))root.insertAdjacentHTML('afterbegin',specialDateBanner(date));
   root.querySelector('#prev-day').onclick=()=>{selectedDate=shiftDay(date,-1);selectedMonth=selectedDate.slice(0,7);selectedYear=yearOf(selectedDate);render()};
   root.querySelector('#next-day').onclick=()=>{selectedDate=shiftDay(date,1);selectedMonth=selectedDate.slice(0,7);selectedYear=yearOf(selectedDate);render()};
   const editor=root.querySelector('#day-editor');editor.addEventListener('input',()=>{clearTimeout(draftTimer);root.querySelector('#editor-meta').textContent=`${splitEvents(editor.value).length} recognized chunks · local draft`;draftTimer=setTimeout(()=>saveDraft(date,editor.value),450)});
+  if(suggested)editor.addEventListener('input',()=>{if(!editor.value.startsWith(suggested))localStorage.setItem('tide:preamble-dismissed:'+date,'1')});
   root.querySelector('#save-day').onclick=()=>saveCurrentDay(date,editor.value);root.querySelector('#versions').onclick=()=>showVersions(date);root.querySelector('#open-otd').onclick=()=>{onThisDayDate=date;setView('on-this-day')};root.querySelector('#open-month').onclick=()=>{selectedMonth=date.slice(0,7);setView('monthly')};root.querySelector('#open-records').onclick=()=>setView('records');root.querySelectorAll('.otd-item').forEach(x=>x.onclick=()=>openDay(x.dataset.date));
 }
 async function saveCurrentDay(date,text){saveEntry(state,date,text);persist();clearDraft(date);toast('Day saved locally.');render();if(state.settings.autoCloudSync&&cloud.authenticated){try{const r=await cloudPush(state,cloud.etag);cloud.etag=r.etag||cloud.etag;toast('Cloud sync complete.')}catch(e){toast(`Saved locally; cloud sync failed: ${e.message}`,'bad')}}}
@@ -1002,7 +1022,7 @@ async function syncCloud(){if(!cloud.authenticated)return toast('Connect cloud s
 async function pullCloud(silent=false){try{const r=await cloudPull();state=mergeStates(state,r.state);cloud.etag=r.etag;persist();if(!silent)toast('Cloud data loaded.')}catch(e){if(!silent)toast(e.message,'bad')}}
 async function bootstrapCloud(){const status=await cloudStatus();cloud={...cloud,...status,checked:true};if(status.authenticated){cloud.authenticated=true;await pullCloud(true)}updateSyncPill();render()}
 function updateSyncPill(){const pill=document.querySelector('#sync-pill');pill.innerHTML=`<span class="sync-dot"></span><span>${cloud.authenticated?'Cloud ready · local-first':cloud.configured?'Cloud available · locked':'Local-first'}</span>`}
-function render(){const viceCityActive=selectedDate>='2026-11-19'&&selectedDate<='2026-12-31';root.classList.toggle('vice-city-nov19',viceCityActive);document.body.classList.toggle('vice-city-season',viceCityActive);updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'music':musicExplorerView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}document.dispatchEvent(new Event('tide:view-rendered'))}
+function render(){setThemeForDate(root,presentationDate(),personalCalendarEvents(state,presentationDate()));updateSyncPill();switch(view){case'today':todayView();break;case'calendar':calendarView();break;case'on-this-day':onThisDayView();break;case'monthly':monthlyView();break;case'yearly':yearlyView();break;case'trackers':trackersView();break;case'music':musicExplorerView();break;case'records':recordsView();break;case'ask':askView();break;case'history':historyView();break;case'settings':settingsView();break;default:todayView()}document.dispatchEvent(new Event('tide:view-rendered'))}
 render();bootstrapCloud();
 // A new gaming snapshot can change session totals without changing diary entries.
 // Repaint only read-only reporting pages; never interrupt the Today editor.
