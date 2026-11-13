@@ -44,6 +44,10 @@ export function trackerDefinition(state,id){
 export function allTrackerDefinitions(state){
   return [...ACTIVE_AUTO_DEFS,...v3.allTrackerDefinitions(state).filter(t=>t.id!==DUPLICATE_COLLISIONS)].map(t=>trackerDefinition(state,t.id));
 }
+export function trackerFromQuestion(state,question){
+  const q=String(question||'').toLowerCase();
+  return allTrackerDefinitions(state).find(t=>[t.name,...(t.aliases||[])].some(alias=>q.includes(String(alias).toLowerCase())))||null;
+}
 
 
 // Generated history for automatic trackers is derived from the authoritative data.
@@ -130,6 +134,16 @@ export function askTide(state,question){
   const q=String(question||'').trim(),lower=q.toLowerCase();
   const isHong=/hong kong/.test(lower);
   const isCollision=/\bcollisions?\b|walked into (?:an object|something)|bumped into/.test(lower);
+  const match=trackerFromQuestion(state,q);
+  if(match&&AUTO_TRACKER_IDS.has(match.id)){
+    const scope=scopedQuestion(q),total=trackerTotal(state,match.id,scope);
+    const location=scope.month?v3.monthLabel(scope.month):scope.year?String(scope.year):'all time';
+    if(/what days|which days|what dates|which dates|when did|show (?:me )?(?:every|all)/.test(lower)){
+      const events=occurrencesFor(state,match.id,scope);
+      return{type:'dates',primary:`${total} ${match.name.toLowerCase()} · ${location}`,items:events.slice(-100).map(row=>({date:row.date,label:v3.dateLabel(row.date,{weekday:false}),meta:row.snippet})),detail:'Derived from positive gaming account refreshes or your dated diary entries. Gaming sessions never come from diary mentions.'};
+    }
+    return{type:'count',primary:String(total),detail:`${match.name} · ${location}. No manual session count or estimated historical sessions.`};
+  }
   if(isHong||isCollision){
     const id=isHong?'hong-kong':CANONICAL_COLLISIONS,name=isHong?'Hong Kong Spawns':'Collisions',scope=scopedQuestion(q);
     const total=trackerTotal(state,id,scope);
