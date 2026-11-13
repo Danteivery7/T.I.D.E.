@@ -29,6 +29,9 @@ function migrate(input){
     occurrences:normalizeOccurrences(Array.isArray(s.occurrences)?s.occurrences:[]),trackerOverrides:s.trackerOverrides||{},
     musicCache:s.musicCache||{},rawImports:Array.isArray(s.rawImports)?s.rawImports:[],tideCounters:s.tideCounters||{},
     yearRankings:s.yearRankings||null,
+    calendarEvents:s.calendarEvents&&typeof s.calendarEvents==='object'?s.calendarEvents:{},
+    favoriteDays:s.favoriteDays&&typeof s.favoriteDays==='object'?s.favoriteDays:{},
+    healthActivity:{...(s.healthActivity||{}),days:s.healthActivity?.days||{}},
     settings:{...base.settings,...(s.settings||{}),migrations:{...(base.settings?.migrations||{}),...(s.settings?.migrations||{})}},
   };
 }
@@ -118,6 +121,12 @@ export function mergeStates(local,remote){
   const imports=new Map();for(const x of [...(r.rawImports||[]),...(l.rawImports||[])])imports.set(x.id||`${x.importedAt}:${x.characters}`,x);out.rawImports=[...imports.values()];
   out.tideCounters=mergeCounters(l.tideCounters,r.tideCounters);
   out.yearRankings=newer(r.yearRankings,l.yearRankings)||l.yearRankings||r.yearRankings||null;
+  // Each calendar event has its own timestamp/tombstone; never resurrect a deleted event.
+  out.calendarEvents=mergeMapByTime(l.calendarEvents,r.calendarEvents);
+  out.favoriteDays=mergeMapByTime(l.favoriteDays,r.favoriteDays);
+  const healthDays=mergeMapByTime(l.healthActivity?.days,r.healthActivity?.days);
+  const healthMeta=newer(l.healthActivity,r.healthActivity)||l.healthActivity||r.healthActivity||{};
+  out.healthActivity={...healthMeta,days:healthDays};
   out.settings={...(r.settings||{}),...(l.settings||{}),migrations:{...(r.settings?.migrations||{}),...(l.settings?.migrations||{})}};
   out.updatedAt=new Date().toISOString();
   return out;
