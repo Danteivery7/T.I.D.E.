@@ -1,8 +1,8 @@
 // Read-only counts for the five current-life trackers.
-// No diary-to-gaming conversion. Editing counts explicit diary mentions;
-// Social Days counts distinct dates; game sessions are saved by the gaming refresh pipeline.
+// Gaming sessions derive from dated diary starts, not cumulative playtime refreshes.
+// Editing and Social Days also derive from existing diary activity.
 import { DIARY_SIGNALS } from './diary-insights.js';
-import { gaming } from './gaming-data.js';
+import { diaryGamingSessions } from './gaming-diary-sessions.js';
 
 export const LIFE_TRACKER_IDS=['gaming-sessions','editing-events','social-days','migraines','hong-kong'];
 export const ARCHIVED_GTA_IDS=['mors-mutual','google-car','apartment-collisions'];
@@ -19,15 +19,7 @@ const inScope=(date,scope={})=>DAY.test(date)&&(!scope.month||date.startsWith(sc
 
 export function derivedTrackerRows(state,id,scope={}){
   const rows=[];
-  if(id==='gaming-sessions'){
-    for(const event of gaming().sessions||[]){
-      if(!event||!event.id||!inScope(String(event.date||''),scope))continue;
-      if(!(Number(event.minutes)>0))continue;
-      rows.push({id:String(event.id),trackerId:id,date:event.date,count:1,source:'gaming-report',capturedAt:event.capturedAt||'',snippet:String(event.title||'Game')+' · '+Math.round(Number(event.minutes))+' reported minutes'});
-    }
-    // The same snapshot can arrive from two devices. Count its stable ID once.
-    return [...new Map(rows.map(x=>[x.id,x])).values()].sort((a,b)=>a.date.localeCompare(b.date)||String(a.capturedAt).localeCompare(String(b.capturedAt)));
-  }
+  if(id==='gaming-sessions')return diaryGamingSessions(state,scope).map(event=>({...event,trackerId:id}));
   if(id!=='editing-events'&&id!=='social-days')return rows;
   for(const [date,entry] of Object.entries(state?.entries||{})){
     if(!inScope(date,scope)||!String(entry?.text||'').trim())continue;
