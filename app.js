@@ -114,6 +114,41 @@ function closeSidebar(){
 function openModal(title,body,eyebrow='T.I.D.E.'){document.querySelector('#modal-title').textContent=title;document.querySelector('#modal-eyebrow').textContent=eyebrow;document.querySelector('#modal-body').innerHTML=body;modal.showModal()}
 function closeModal(){modal.close()}
 function persist(){saveLocal(state)}
+// Reuse the same authenticated private importer from Health, Finances and Settings.
+// There is deliberately no public source file or uncredentialed API backdoor.
+async function activatePrivateData(file){
+  try{
+    if(!file||file.size>80*1024*1024)throw new Error('Select your prepared T.I.D.E. private setup file (up to 80 MB).');
+    const payload=JSON.parse(await file.text());
+    if(payload?.format!=='tide-private-bootstrap-v1'||!payload.health||!payload.finances)
+      throw new Error('Choose the combined T.I.D.E. Health + Finances file provided in ChatGPT.');
+    // Either import must succeed before any diary or tracker data is replaced.
+    const draft=structuredClone(state);
+    const healthCount=mergeHealthImport(draft,payload.health);
+    const financeCount=importFinances(draft,payload.finances);
+    state=draft;persist();render();
+    toast('Activated '+fmt(healthCount)+' Health days and '+fmt(financeCount)+' financial transactions.');
+    if(cloud.authenticated){
+      try{
+        const result=await cloudPush(state,cloud.etag);
+        cloud.etag=result?.etag||cloud.etag;
+        toast('Health and Finances are saved in your private T.I.D.E. cloud.');
+      }catch(error){
+        toast('Imported here, but cloud sync failed: '+error.message,'bad');
+      }
+    }else toast('Imported on this device. Connect T.I.D.E. cloud in Settings for other devices.');
+    return true;
+  }catch(error){toast('Health + Finances activation failed: '+error.message,'bad');return false;}
+}
+const quickPrivateInput=document.querySelector('#tide-private-activation-file');
+root.addEventListener('click',event=>{
+  if(event.target.closest('[data-tide-private-activate]'))quickPrivateInput?.click();
+});
+quickPrivateInput?.addEventListener('change',async event=>{
+  const file=event.target.files?.[0];
+  if(file)await activatePrivateData(file);
+  event.target.value='';
+});
 
 root.addEventListener('click',event=>{const button=event.target.closest('[data-insight-day]');if(button)openDay(button.dataset.insightDay)});
 root.addEventListener('click',event=>{
@@ -1321,21 +1356,8 @@ function settingsView(){const defs=allTrackerDefinitions(state);root.innerHTML=`
   const privateSetupInput=root.querySelector('#private-setup-file');
   if(privateSetupInput)privateSetupInput.onchange=async e=>{
     const file=e.target.files?.[0];if(!file)return;
-    try{
-      if(file.size>80*1024*1024)throw new Error('Private setup file exceeds 80 MB.');
-      const payload=JSON.parse(await file.text());
-      if(payload?.format!=='tide-private-bootstrap-v1'||!payload.health||!payload.finances)throw new Error('Choose the T.I.D.E. Private Health + Finances Setup JSON provided in ChatGPT.');
-      // Validate and import both sources into a temporary copy; keep the diary intact if either fails.
-      const draft=structuredClone(state);
-      const healthCount=mergeHealthImport(draft,payload.health);
-      const financeCount=importFinances(draft,payload.finances);
-      state=draft;persist();render();
-      toast('Loaded '+fmt(healthCount)+' Health days and '+fmt(financeCount)+' financial records.');
-      if(cloud.authenticated){
-        try{const result=await cloudPush(state,cloud.etag);cloud.etag=result.etag||cloud.etag;toast('Your private T.I.D.E. cloud has been updated.');}
-        catch(err){toast('Imported locally. Cloud sync was unsuccessful: '+err.message,'bad');}
-      }
-    }catch(err){toast('Private setup failed: '+err.message,'bad');}
+    await activatePrivateData(file);
+    e.target.value='';
   };
   const financeInput=root.querySelector('#finance-import-file');if(financeInput)financeInput.onchange=async e=>{
     const file=e.target.files?.[0];if(!file)return;
