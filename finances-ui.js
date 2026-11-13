@@ -39,7 +39,7 @@ export function financeRecordsMarkup(state,scope={},group='all'){
  ['Best month of money received',moneyLabel(p.bestReceiptMonth?.receipts),monthText(p.bestReceiptMonth?.month),null],
  ['Highest estimated closing month',moneyLabel(p.highestEndingMonth?.endingCash),monthText(p.highestEndingMonth?.month),null],
  ['Lowest estimated closing month',moneyLabel(p.lowestEndingMonth?.endingCash),monthText(p.lowestEndingMonth?.month),null],
- ['Reconstructed days below zero',String(p.negativeCashDays??0),'Estimated combined cash position; incomplete historical coverage',null],
+ ['Reconstructed days below zero',p.negativeCashDays==null?'—':String(p.negativeCashDays),'Estimated combined cash position; incomplete historical coverage',null],
  ['Lowest money received month',moneyLabel(p.worstReceiptMonth?.receipts),monthText(p.worstReceiptMonth?.month),null],
  ['Highest recorded expense month',moneyLabel(p.bestExpenseMonth?.expenses),monthText(p.bestExpenseMonth?.month),null]
  ].map(([a,b,c,d])=>financeRow(a,b,c,d)).join('')}</div><p class="insight-disclaimer">Cash-day and closing-month highs/lows are reconstructed estimates, not verified bank balance history. Historical coverage begins with imported transaction data.</p>`;
