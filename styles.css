@@ -2046,7 +2046,7 @@ body.vice-city-season .tide-topbar .tide-topbar-today:hover{
 body.vice-city-season .tide-topbar .tide-topbar-menu{
   border-color:rgba(242,148,226,.33);background:rgba(190,90,204,.13);color:#ffe6f7;
 }
-body.vice-city-season body:has(.nav-item[data-view="today"].active) .tide-topbar .tide-topbar-today{box-shadow:0 5px 20px rgba(236,101,189,.27)}
+body.vice-city-season:has(.nav-item[data-view="today"].active) .tide-topbar .tide-topbar-today{box-shadow:0 5px 20px rgba(236,101,189,.27)}
 @media(max-width:820px){
   .tide-topbar{gap:11px;padding-inline:max(12px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-right))}
   .tide-topbar .tide-topbar-context{gap:10px}
