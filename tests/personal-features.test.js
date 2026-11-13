@@ -122,7 +122,7 @@ test('Calendar, Year, Trackers, Records, Settings and cloud use the same feature
   const css=readFileSync(new URL('../themes.css',import.meta.url),'utf8');
   const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
   const build=readFileSync(new URL('../build.mjs',import.meta.url),'utf8');
-  for(const v of ['openPersonalCalendarEditor','proposedDiaryHeading','favoriteDaysPanel(y)','favoriteDaysByYearPanel()','healthReportMarkup({month}','healthReportMarkup({year:y}','healthReportMarkup({}','healthYearComparisonMarkup()','id="health-import-file"'])assert.ok(app.includes(v),v);
+  for(const v of ['openPersonalCalendarEditor','proposedDiaryHeading','favoriteDaysPanel(y)','favoriteDaysByYearPanel()','healthReviewMarkup(state,{month})','healthReviewMarkup(state,{year:y})','healthLifetimeMarkup(state)','financeReviewMarkup(state,{month})','financeReviewMarkup(state,{year:y})','financeRecordsMarkup(state)','healthDailyCard(state,date,\'sleepHours\')','healthDailyCard(state,date,\'steps\')','financeTodayMarkup(state,date)','healthYearComparisonMarkup()','id="health-import-file"'])assert.ok(app.includes(v),v);
   assert.ok(html.includes('themes.css'));
   assert.ok(css.includes('body[data-tide-era="2027"]'));
   assert.ok(css.includes('body[data-tide-occasion="thanksgiving"]'));
