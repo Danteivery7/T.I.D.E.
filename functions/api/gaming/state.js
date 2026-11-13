@@ -7,6 +7,13 @@ function stamp(x){return String(x?.updatedAt||'');}
 function newer(a,b){if(!a)return b;if(!b)return a;return stamp(b)>=stamp(a)?b:a;}
 function mergeGaming(remote={},incoming={}){
   const newerState=stamp(incoming)>=stamp(remote)?incoming:remote,older=newerState===incoming?remote:incoming,out={...older,...newerState};
+  // Session events are append-only with stable snapshot keys. Preserve both devices' reports.
+  const sessions=new Map();
+  for(const event of [...(remote.sessions||[]),...(incoming.sessions||[])]){
+    if(!event||typeof event.id!=='string'||!event.id||!/^\d{4}-\d{2}-\d{2}$/.test(String(event.date||''))||!(Number(event.minutes)>0))continue;
+    if(!sessions.has(event.id))sessions.set(event.id,event);
+  }
+  out.sessions=[...sessions.values()].sort((a,b)=>String(a.date).localeCompare(String(b.date))||String(a.capturedAt||'').localeCompare(String(b.capturedAt||''))||String(a.id).localeCompare(String(b.id)));
   out.activity={...(older.activity||{})};
   for(const [date,rec] of Object.entries(newerState.activity||{}))out.activity[date]=newer(out.activity[date],rec);
   out.recoveredMonths={...(older.recoveredMonths||{})};
