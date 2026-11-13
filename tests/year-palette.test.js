@@ -5,7 +5,7 @@ const read=file=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 const css=read('insights.css');
 const eras=read('themes.css');
 const base=read('styles.css');
-const marker='/* T.I.D.E. COMPLETE YEAR PALETTE: generated chromatic surface overrides.';
+const marker='/* T.I.D.E. COMPLETE YEAR PALETTE: year-scoped chromatic surface overrides.';
 const layer=css.slice(css.indexOf(marker));
 
 test('2024 green, 2025 orange and 2027 gold remain defined with distinct dark surfaces',()=>{
@@ -21,16 +21,13 @@ test('2024 green, 2025 orange and 2027 gold remain defined with distinct dark su
 test('color overrides stay limited to non-2026 base years while honoring holiday themes and dates',()=>{
  assert.match(layer,/body:is\(\[data-tide-era="2024"\],\[data-tide-era="2025"\],\[data-tide-era="2027"\]/);
  assert.match(layer,/:not\(\[data-tide-occasion\]\)/);
- assert.match(layer,/:not\(:has\(:is\(#g-year,#g-month,#otd-date-picker,#health-month,#music-explorer-end\)\[value\^="2026"\]/);
- assert.match(layer,/:has\(\.yrk-row\[data-index="0"\]/);
+ assert.match(layer,/:not\(\.vice-city-season\)/);
+ assert.ok(!layer.includes(':has(:is(#g-year'),'Year palette must come from theme-engine, not hidden input values');
+ assert.ok(!layer.includes(':has(.yrk-row'),'Year palette must not guess from ranking rows');
  for(const year of ['2024','2025','2027']){
-  assert.ok(layer.includes('#g-year[value="'+year+'"]'));
-  assert.ok(layer.includes('#g-month[value^="'+year+'-"]'));
-  assert.ok(layer.includes('#otd-date-picker[value^="'+year+'-"]'));
-  assert.ok(layer.includes('[data-year="'+year+'"]'));
-  assert.ok(layer.includes('#health-month,#music-explorer-end'));
-  assert.ok(layer.includes('#fin-year,#health-year,#music-explorer-year,#music-explorer-month'));
+  assert.ok(layer.includes('[data-tide-era="'+year+'"]'),'missing '+year+' scope');
  }
+ assert.ok(!layer.includes('option[value^="2026"]'),'old selected-option heuristic can suppress historic themes');
  assert.ok(!layer.includes('body[data-tide-era="2026"]:not([data-tide-occasion])'),'2026 must retain its native GTA palette');
 });
 test('every major explorer has palette-specific text, gradients, borders and component-color rules',()=>{
