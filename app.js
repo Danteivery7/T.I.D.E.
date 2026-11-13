@@ -51,7 +51,18 @@ const fmt=n=>new Intl.NumberFormat('en-US').format(Number(n)||0);
 const shortDate=d=>d?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(new Date(`${d}T12:00:00`)):'—';
 
 function toast(message,type='good'){const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=message;toastRegion.append(el);setTimeout(()=>el.remove(),3200)}
-function setView(next){view=next;document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));document.querySelector('#view-eyebrow').textContent=view==='ask'?'ASK T.I.D.E.':view.replaceAll('-',' ').toUpperCase();closeSidebar();render()}
+function setView(next){
+  // Keep the year being explored when moving from the time capsule or data hubs.
+  if(view==='on-this-day'){selectedYear=yearOf(onThisDayDate);selectedMonth=onThisDayDate.slice(0,7);}
+  if(view==='finances'){selectedYear=financeYear;selectedMonth=String(financeYear)+selectedMonth.slice(4);}
+  if(view==='health'){selectedYear=healthRange==='year'?healthYear:Number(healthMonth.slice(0,4));selectedMonth=healthRange==='year'?String(healthYear)+selectedMonth.slice(4):healthMonth;}
+  if(next==='finances')financeYear=selectedYear;
+  if(next==='health'){healthYear=selectedYear;healthMonth=selectedMonth;}
+  view=next;
+  document.querySelectorAll('.nav-item[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  document.querySelector('#view-eyebrow').textContent=view==='ask'?'ASK T.I.D.E.':view.replaceAll('-',' ').toUpperCase();
+  closeSidebar();render();
+}
 function openSidebar(){sidebar.classList.add('open');scrim.classList.add('show')}
 function closeSidebar(){sidebar.classList.remove('open');scrim.classList.remove('show')}
 function openModal(title,body,eyebrow='T.I.D.E.'){document.querySelector('#modal-title').textContent=title;document.querySelector('#modal-eyebrow').textContent=eyebrow;document.querySelector('#modal-body').innerHTML=body;modal.showModal()}
@@ -83,12 +94,18 @@ function pageHead(title,sub='',actions=''){return `<div class="page-head"><div><
 function button(label,id,cls=''){return `<button class="button ${cls}" id="${id}">${label}</button>`}
 function entryText(date){return state.entries?.[date]?.text||''}
 function entryExists(date){return Boolean(entryText(date).trim())}
+// An annual/monthly report represents an entire period, not New Year's Day.
+ // Use holiday-free anchor dates for reports so Jan 1 never paints a whole year gold.
+const annualThemeDate=year=>Number(year)===2026?'2026-11-20':String(year)+'-06-15';
 function presentationDate(){
-  const today=isoToday();
   if(view==='today')return selectedDate;
-  if(view==='calendar'||view==='monthly')return selectedMonth===today.slice(0,7)?today:selectedMonth+'-01';
-  if(view==='yearly')return selectedYear===Number(today.slice(0,4))?today:String(selectedYear)+'-01-01';
-  return today;
+  if(view==='on-this-day')return onThisDayDate;
+  if(view==='calendar'||view==='monthly')return selectedMonth+'-15';
+  if(view==='yearly'||view==='trackers'||view==='records')return annualThemeDate(selectedYear);
+  if(view==='finances')return annualThemeDate(financeYear);
+  if(view==='health')return healthRange==='year'?annualThemeDate(healthYear):healthMonth+'-15';
+  if(view==='music')return musicPeriod==='year'?annualThemeDate(musicYear):musicPeriod==='month'?musicMonth+'-15':annualThemeDate(selectedYear);
+  return annualThemeDate(selectedYear);
 }
 function specialDateBanner(date){
   const events=personalCalendarEvents(state,date),holiday=holidaysOnDate(date).find(h=>/Christmas|Thanksgiving|New Year's|St. Patrick|Halloween|Easter|Independence/.test(h.name));
@@ -628,7 +645,7 @@ function yearlyView(){
     ${diaryInsightPanel({year:y},"More than just a year of gaming")}
     <div class="section-title">YOUR YEAR IN MUSIC</div>
     <section class="card year-music-detail"><div class="card-header"><div><h2>Top Songs, Artists & Albums</h2><div class="small muted">Real stats.fm streams and original artwork. Your award winners appear above.</div></div>${button("Refresh music","refresh-year-music")}</div><div id="year-music">${cached?renderMusicSections(cached):'<div class="muted small">Loading music…</div>'}</div></section>`;
-  root.querySelector("#year-select").onchange=e=>{selectedYear=Number(e.target.value);render()};
+  root.querySelector("#year-select").onchange=e=>{selectedYear=Number(e.target.value);selectedMonth=String(selectedYear)+selectedMonth.slice(4);render()};
   root.querySelector("#save-year").onclick=()=>{
     saveYearlyReview(state,y,{bestDay:root.querySelector("#year-best-day").value,worstDay:root.querySelector("#year-worst-day").value,bestMonth:root.querySelector("#year-best-month").value,worstMonth:root.querySelector("#year-worst-month").value});
     persist();toast("Year picks saved.");
