@@ -11,7 +11,7 @@ export const AUTO_TRACKER_IDS=new Set(['gaming-sessions','editing-events','socia
 
 const DAY=/^\d{4}-\d{2}-\d{2}$/;
 const EDIT=/\b(?:re[- ]?edit(?:ed|ing|s)?|edit(?:ed|ing|s)?|video[- ]editing|(?:premiere pro|adobe premiere|after effects)\s+(?:editing|session)|worked on (?:an?|the|my) edit)\b/i;
-const NOT_EDIT=/\b(?:didn['’]?t|did not|haven['’]?t|not|never|without|no|plan(?:ned)? to|need(?:ed)? to|want(?:ed)? to|will|gonna|going to|should)\s+(?:(?:do|start|finish|be)\s+)?(?:re[- ]?)?edit\b/i;
+const NOT_EDIT=/\b(?:didn['’]?t|did not|haven['’]?t|not|never|without|no|plan(?:ned)? to|need(?:ed)? to|want(?:ed)? to|will|gonna|going to|should)\s+(?:(?:do|start|finish|be)\s+)?(?:re[- ]?)?edit(?:ed|ing|s)?\b/i;
 const NOT_SOCIAL=/\b(?:didn['’]?t|did not|never|not|couldn['’]?t|without|no)\s+(?:hang(?:ing)? out|talk|call|facetime|socializ|speak|visit)\b/i;
 const segments=text=>String(text||'').split(/[,;\n]+/).map(x=>x.trim()).filter(Boolean);
 const socialPattern=DIARY_SIGNALS.find(x=>x.id==='social')?.pattern;
