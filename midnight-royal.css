@@ -552,3 +552,43 @@ body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .dia
 body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .record-hall-breakdown-rank{
   color:var(--royal-ice)
 }
+
+
+/* 2027 final layer: the original calendar, monthly review and Today cards use
+   #view-root-specific legacy rules. Match that ID to ensure the new palette
+   actually paints those surfaces instead of only changing their variables. */
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) #view-root .today-dashboard>.card{
+  background:
+    radial-gradient(circle at 96% -6%,rgba(78,123,255,.13),transparent 49%),
+    linear-gradient(134deg,#17243c,#101726 73%,#15213a);
+  border-color:rgba(143,174,226,.27);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) #view-root .today-dashboard>.today-health-panel--sleep{
+  background:radial-gradient(circle at 95% 2%,rgba(143,214,255,.18),transparent 58%),linear-gradient(134deg,#15263b,#101727 73%,#122338);
+  border-color:rgba(143,214,255,.35);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) #view-root .today-dashboard>.today-health-panel--steps{
+  background:radial-gradient(circle at 95% 2%,rgba(73,201,123,.13),transparent 57%),linear-gradient(134deg,#15312f,#0f1d2c 72%,#15243b);
+  border-color:rgba(73,201,123,.31);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) #view-root .today-dashboard>.today-finance-panel{
+  background:radial-gradient(circle at 95% 2%,rgba(231,197,122,.2),transparent 57%),linear-gradient(134deg,#2a2b2d,#131e2e 75%,#17243a);
+  border-color:rgba(231,197,122,.43);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) #view-root .month-review-hero{
+  background:radial-gradient(circle at 96% 0%,rgba(231,197,122,.18),transparent 46%),linear-gradient(121deg,#172b4c,#0b1526 65%,#18283f);
+  border-color:rgba(231,197,122,.39);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) #view-root .yrk-podium-card{
+  background:radial-gradient(circle at 94% 5%,rgba(231,197,122,.11),transparent 45%),linear-gradient(131deg,#1b304c,#101a2c 69%,#14283f);
+  border-color:rgba(143,174,226,.29);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) #view-root .yrk-podium-card:nth-child(3n+2){
+  background:radial-gradient(circle at 95% 0%,rgba(78,123,255,.17),transparent 43%),linear-gradient(131deg,#19365b,#101d34 71%,#14243c);
+  border-color:rgba(78,123,255,.37);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) #view-root .trk-dashboard-stat,
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) #view-root .trk-ledger-section{
+  background:linear-gradient(132deg,#1b2d4a,#101a2c 74%,#152941);
+  border-color:rgba(78,123,255,.3);
+}
