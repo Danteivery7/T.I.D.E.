@@ -473,7 +473,7 @@ function healthReportMarkup(scope={},title='Health & Activity'){
 
 function healthYearComparisonMarkup(selectedYear=Number(isoToday().slice(0,4))){
   // Year reviews must never include years later than the chosen year.
-  const from=2024,to=Math.max(from,Number(selectedYear)||from),years=Array.from({length:to-from+1},(_,i)=>to-i);
+  const from=2024,to=Math.max(from,Number(selectedYear)||from),years=Array.from({length:to-from+1},(_,i)=>from+i);
   const reports=yearlyHealthOverview(state,years);
   return `<section class="health-year-comparison"><div class="health-eyebrow">SLEEP BY YEAR · HOURS PER RECORDED NIGHT</div><div class="health-year-comparison-grid">${reports.map(x=>`<div class="health-year-avg"><span>${x.year}</span><strong>${x.metrics.sleepHours.days?formatHealth('sleepHours',x.metrics.sleepHours.average):'—'}</strong><small>${x.metrics.sleepHours.days} recorded nights</small></div>`).join('')}</div></section>`;
 }
