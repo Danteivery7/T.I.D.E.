@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {encodeCloudState,decodeCloudState,isCompressedCloudState} from '../functions/_lib/state-codec.js';
 import {readCloud,mergeAndWrite} from '../functions/_lib/state.js';
+import {cloudStorageFailure} from '../functions/_lib/cloud-errors.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const minimal=()=>({version:1,entries:{'2026-11-14':{text:"Today's diary",updatedAt:'2026-11-14T12:00:00Z'}},
@@ -88,4 +89,39 @@ test('browser sync queue stores only a pointer instead of another full local hea
  assert.ok(src.includes("if(current?.id===id)rawRemove(OUTBOX_KEY)"),'old writes cannot clear later pending edits');
  assert.ok(src.includes("pending?.stateRef==='local'?local"),'no redundant self-merge');
  assert.ok(!src.includes('queuedAt:new Date().toISOString(),state:migrate(state)'),'new pending queue must not duplicate the entire state');
+});
+
+
+test('daily Cloudflare usage quota errors include a safe retry time and preserve pending edits',()=>{
+ const when=new Date('2026-11-14T18:30:00Z');
+ for(const kind of ['read','write']){
+  const error=new Error("Your account has exceeded D1's free tier daily row "+kind+" limit. Upgrade or wait.");
+  const result=cloudStorageFailure(error,when);
+  assert.equal(result.status,429);
+  assert.equal(result.code,'D1_DAILY_QUOTA');
+  assert.equal(result.retryAt,'2026-11-15T00:00:00.000Z');
+  assert.ok(result.error.includes('unsynced changes remain on this device'));
+ }
+});
+
+test('Cloudflare size and generic quota errors never report success or ask to delete local data',()=>{
+ const large=cloudStorageFailure(new Error('SQLITE_TOOBIG: string or blob too big'));
+ assert.equal(large.status,507);
+ assert.equal(large.code,'CLOUD_RECORD_SIZE');
+ assert.ok(large.error.includes('Keep the local copy'));
+ const quota=cloudStorageFailure(new Error('QuotaExceededError: The quota has been exceeded.'));
+ assert.equal(quota.status,507);
+ assert.equal(quota.code,'STORAGE_QUOTA');
+ assert.ok(quota.error.includes('Keep this browser'));
+ const route=read('functions/api/tide/state.js');
+ assert.ok(route.includes("import { cloudStorageFailure }"));
+ assert.equal((route.match(/const failure=cloudStorageFailure\(error\)/g)||[]).length,2);
+});
+
+test('D1 table schema check is reused per runtime binding to avoid poll query waste',()=>{
+ const backend=read('functions/_lib/state.js');
+ assert.ok(backend.includes('const tableInitialized=new WeakMap()'));
+ assert.ok(backend.includes('tableInitialized.get(db)'));
+ assert.ok(backend.includes('tableInitialized.set(db,pending)'));
+ assert.ok(backend.includes('tableInitialized.delete(db)'),'retry after transient failure');
 });
