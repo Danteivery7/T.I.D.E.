@@ -471,8 +471,9 @@ function healthReportMarkup(scope={},title='Health & Activity'){
   </section>`;
 }
 
-function healthYearComparisonMarkup(){
-  const from=2024,to=Math.max(2027,Number(isoToday().slice(0,4))),years=Array.from({length:to-from+1},(_,i)=>to-i);
+function healthYearComparisonMarkup(selectedYear=Number(isoToday().slice(0,4))){
+  // Year reviews must never include years later than the chosen year.
+  const from=2024,to=Math.max(from,Number(selectedYear)||from),years=Array.from({length:to-from+1},(_,i)=>to-i);
   const reports=yearlyHealthOverview(state,years);
   return `<section class="health-year-comparison"><div class="health-eyebrow">SLEEP BY YEAR · HOURS PER RECORDED NIGHT</div><div class="health-year-comparison-grid">${reports.map(x=>`<div class="health-year-avg"><span>${x.year}</span><strong>${x.metrics.sleepHours.days?formatHealth('sleepHours',x.metrics.sleepHours.average):'—'}</strong><small>${x.metrics.sleepHours.days} recorded nights</small></div>`).join('')}</div></section>`;
 }
@@ -729,7 +730,7 @@ function yearlyView(){
     ${healthReviewMarkup(state,{year:y})}
     <div class="section-title">FINANCIAL YEAR IN REVIEW · ${y}</div>
     ${financeReviewMarkup(state,{year:y})}
-    ${healthYearComparisonMarkup()}
+    ${healthYearComparisonMarkup(y)}
     <div class="section-title">GEOGUESSR · RECORD BOOK</div>
     <div class="records-grid year-geo-records">
       <div class="record-card"><div class="stat-label">Longest Daily Challenge Streak</div><div class="record-value">${dc.longest} days</div><div class="record-detail">${dc.longestStart?`${shortDate(dc.longestStart)} → ${shortDate(dc.longestEnd)}`:"No streak data yet."}</div></div>
