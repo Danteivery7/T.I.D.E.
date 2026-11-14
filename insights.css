@@ -882,3 +882,16 @@ body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):no
 .sleep-coach-week small{font-size:11px;color:var(--muted)}
 @media(max-width:980px){#view-root .sleep-coach-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}#view-root .sleep-coach-weeks{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:440px){#view-root .sleep-coach-weeks{grid-template-columns:minmax(0,1fr)}}
+
+/* A total and a daily average in the SAME Today Steps card.
+   Desktop: two measures on one line; narrow phones: stacked. */
+#view-root .today-step-dual{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:4px 0 14px}
+#view-root .today-step-measure{display:flex;flex-direction:column;gap:5px;min-width:0}
+#view-root .today-step-measure--avg{border-left:1px solid var(--line);padding-left:13px}
+#view-root .today-step-measure>span{color:var(--muted);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+#view-root .today-step-measure>strong{color:var(--accent);font-size:clamp(21px,2.5vw,34px);font-weight:950;letter-spacing:-.04em;line-height:1.12;font-variant-numeric:tabular-nums}
+#view-root .today-step-measure>small{font-size:11px;color:var(--muted);line-height:1.35}
+@media(max-width:510px){
+ #view-root .today-step-dual{grid-template-columns:minmax(0,1fr);gap:12px}
+ #view-root .today-step-measure--avg{border-left:0;border-top:1px solid var(--line);padding:12px 0 0}
+}
