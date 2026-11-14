@@ -33,11 +33,16 @@ function stepsYearComparison(state,throughYear){
  const years=comparisonYears(throughYear).filter(y=>available.has(y));
  if(!years.length)return '';
  const results=yearlyHealthOverview(state,years),max=Math.max(1,...results.map(r=>r.metrics.steps.average||0));
- return '<section class="insight-surface"><h3>Average daily steps · year by year</h3><p class="insight-subcopy">Daily averages let you compare full and partial years fairly.</p><div class="insight-bars">'+results.map(r=>{
-   const m=r.metrics.steps,v=m.average;
-   return '<div class="insight-bar-row"><span>'+r.year+'</span><div><i style="width:'+Math.max(3,Math.round((v||0)/max*100))+'%"></i></div><strong>'+
-     (v==null?'—':Math.round(v).toLocaleString('en-US'))+'</strong></div><small class="muted">'+m.days+' recorded days in '+r.year+'</small>';
- }).join('')+'</div></section>';
+ return '<section class="insight-surface year-step-comparison"><h3>Average daily steps · year by year</h3>'+
+  '<p class="insight-subcopy">Compare full and partial years using recorded days. Missing days are never zero.</p>'+
+  '<div class="year-comparison-cards year-comparison-cards--steps">'+results.map(r=>{
+    const m=r.metrics.steps,average=m.average,percent=average==null?0:Math.max(0,Math.round(average/max*100));
+    return '<article class="year-comparison-card year-step-card"><span class="year-step-label">'+r.year+'</span>'+
+      '<strong class="year-step-average">'+(average==null?'—':Math.round(average).toLocaleString('en-US'))+'</strong>'+
+      '<span class="year-step-unit">steps per recorded day</span>'+
+      '<div class="year-step-meter" aria-hidden="true"><i style="width:'+percent+'%"></i></div>'+
+      '<small class="muted">'+m.days+' recorded day'+(m.days===1?'':'s')+'</small></article>';
+  }).join('')+'</div></section>';
 }
 export function healthDailyCard(state,date,key){
  const month=String(date).slice(0,7),p=healthPeriod(state,{month}),m=p.metrics[key],sleep=key==='sleepHours';
