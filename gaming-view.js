@@ -66,13 +66,13 @@ function diarySessionComparison(throughYear){
     }
     const favorite=[...byGame.values()].sort((a,b)=>b.count-a.count||a.title.localeCompare(b.title))[0];
     const days=new Set(rows.map(row=>row.date)).size;
-    return '<article class="card" style="min-width:0;padding:17px"><div class="stat-label">'+y+
+    return '<article class="card year-comparison-card year-session-card"><div class="stat-label">'+y+
       ' · Diary history</div><div class="big-stat">'+fmt(rows.length)+
       '</div><div class="small muted">'+fmt(days)+' gaming day'+(days===1?'':'s')+
       '</div><div class="small muted" style="margin-top:10px">Most sessions: '+
       esc(favorite?.title||'No recorded games yet')+(favorite?' · '+fmt(favorite.count):'')+'</div></article>';
   });
-  return '<div class="section-title">GAMING SESSIONS · YEAR BY YEAR</div><div class="grid grid-4">'+
+  return '<div class="section-title">GAMING SESSIONS · YEAR BY YEAR</div><div class="year-comparison-cards year-comparison-cards--gaming">'+
     cards.join('')+'</div><p class="small muted" style="margin:10px 0 20px">'+
     'Each distinct play start in your saved diary counts once. Replaying later counts again; '+ 
     'continued playing does not. Tracked hours are separate from session counts.</p>';
