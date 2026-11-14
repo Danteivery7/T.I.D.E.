@@ -478,7 +478,7 @@ function healthYearComparisonMarkup(selectedYear=Number(isoToday().slice(0,4))){
   // Year reviews must never include years later than the chosen year.
   const years=comparisonYears(selectedYear);
   const reports=yearlyHealthOverview(state,years);
-  return `<section class="health-year-comparison"><div class="health-eyebrow">SLEEP BY YEAR · HOURS PER RECORDED NIGHT</div><div class="health-year-comparison-grid">${reports.map(x=>`<div class="health-year-avg"><span>${x.year}</span><strong>${x.metrics.sleepHours.days?formatHealth('sleepHours',x.metrics.sleepHours.average):'—'}</strong><small>${x.metrics.sleepHours.days} recorded nights</small></div>`).join('')}</div></section>`;
+  return `<section class="health-year-comparison"><div class="health-eyebrow">SLEEP BY YEAR · HOURS PER RECORDED NIGHT</div><div class="health-year-comparison-grid year-comparison-cards year-comparison-cards--sleep">${reports.map(x=>`<div class="health-year-avg year-comparison-card"><span>${x.year}</span><strong>${x.metrics.sleepHours.days?formatHealth('sleepHours',x.metrics.sleepHours.average):'—'}</strong><small>${x.metrics.sleepHours.days} recorded nights</small></div>`).join('')}</div></section>`;
 }
 
 function financeView(){
