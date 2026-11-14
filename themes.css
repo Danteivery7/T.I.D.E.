@@ -15,11 +15,16 @@ body[data-tide-era="2025"]{
  --tide-grad:linear-gradient(132deg,#402417,#231813 60%,#342014);
 }
 body[data-tide-era="2027"]{
- --bg:#090a0c;--panel:#15140f;--panel-2:#211d12;--panel-3:#302716;
- --line:#5a4828;--text:#fffaee;--muted:#d0c2a3;--subtle:#a3916c;
- --accent:#efc66b;--accent-2:#d9ac4d;--good:#aedda2;
- --tide-ink:#090909;--tide-pane:#221b0c;--tide-glow:rgba(234,184,77,.23);
- --tide-grad:linear-gradient(135deg,#332812,#16140f 66%,#241f13);
+ /* Midnight Royal Wealth: black & champagne gold, royal-blue co-star,
+    icy-blue detail, money-green successes, and cool platinum text. */
+ --bg:#070a12;--panel:#101726;--panel-2:#172033;--panel-3:#22304a;
+ --line:#2a3550;--text:#f8f5ee;--muted:#b9c2d1;--subtle:#8594b0;
+ --accent:#e7c57a;--accent-2:#4e7bff;--good:#49c97b;--warn:#f0c779;
+ --tide-ink:#070a12;--tide-pane:#141f32;--tide-glow:rgba(78,123,255,.18);
+ --tide-grad:linear-gradient(135deg,#19253b 0%,#0f1625 54%,#101c31 100%);
+ --royal-gold:#e7c57a;--royal-rich-gold:#cfa24a;--royal-blue:#4e7bff;
+ --royal-ice:#8fd6ff;--royal-green:#49c97b;--royal-platinum:#dde5ef;
+ --royal-ink:#070a12;
 }
 body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):not(.vice-city-season):not([data-tide-occasion]){
  background:radial-gradient(circle at 70% -5%,var(--tide-glow),transparent 39%),var(--bg);
@@ -46,11 +51,11 @@ body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):no
  border-color:color-mix(in srgb,var(--accent),transparent 57%);
 }
 body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.page-head h1,.yrk-podium-number,.record-hall-card-value,.month-hero-kicker,.tide-cal-kicker,.trk-eyebrow){
- color:#ffdfa0;
+ color:var(--royal-gold);
 }
 body[data-tide-era="2027"]:not([data-tide-occasion]) .trk-hero:before,
 body[data-tide-era="2027"]:not([data-tide-occasion]) #tracker-showcase:before{
- background:linear-gradient(90deg,#936b22,#f4cc76,#a68036);
+ background:linear-gradient(90deg,var(--royal-rich-gold),var(--royal-gold),var(--royal-blue),var(--royal-ice));
 }
 
 /* Occasion palettes override their year, but remain readable in dark mode. */
@@ -264,13 +269,14 @@ body:is([data-tide-era="2024"],[data-tide-era="2025"],[data-tide-era="2027"]):no
  background:var(--tide-grad);border-color:color-mix(in srgb,var(--accent),transparent 60%);
 }
 body[data-tide-era="2027"]:not([data-tide-occasion]) #view-root .tide-calendar-stage .tide-cal-day{
- background:linear-gradient(136deg,#1e1a12,#111112);
- border-color:rgba(212,171,87,.2);
+ background:linear-gradient(138deg,#172238,#0e1625 72%,#121b2b);
+ border-color:rgba(143,214,255,.19);
 }
 body[data-tide-era="2027"]:not([data-tide-occasion]) #view-root .tide-calendar-stage .tide-cal-day.is-today{
- border-color:#e8bf66;box-shadow:inset 0 0 0 1px rgba(230,195,121,.35);
+ border-color:var(--royal-gold);
+ box-shadow:inset 0 0 0 1px rgba(231,197,122,.35),0 0 19px rgba(78,123,255,.1);
 }
 body[data-tide-era="2027"]:not([data-tide-occasion]) #view-root .tide-cal-hero{
- background:linear-gradient(130deg,#382a12,#100e0b 68%,#252013);
- border-color:rgba(226,183,87,.38);
+ background:radial-gradient(circle at 95% 9%,rgba(231,197,122,.15),transparent 42%),linear-gradient(120deg,#172844,#0a0f1b 67%,#18213a);
+ border-color:rgba(231,197,122,.36);
 }
