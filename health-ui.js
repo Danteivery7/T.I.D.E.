@@ -1,6 +1,7 @@
 import {healthRows,healthPeriod,formatHealth,yearlyHealthOverview} from './health-activity.js';
 import {sleepCoachingMarkup} from './sleep-coach.js';
 import {migraineSummary,weeklyHealth,dailyHealthComparison} from './health-insights.js';
+import {comparisonYears} from './year-ranking-utils.js';
 function healthEsc(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 function healthDateText(d){return d?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}).format(new Date(d+'T12:00:00Z')):'—';}
@@ -28,7 +29,8 @@ function healthMonthBars(rows,title,key='count'){
 }
 
 function stepsYearComparison(state,throughYear){
- const years=[...new Set(healthRows(state).map(r=>Number(r.date.slice(0,4))))].filter(y=>y>=2024&&y<=throughYear).sort((a,b)=>a-b);
+ const available=new Set(healthRows(state).map(r=>Number(r.date.slice(0,4))));
+ const years=comparisonYears(throughYear).filter(y=>available.has(y));
  if(!years.length)return '';
  const results=yearlyHealthOverview(state,years),max=Math.max(1,...results.map(r=>r.metrics.steps.average||0));
  return '<section class="insight-surface"><h3>Average daily steps · year by year</h3><p class="insight-subcopy">Daily averages let you compare full and partial years fairly.</p><div class="insight-bars">'+results.map(r=>{
