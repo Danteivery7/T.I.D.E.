@@ -1,0 +1,127 @@
+/* T.I.D.E. date navigator — replaces native Edge/Chrome calendar overlays.
+   This does not style or change the main T.I.D.E. calendar grid. */
+.tide-date-trigger{
+  display:inline-flex;align-items:center;justify-content:space-between;gap:15px;
+  box-sizing:border-box;width:100%;max-width:100%;min-height:43px;
+  padding:10px 13px;border:1px solid var(--line);
+  border-radius:12px;background:var(--panel-2);color:var(--text);
+  font:inherit;font-size:13px;font-weight:760;letter-spacing:.01em;
+  text-align:left;cursor:pointer;transition:border-color .16s,background .16s,box-shadow .16s;
+}
+.tide-date-trigger:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 7%,var(--panel-2))}
+.tide-date-trigger:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.tide-date-trigger--empty .tide-date-trigger-label{color:var(--muted);font-weight:600}
+.tide-date-trigger-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tide-date-trigger-icon{
+  display:grid;place-items:center;flex-shrink:0;width:28px;height:28px;
+  border-radius:8px;background:color-mix(in srgb,var(--accent) 15%,transparent);
+  color:var(--accent);font-size:19px
+}
+.tide-cal-month-chooser .tide-date-trigger{width:auto;min-width:170px}
+.tide-otd-toolbar-actions .tide-date-trigger{min-width:150px}
+
+.today-date-jump{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  width:fit-content;max-width:100%;margin:1px auto 15px;
+  font-size:11px;font-weight:780;color:var(--muted)
+}
+.today-date-jump .tide-date-trigger{min-width:177px;min-height:37px;padding:5px 8px}
+.today-date-jump .tide-date-trigger-icon{width:25px;height:25px}
+
+.tide-date-picker-dialog{
+  width:min(448px,calc(100vw - 24px));
+  max-width:none;max-height:calc(100dvh - 24px);
+  padding:0;margin:auto;border:1px solid color-mix(in srgb,var(--accent) 30%,var(--line));
+  border-radius:22px;background:var(--panel);color:var(--text);
+  box-shadow:0 30px 110px rgba(0,0,0,.55);
+  font-family:inherit;overflow:auto;overscroll-behavior:contain
+}
+.tide-date-picker-dialog::backdrop{background:rgba(4,7,17,.78);backdrop-filter:blur(8px)}
+.tide-date-picker-frame{padding:23px;min-width:0}
+.tide-date-picker-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.tide-date-picker-eyebrow{
+  color:var(--accent-2);font-size:10px;font-weight:900;
+  letter-spacing:.16em;text-transform:uppercase
+}
+.tide-date-picker-head h2{margin:6px 0;font-size:24px;line-height:1.15;letter-spacing:-.045em;color:var(--text);font-weight:900}
+.tide-date-picker-subtitle{margin:0;color:var(--muted);font-size:12px;line-height:1.5}
+.tide-date-picker-close,.tide-date-picker-arrow{
+  display:grid;place-items:center;flex-shrink:0;
+  min-width:39px;min-height:39px;padding:0;
+  border:1px solid var(--line);border-radius:11px;background:var(--panel-2);
+  color:var(--text);font:inherit;font-size:25px;cursor:pointer
+}
+.tide-date-picker-close:hover,.tide-date-picker-arrow:hover:not(:disabled){
+  color:var(--accent);border-color:var(--accent)
+}
+.tide-date-picker-arrow:disabled{opacity:.32;cursor:not-allowed}
+.tide-date-picker-controls{
+  display:grid;grid-template-columns:38px minmax(0,1.3fr) minmax(0,.9fr) 38px;
+  gap:8px;align-items:end;margin:22px 0 16px
+}
+.tide-date-picker-select-label{
+  display:flex;flex-direction:column;gap:6px;min-width:0;
+  color:var(--muted);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.08em
+}
+.tide-date-picker-select-label select{
+  appearance:auto;box-sizing:border-box;width:100%;height:39px;
+  border:1px solid var(--line);border-radius:10px;padding:6px;
+  background:var(--panel-2);color:var(--text);font:inherit;
+  font-size:13px;font-weight:750;letter-spacing:0;cursor:pointer
+}
+.tide-date-picker-select-label select:focus-visible,
+.tide-date-picker-dialog button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tide-date-picker-day-grid{
+  display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;
+  padding:9px 0 18px
+}
+.tide-date-weekday{padding:8px 0;color:var(--muted);font-size:10px;text-align:center;font-weight:850;text-transform:uppercase}
+.tide-date-day-gap{display:block}
+.tide-date-day{
+  display:grid;place-items:center;min-width:0;aspect-ratio:1;
+  padding:2px;border:1px solid transparent;border-radius:11px;
+  background:transparent;color:var(--text);font:inherit;
+  font-size:14px;font-weight:720;cursor:pointer
+}
+.tide-date-day:hover:not(:disabled){background:color-mix(in srgb,var(--accent) 14%,var(--panel));border-color:var(--accent)}
+.tide-date-day.is-today{border-color:var(--accent);color:var(--accent)}
+.tide-date-day.is-selected,.tide-date-day.is-selected:hover{
+  background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:900
+}
+.tide-date-day:disabled{opacity:.19;cursor:not-allowed}
+.tide-date-month-grid{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;padding:6px 0 24px
+}
+.tide-date-month-tile{
+  display:grid;place-items:center;min-height:64px;
+  border:1px solid var(--line);border-radius:12px;
+  background:var(--panel-2);color:var(--text);
+  font:inherit;font-size:15px;font-weight:840;cursor:pointer
+}
+.tide-date-month-tile:hover:not(:disabled){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--panel-2))}
+.tide-date-month-tile.is-selected{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,var(--panel-2))}
+.tide-date-month-tile:disabled{opacity:.25;cursor:not-allowed}
+.tide-date-picker-bottom{border-top:1px solid var(--line);padding-top:16px;display:flex;flex-direction:column;gap:12px}
+.tide-date-picker-hint{font-size:11px;line-height:1.5;color:var(--muted)}
+.tide-date-picker-bottom-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
+.tide-date-picker-bottom-actions button{
+  min-height:38px;padding:8px 14px;border:1px solid var(--line);
+  border-radius:10px;background:var(--panel-2);color:var(--text);
+  font:inherit;font-size:12px;font-weight:800;cursor:pointer
+}
+.tide-date-picker-bottom-actions button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.tide-date-picker-bottom-actions [data-date-today]{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.tide-date-picker-bottom-actions button:disabled{opacity:.35;cursor:not-allowed}
+@media(max-width:520px){
+  .tide-date-picker-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 20px);border-radius:16px}
+  .tide-date-picker-frame{padding:17px 14px 15px}
+  .tide-date-picker-head h2{font-size:23px}
+  .tide-date-picker-controls{grid-template-columns:34px minmax(0,1.25fr) minmax(0,.85fr) 34px;gap:6px}
+  .tide-date-picker-arrow{min-width:34px;min-height:39px}
+  .tide-date-day-grid{gap:4px}
+  .tide-date-day{min-height:39px;border-radius:9px}
+  .tide-date-month-tile{min-height:55px}
+  .today-date-jump{flex-wrap:wrap}
+}
+@media(prefers-reduced-motion:reduce){.tide-date-trigger{transition:none}.tide-date-picker-dialog::backdrop{backdrop-filter:none}}
