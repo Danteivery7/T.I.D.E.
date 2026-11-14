@@ -3,13 +3,22 @@ const ROW_ID=1;
 
 export function validState(state){return state&&typeof state==='object'&&Number(state.version)>=1&&state.entries&&typeof state.entries==='object'&&Array.isArray(state.occurrences)}
 
+// Cloudflare isolates are reused. Avoid running schema DDL on every diary
+// autosync/poll; one initialization per D1 binding is sufficient.
+const tableInitialized=new WeakMap();
 async function ensureTable(env){
-  await env.TIDE_DB.prepare(`CREATE TABLE IF NOT EXISTS tide_state (
-    id INTEGER PRIMARY KEY,
-    version INTEGER NOT NULL,
-    json TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-  )`).run();
+  const db=env.TIDE_DB;
+  let pending=tableInitialized.get(db);
+  if(!pending){
+    pending=db.prepare(`CREATE TABLE IF NOT EXISTS tide_state (
+      id INTEGER PRIMARY KEY,
+      version INTEGER NOT NULL,
+      json TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`).run().catch(error=>{tableInitialized.delete(db);throw error;});
+    tableInitialized.set(db,pending);
+  }
+  await pending;
 }
 
 export async function readCloud(env){
