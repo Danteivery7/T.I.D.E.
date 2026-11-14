@@ -118,7 +118,7 @@ test('Today Steps display total plus daily average and Health shows monthly/year
  assert.equal(healthPeriod(state,{year:2025}).metrics.sleepHours.days,0,'no invented old sleep');
  const app=read('app.js');
  assert.ok(app.includes('healthYearComparisonMarkup(y)'));
- assert.ok(app.includes('const from=2024,to=Math.max(from,Number(selectedYear)||from)'));
+ assert.ok(app.includes('const years=comparisonYears(selectedYear);'));
  assert.ok(!app.includes('Math.max(2027,Number(isoToday().slice(0,4)))'));
  assert.ok(read('insights.css').includes('today-step-measure--avg'));
 });
