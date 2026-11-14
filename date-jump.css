@@ -125,3 +125,55 @@
   .today-date-jump{flex-wrap:wrap}
 }
 @media(prefers-reduced-motion:reduce){.tide-date-trigger{transition:none}.tide-date-picker-dialog::backdrop{backdrop-filter:none}}
+
+/* The Today jump sits ABOVE the preserved diary card, never inside it. */
+#view-root .today-date-jump-bar{
+  display:flex;justify-content:flex-end;align-items:center;
+  margin:0 0 12px;min-height:36px
+}
+#view-root .today-date-jump-bar .today-date-jump{margin:0}
+.tide-date-quick-years{
+  display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:-4px 0 13px
+}
+.tide-date-quick-years>span{
+  flex:0 0 100%;color:var(--muted);font-size:10px;
+  font-weight:850;letter-spacing:.1em
+}
+.tide-date-quick-years button{
+  padding:7px 11px;border:1px solid var(--line);border-radius:9px;
+  background:var(--panel-2);color:var(--muted);font:inherit;font-size:12px;
+  font-weight:820;cursor:pointer
+}
+.tide-date-quick-years button.is-selected{
+  background:color-mix(in srgb,var(--accent) 15%,var(--panel));
+  border-color:var(--accent);color:var(--accent)
+}
+.tide-date-quick-years button:hover{border-color:var(--accent);color:var(--accent)}
+.tide-date-picker-manual{
+  display:flex;align-items:end;gap:9px;margin:0 0 10px
+}
+.tide-date-picker-manual label{
+  flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;
+  color:var(--muted);font-size:10px;font-weight:820
+}
+.tide-date-picker-manual input{
+  box-sizing:border-box;width:100%;min-height:39px;padding:9px 11px;
+  border:1px solid var(--line);border-radius:10px;
+  background:var(--panel-2);color:var(--text);font:inherit;
+  font-size:13px;font-variant-numeric:tabular-nums
+}
+.tide-date-picker-manual button{
+  min-height:39px;padding:8px 17px;border:1px solid var(--accent);
+  border-radius:10px;background:color-mix(in srgb,var(--accent) 16%,var(--panel));
+  color:var(--accent);font:inherit;font-size:13px;font-weight:850;cursor:pointer
+}
+.tide-date-picker-error{
+  min-height:0;margin:0;color:var(--danger);
+  font-size:11px;font-weight:700;line-height:1.4
+}
+.tide-date-picker-error:not(:empty){margin:-2px 0 12px}
+@media(max-width:520px){
+  #view-root .today-date-jump-bar{justify-content:center}
+  .tide-date-picker-manual{gap:7px}
+  .tide-date-picker-manual button{padding-inline:14px}
+}
