@@ -1,0 +1,173 @@
+/* T.I.D.E. adaptive historical year comparisons.
+   One card fills the row, two split it in half, three fill thirds, four fill
+   quarters. After four years, later rows also grow to fill their width.
+   Dedicated selectors preserve all other four-stat dashboards and awards. */
+
+#view-root .year-comparison-cards{
+  --year-cards-gap:12px;
+  display:flex;
+  flex-wrap:wrap;
+  align-items:stretch;
+  justify-content:center;
+  gap:var(--year-cards-gap);
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  margin:13px 0 0;
+}
+#view-root .year-comparison-cards > .year-comparison-card{
+  box-sizing:border-box;
+  flex:1 1 calc((100% - 36px)/4);
+  min-width:0;
+  max-width:none;
+  margin:0;
+  overflow-wrap:anywhere;
+  align-self:stretch;
+}
+
+/* Gaming: retain the existing stat card identity, but remove empty columns. */
+#view-root .year-comparison-cards--gaming .year-session-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:8px;
+  padding:20px clamp(12px,1.9vw,24px);
+  min-height:164px;
+}
+#view-root .year-session-card > .stat-label{
+  text-align:center;
+  line-height:1.35;
+}
+#view-root .year-session-card > .big-stat{
+  font-size:clamp(29px,3vw,46px);
+  line-height:1.1;
+  margin:0;
+  font-variant-numeric:tabular-nums;
+}
+#view-root .year-session-card > .small{
+  max-width:100%;
+  line-height:1.5;
+  text-wrap:pretty;
+}
+#view-root .year-session-card > .small:last-child{
+  margin-top:2px !important;
+}
+
+/* Sleep: use the same count-aware row; the year data remains unchanged. */
+#view-root .health-year-comparison-grid.year-comparison-cards{
+  display:flex;
+  grid-template-columns:none;
+}
+#view-root .year-comparison-cards--sleep > .health-year-avg{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:8px;
+  min-height:124px;
+  padding:18px 12px;
+}
+#view-root .year-comparison-cards--sleep .health-year-avg > strong{
+  font-variant-numeric:tabular-nums;
+  font-size:clamp(23px,2.5vw,34px);
+  line-height:1.1;
+}
+#view-root .year-comparison-cards--sleep .health-year-avg > small{
+  line-height:1.4;
+}
+
+/* Steps: year-specific cards keep both the comparable average and a mini
+   proportional bar, so every year remains independently readable. */
+#view-root .year-comparison-cards--steps > .year-step-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:162px;
+  padding:19px clamp(12px,1.8vw,20px);
+  gap:6px;
+  text-align:center;
+  border:1px solid color-mix(in srgb,var(--accent-2) 29%,var(--line));
+  border-radius:15px;
+  background:
+    radial-gradient(circle at 95% 0%,color-mix(in srgb,var(--accent-2) 11%,transparent),transparent 54%),
+    var(--panel-2);
+}
+#view-root .year-step-label{
+  color:var(--accent);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.11em;
+}
+#view-root .year-step-average{
+  color:var(--text);
+  font-size:clamp(26px,3vw,39px);
+  line-height:1.12;
+  letter-spacing:-.04em;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+#view-root .year-step-unit{
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.4;
+}
+#view-root .year-step-meter{
+  width:100%;
+  height:10px;
+  margin:9px 0 5px;
+  overflow:hidden;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--accent-2) 12%,var(--panel));
+}
+#view-root .year-step-meter > i{
+  display:block;
+  height:100%;
+  min-width:0;
+  border-radius:inherit;
+  background:linear-gradient(90deg,var(--accent-2),var(--accent));
+  box-shadow:0 0 14px color-mix(in srgb,var(--accent-2) 18%,transparent);
+}
+#view-root .year-step-card > small{
+  text-align:center;
+  line-height:1.4;
+}
+
+/* Tablet: two equally sized cards per complete row, any remainder grows. */
+@media(max-width:1120px){
+  #view-root .year-comparison-cards > .year-comparison-card{
+    flex-basis:calc((100% - 12px)/2);
+  }
+}
+
+/* Phone: readable, full-width cards, no cramped four-column fragments. */
+@media(max-width:600px){
+  #view-root .year-comparison-cards{
+    --year-cards-gap:9px;
+    gap:9px;
+  }
+  #view-root .year-comparison-cards > .year-comparison-card{
+    flex-basis:100%;
+    width:100%;
+    max-width:100%;
+  }
+  #view-root .year-comparison-cards--gaming .year-session-card{
+    min-height:124px;
+    gap:6px;
+    padding:15px 14px;
+  }
+  #view-root .year-comparison-cards--steps > .year-step-card{
+    min-height:128px;
+    padding:15px;
+  }
+  #view-root .year-comparison-cards--sleep > .health-year-avg{
+    min-height:100px;
+    padding:14px;
+  }
+  #view-root .year-step-average{
+    font-size:clamp(27px,8vw,35px);
+  }
+}
