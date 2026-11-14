@@ -134,8 +134,10 @@ export function healthAnswers(state,question,context={}){
  else if(/\bthis year\b/.test(q))scope={year:Number((context.today||'').slice(0,4))};
  if(/\bmigraines?|headaches?\b/.test(q)){
   const report=migraineSummary(state,scope),monthly=report.topMonths[0];
-  return{kind:'health',heading:'MIGRAINES · DIARY-REPORTED SYMPTOM DAYS',primary:/\bmost|peak|worst month/.test(q)&&monthly?monthly.month+' · '+monthly.count+' days':String(report.days)+' distinct dated days',
-   detail:'Based on dated diary/occurrence evidence. Estimated historical totals are not silently converted into confirmed days.',items:report.rows.slice(-30).reverse().map(x=>({date:x.date,label:x.kind==='migraine'?'Migraine mentioned':'Headache mentioned',meta:x.detail})),source:'T.I.D.E. migraine diary and manual corrections'};
+  return{kind:'health',heading:'MIGRAINES · TRACKED EVENTS AND SYMPTOM DAYS',primary:/\bmost|peak|worst month/.test(q)&&monthly?
+    monthly.month+' · '+monthly.count+' events on '+monthly.days+' dated symptom days':
+    String(report.events)+' recorded events on '+report.datedDays+' dated symptom days',
+   detail:'Episodes and distinct dates are different counts. Monthly records, tracker totals and Health use the same calculation; undated records remain undated.',items:report.rows.slice(-30).reverse().map(x=>({date:x.date,label:x.kind==='migraine'?'Migraine mentioned':'Headache mentioned',meta:x.detail})),source:'T.I.D.E. migraine diary and tracker corrections'};
  }
  const key=/sleep|slept|sleeping/.test(q)?'sleepHours':/steps?/.test(q)?'steps':/distance|walk(?:ed|ing)?/.test(q)?'distanceMiles':/stand/.test(q)?'standHours':/workout/.test(q)?'workouts':/calories/.test(q)?'activeCalories':'exerciseMinutes';
  const p=healthPeriod(state,scope),m=p.metrics[key];
