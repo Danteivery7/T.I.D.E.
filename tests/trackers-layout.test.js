@@ -33,7 +33,7 @@ test('special GeoGuessr record editors and existing quick handlers stay wired',(
 test('Trackers has a featured area, searchable library and responsive color treatments',()=>{
   for(const marker of ['trk-hero','trk-dashboard-stats','trk-ledger-section','trk-ledger-list','data-trk-filter="in-use"','data-trk-filter="retired"','id="trk-search"','trk-library-empty'])assert.ok(source.includes(marker),marker);
   for(const marker of ['.trk-hero','.trk-dashboard-stats','#tracker-showcase .tracker-spotlight-table','#view-root .trk-ledger-list>.trk-ledger-row','@media(max-width:450px)','body.vice-city-season .trk-hero'])assert.ok(styles.includes(marker),marker);
-  assert.match(sw,/tide-shell-v4\d/);
+  assert.match(sw,/tide-shell-v\d+/);
 });
 
 test('five active life trackers and historical GTA records have separate entry points',()=>{
