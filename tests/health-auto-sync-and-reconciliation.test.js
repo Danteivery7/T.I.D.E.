@@ -92,11 +92,11 @@ test('Migraine total uses tracker year authority while detailed records remain d
  assert.equal(report.loggedMonths,1);
  const markup=healthHubMarkup(state,{tab:'migraines',period:'year',year:2026});
  assert.ok(markup.includes('11'));
- assert.ok(markup.includes('7 dated symptom days'));
- assert.ok(markup.includes('4 additional tracker records cannot be assigned'));
+ assert.ok(markup.includes('7 recorded dates'));
+ assert.ok(markup.includes('4 additional event records cannot be assigned'));
  const review=healthReviewMarkup(state,{year:2026});
  assert.ok(review.includes('11'));
- assert.ok(review.includes('4 dates unverified'));
+ assert.ok(review.includes('4 undated events'));
  assert.equal((review.match(/class="insight-stat /g)||[]).length,6,'six existing review slots must remain');
 });
 test('Today Steps display total plus daily average and Health shows monthly/year comparisons',()=>{
