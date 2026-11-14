@@ -125,7 +125,7 @@ export function dailyHealthComparison(state,month,key){
  return{best:sorted.at(-1)||null,worst:sorted[0]||null,rows:completed};
 }
 export function healthAnswers(state,question,context={}){
- const q=String(question||'').toLowerCase(),healthWords=/\b(?:sleep|slept|sleeping|steps?|walk(?:ed|ing)?|distance|exercise|workout|standing|stand hours|calories|health|migraine|headache|activity rings?)\b/;
+ const q=String(question||'').toLowerCase(),healthWords=/\b(?:sleep|slept|sleeping|steps?|walk(?:ed|ing)?|distance|exercise|workout|standing|stand hours|calories|health|migraines?|headaches?|activity rings?)\b/;
  if(!healthWords.test(q))return null;
  const year=Number(q.match(/\b20\d{2}\b/)?.[0]),monthName=q.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/)?.[1];
  const months=['january','february','march','april','may','june','july','august','september','october','november','december'];
