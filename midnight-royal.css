@@ -399,3 +399,156 @@ body[data-tide-era="2027"][data-tide-occasion="new-year"] #view-root .year-award
   body[data-tide-era="2027"][data-tide-occasion="new-year"] .topbar::before,
   body[data-tide-era="2027"][data-tide-occasion="new-year"] .topbar::after{animation:none;opacity:.2}
 }
+
+
+/* Final explorer pass: turn previously pink/purple hardcoded surfaces into the
+   same restrained 2027 gold/royal/ice/green family. */
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) :is(.music-explorer-hero,.tide-otd-hero,.tide-otd-stage,.yrk-hero,.record-hall-feature,.diary-insights-panel,.trk-page){
+  --c-primary:var(--royal-gold);
+  --c-secondary:var(--royal-blue);
+  --c-highlight:var(--royal-ice);
+  --yrk-rose:var(--royal-gold);
+  --ask-pink:var(--royal-blue);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) :is(.tide-calendar-stage,.tide-otd-stage){
+  --c-primary:var(--royal-gold);
+  --c-secondary:var(--royal-blue);
+  --c-highlight:var(--royal-ice);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) :is(.music-explorer-hero,.tide-otd-hero,.record-hall-feature){
+  background:
+    radial-gradient(circle at 91% 7%,rgba(78,123,255,.19),transparent 43%),
+    linear-gradient(120deg,#152946,#0d1525 64%,#1b2740);
+  border-color:rgba(231,197,122,.35);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) :is(.music-explorer-hero,.record-hall-feature)::before{
+  background:linear-gradient(90deg,var(--royal-gold),var(--royal-blue),var(--royal-ice));
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .music-explorer-hero-eyebrow,
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .music-explorer-section-eyebrow{
+  color:var(--royal-gold);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .music-explorer-hero h2 span{
+  color:var(--royal-ice);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .music-explorer-hero p{
+  color:var(--muted);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .music-explorer-hero-graphic{
+  color:var(--royal-gold);
+  text-shadow:0 8px 27px rgba(231,197,122,.28);
+  box-shadow:0 0 0 14px rgba(231,197,122,.065),0 0 0 28px rgba(78,123,255,.045);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .music-explorer-toolbar{
+  border-color:rgba(78,123,255,.24);
+  background:linear-gradient(145deg,rgba(78,123,255,.11),rgba(231,197,122,.045));
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .music-explorer-period.is-current{
+  background:linear-gradient(113deg,rgba(78,123,255,.3),rgba(143,214,255,.14));
+  border-color:rgba(143,214,255,.51);
+  color:#fff;
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .music-explorer-category{
+  --music-cat-accent:var(--royal-gold);
+  background:linear-gradient(137deg,#303641,#151f32 72%,#101c31);
+  border-color:rgba(231,197,122,.29);
+  color:var(--text);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .music-explorer-category:nth-child(2){
+  --music-cat-accent:var(--royal-blue);
+  background:linear-gradient(137deg,#182f52,#111e36 72%,#152642);
+  border-color:rgba(78,123,255,.39);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .music-explorer-category:nth-child(3){
+  --music-cat-accent:var(--royal-ice);
+  background:linear-gradient(137deg,#183444,#10212f 72%,#132c42);
+  border-color:rgba(143,214,255,.35);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) :is(.yrk-row,.music-item,.month-challenge-stat){
+  background:linear-gradient(142deg,#17243a,#0f1a2d);
+  border-color:rgba(78,123,255,.25);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .yrk-row:nth-child(3n+1){
+  border-color:rgba(231,197,122,.34);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .yrk-row:nth-child(3n+3){
+  border-color:rgba(73,201,123,.32);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .month-activity-bar div{
+  background:linear-gradient(90deg,var(--royal-blue),var(--royal-ice));
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) #gaming-month-review .card{
+  border-color:rgba(143,214,255,.33);
+  background:linear-gradient(140deg,#172b46,#101c31 74%,#172139)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-otd-stage{
+  border-color:rgba(78,123,255,.24);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-otd-hero{
+  border-color:rgba(231,197,122,.33);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-otd-date-main>strong,
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-otd-hero-month{
+  color:var(--royal-gold);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-otd-date-main b{
+  color:var(--royal-ice);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-otd-stats>div,
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-otd-toolbar{
+  background:linear-gradient(123deg,rgba(78,123,255,.15),rgba(231,197,122,.045));
+  border-color:rgba(143,174,226,.31);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-otd-stats>div:nth-child(2) b{
+  color:var(--royal-ice);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-otd-stats>div:nth-child(3) b{
+  color:var(--royal-green);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-cal-holiday--special{
+  color:var(--royal-ice);
+  background:rgba(78,123,255,.2);
+  border-color:rgba(143,214,255,.5)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-cal-agenda{
+  border-color:rgba(143,174,226,.3);
+  background:linear-gradient(144deg,#152338,#0f1d30)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .tide-cal-agenda--special .tide-cal-agenda-day{
+  background:rgba(78,123,255,.18)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) :is(.diary-insights-panel,.record-hall-day-breakdown){
+  border-color:rgba(78,123,255,.31);
+  background:linear-gradient(137deg,rgba(78,123,255,.125),rgba(231,197,122,.044));
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) :is(.diary-insights-eyebrow,.record-hall-breakdown-toggle){
+  color:var(--royal-gold)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .diary-signal-card{
+  background:linear-gradient(135deg,#19273c,#121e30);
+  border-color:rgba(143,174,226,.24)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .diary-signal--creative{
+  --diary-signal:var(--royal-blue)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .diary-signal--learning{
+  --diary-signal:var(--royal-ice)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .diary-signal--business,
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .diary-signal--money{
+  --diary-signal:var(--royal-gold)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .diary-signal--social,
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .diary-signal--wellness{
+  --diary-signal:var(--royal-green)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .diary-signal--sports,
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .diary-signal--outings{
+  --diary-signal:var(--royal-ice)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .diary-signal--pets{
+  --diary-signal:var(--royal-platinum)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]):not(.vice-city-season) .record-hall-breakdown-rank{
+  color:var(--royal-ice)
+}
