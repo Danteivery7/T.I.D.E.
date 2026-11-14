@@ -1125,8 +1125,9 @@ function recordsView(){
   const busiest=dates.map(([date,entry])=>({date,events:splitEvents(entry.text).length})).sort((a,b)=>b.events-a.events||a.date.localeCompare(b.date))[0];
   const top=activityStats(state).counts[0],editing=topTrackerDay(state,"editing-events");
   const sessionPeak=topTrackerMonth(state,"gaming-sessions"),editingPeak=topTrackerMonth(state,"editing-events"),socialPeak=topTrackerMonth(state,"social-days");
-  const migraineMonths=new Set([...Object.keys(state.monthlyReviews||{}),...Object.keys(state.entries||{}).map(d=>d.slice(0,7)),...(state.occurrences||[]).filter(x=>x.trackerId==='migraines').map(x=>String(x.date||'').slice(0,7))]);
-  const migrainePeak=[...migraineMonths].filter(m=>/^\d{4}-\d{2}$/.test(m)).map(month=>({month,count:trackerTotal(state,'migraines',{month})})).filter(x=>x.count>0).sort((a,b)=>b.count-a.count||b.month.localeCompare(a.month))[0]||null;
+  // Personal Records and Health must use the same monthly migraine audit.
+  // Occurrence count and distinct symptom dates are separate statistics.
+  const migrainePeak=migraineSummary(state).topMonths[0]||null;
   const streak=loggingStreak(state),daily=dailyChallengeStreaks(state),monty=montyRecord(state);
   const geo=geoguessr10kRecord(state);
   const lifeRecords=diarySignals(state);
@@ -1181,7 +1182,7 @@ function recordsView(){
         ${recordHallCard("total","gamepad","Most reported gaming sessions in a month",sessionPeak?`${fmt(sessionPeak.count)} sessions`:"—",sessionPeak?`${monthLabel(sessionPeak.month)} · reported game increases`:"Session reports are counted from new gaming refreshes")}
         ${recordHallCard("edit","edit","Most editing events in a month",editingPeak?`${fmt(editingPeak.count)} edits`:"—",editingPeak?`${monthLabel(editingPeak.month)} · explicit diary edits`:"No saved editing entries")}
         ${recordHallCard("activity","sparkle","Most social days in a month",socialPeak?`${fmt(socialPeak.count)} days`:"—",socialPeak?`${monthLabel(socialPeak.month)} · diary-identified social days`:"No social diary mentions")}
-        ${recordHallCard("activity","diary","Most migraines in a month",migrainePeak?`${fmt(migrainePeak.count)} occurrences`:"—",migrainePeak?monthLabel(migrainePeak.month):"No recorded migraine occurrences")}
+        ${recordHallCard("activity","diary","Most migraine/headache events in one month",migrainePeak?`${fmt(migrainePeak.count)} occurrences`:"—",migrainePeak?`${monthLabel(migrainePeak.month)} · ${fmt(migrainePeak.days)} dated symptom days${migrainePeak.eventsWithoutVerifiedDates?` · ${fmt(migrainePeak.eventsWithoutVerifiedDates)} without dated details`:''}`:"No recorded migraine occurrences")}
       </div>
       <div class="section-title">YOUR LIFE · DIARY MILESTONES</div>
       <div class="record-hall-card-grid record-hall-diary">
