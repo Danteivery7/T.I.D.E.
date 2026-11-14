@@ -1,4 +1,5 @@
 import {healthRows,healthPeriod} from './health-activity.js';
+import {trackerTotal} from './engine-v4.js';
 const DAY=/^\d{4}-\d{2}-\d{2}$/;
 const migrainePhrase=/\b(?:migraines?|headaches?|head\s*aches?)\b/i;
 const migraineKeyword=/\bmigraines?\b/i;
@@ -34,7 +35,28 @@ const season=date=>{const mmdd=date.slice(5);return mmdd>='09-01'&&mmdd<='12-15'
 export function migraineSummary(state,scope={}){
  const rows=migraineEvidence(state,scope),byMonth=new Map();
  for(const r of rows){const m=r.date.slice(0,7);byMonth.set(m,(byMonth.get(m)||0)+1)}
- const topMonths=[...byMonth].map(([month,count])=>({month,count})).sort((a,b)=>b.count-a.count||b.month.localeCompare(a.month));
+ // The historical tracker can have verified annual/monthly totals without a
+ // date for every event. Preserve that authority; never fabricate missing dates.
+ const months=new Set([...byMonth.keys(),
+   ...Object.keys(state.monthlyReviews||{}).filter(x=>/^\d{4}-\d{2}$/.test(x)),
+   ...Object.keys(state.entries||{}).map(x=>x.slice(0,7)),
+   ...(state.occurrences||[]).filter(x=>x.trackerId==='migraines').map(x=>String(x.date||'').slice(0,7))]);
+ for(const month of months){
+   if(!/^\d{4}-\d{2}$/.test(month)||scope.month&&month!==scope.month||scope.year&&!month.startsWith(String(scope.year)+'-'))continue;
+   const tracked=Math.max(0,Number(trackerTotal(state,'migraines',{month}))||0);
+   if(tracked>(byMonth.get(month)||0))byMonth.set(month,tracked);
+ }
+ const topMonths=[...byMonth].filter(([,count])=>count>0).map(([month,count])=>({month,count})).sort((a,b)=>b.count-a.count||b.month.localeCompare(a.month));
+ const trackedTotal=Math.max(0,Number(trackerTotal(state,'migraines',scope))||0);
+ const total=Math.max(rows.length,trackedTotal);
+ const missingDateCount=Math.max(0,total-rows.length);
+ const observedMonths=new Set(Object.keys(state.entries||{}).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&(!scope.year||d.startsWith(String(scope.year)+'-'))&&(!scope.month||d.startsWith(scope.month+'-'))).map(d=>d.slice(0,7)));
+ const averageMonths=observedMonths.size||new Set([...byMonth.keys()].filter(m=>byMonth.get(m)>0)).size;
+ const averagePerLoggedMonth=averageMonths?Math.round(total/averageMonths*100)/100:null;
+ const lastMigraineDate=rows.filter(r=>r.kind==='migraine').at(-1)?.date||null;
+ const today=new Date().toLocaleDateString('en-CA');
+ const daysSinceLastRecordedMigraine=lastMigraineDate&&lastMigraineDate<=today?
+   Math.round((Date.parse(today+'T12:00:00Z')-Date.parse(lastMigraineDate+'T12:00:00Z'))/86400000):null;
  const diary=dates(state).filter(([d])=>(!scope.year||d.startsWith(String(scope.year)+'-'))&&(!scope.month||d.startsWith(scope.month+'-')));
  const denominators={fall:0,rest:0},symptoms={fall:0,rest:0};
  for(const [date] of diary)denominators[season(date)]++;
@@ -62,7 +84,8 @@ export function migraineSummary(state,scope={}){
   pairedOtherNights:0,averageOtherNight:null};
  const nonMigraine=healthRows(state,scope).filter(x=>Number.isFinite(x.sleepHours)&&!symptomsByDate.has(x.date));
  sleep.pairedOtherNights=nonMigraine.length;sleep.averageOtherNight=nonMigraine.length?Math.round(nonMigraine.reduce((n,r)=>n+r.sleepHours,0)/nonMigraine.length*100)/100:null;
- return{rows,days:rows.length,types,topMonths,monthly:[...byMonth].map(([month,count])=>({month,count})).sort((a,b)=>a.month.localeCompare(b.month)),
+ return{rows,days:total,datedDays:rows.length,missingDateCount,averagePerLoggedMonth,loggedMonths:averageMonths,lastMigraineDate,daysSinceLastRecordedMigraine,
+  types,topMonths,monthly:[...byMonth].filter(([,count])=>count>0).map(([month,count])=>({month,count})).sort((a,b)=>a.month.localeCompare(b.month)),
   firstDate:rows[0]?.date||null,lastDate:rows.at(-1)?.date||null,seasonal:{fallDays:symptoms.fall,fallLoggedDays:denominators.fall,restDays:symptoms.rest,restLoggedDays:denominators.rest,fallRate,restRate,ratio:restRate>0?Math.round(fallRate/restRate*100)/100:null},
   school,homeAlone:lone,sleep};
 }
