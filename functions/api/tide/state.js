@@ -1,6 +1,7 @@
 import { comparePassword,isAuthenticated,json } from '../../_lib/auth.js';
 import { mergeAndWrite,readCloud,validState } from '../../_lib/state.js';
 import { entryText,saveEntry } from '../../_lib/diary.js';
+import { cloudStorageFailure } from '../../_lib/cloud-errors.js';
 
 const DATE_RE=/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const clean=(value,max=12000)=>String(value??'').trim().slice(0,max);
@@ -94,7 +95,7 @@ export async function onRequestGet(context){
     await flushShortcutQueue(context);
     const current=await readCloud(context.env);
     return json({state:current.state,etag:current.etag});
-  }catch(error){return json({error:error?.message||'Shared storage request failed.'},500)}
+  }catch(error){const failure=cloudStorageFailure(error);return json({error:failure.error,code:failure.code,retryAt:failure.retryAt||null},failure.status)}
 }
 
 export async function onRequestPost(context){
@@ -116,5 +117,5 @@ export async function onRequestPost(context){
     if(!validState(body?.state))return json({error:'Invalid T.I.D.E. state.'},400);
     const saved=await mergeAndWrite(context.env,body.state);
     return json({ok:true,state:saved.state,etag:saved.etag});
-  }catch(error){return json({error:error?.message||'Shared storage request failed.'},500)}
+  }catch(error){const failure=cloudStorageFailure(error);return json({error:failure.error,code:failure.code,retryAt:failure.retryAt||null},failure.status)}
 }
