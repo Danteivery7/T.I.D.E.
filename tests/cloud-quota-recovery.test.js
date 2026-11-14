@@ -5,7 +5,7 @@ import {encodeCloudState,decodeCloudState,isCompressedCloudState} from '../funct
 import {readCloud,mergeAndWrite} from '../functions/_lib/state.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const minimal=()=>({version:1,entries:{'2026-11-14':{text:'Today's diary',updatedAt:'2026-11-14T12:00:00Z'}},
+const minimal=()=>({version:1,entries:{'2026-11-14':{text:"Today's diary",updatedAt:'2026-11-14T12:00:00Z'}},
  occurrences:[],monthlyReviews:{},yearlyReviews:{},healthActivity:{days:{}},
  finances:{accounts:{},transactions:{},recurring:{},manualEvents:{}}});
 
