@@ -65,7 +65,7 @@ test('D1 merge transparently migrates a legacy snapshot on a large write and pre
  incoming.entries['2026-11-14'].updatedAt='2026-11-14T13:00:00Z';
  // Force compressed storage without touching real user data.
  for(let i=0;i<700;i++){
-  incoming.healthActivity.days['2024-'+String((i%12)+1).padStart(2,'0')+'-'+String((i%28)+1).padStart(2,'0')]={
+  incoming.healthActivity.days[new Date(Date.UTC(2024,0,i+1)).toISOString().slice(0,10)]={
    steps:8000+i,notes:'Daily health sample '+String(i).repeat(65)};
  }
  const result=await mergeAndWrite(env,incoming);
