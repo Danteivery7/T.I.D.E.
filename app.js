@@ -619,19 +619,23 @@ function yearAwardMarkup(y,music,failed=false){
   const gameData=activityRange(`${y}-01-01`,`${y}-12-31`,"all");
   const game=gameData.games.filter(g=>Number(g.minutes)>0).sort((a,b)=>b.minutes-a.minutes||a.title.localeCompare(b.title))[0];
   const gamePartial=!gameData.coverageStart||`${y}-01-01`<gameData.coverageStart;
+  // Earlier-year Game of the Year winners are personally selected, not guessed from partial playtime.
+  const chosenGame={2024:{title:"GTA V",aliases:["gta v","grand theft auto v","gta 5","gta online"]},2025:{title:"The Crew Motorfest",aliases:["the crew motorfest","motorfest"]}}[y];
+  const chosenGameData=chosenGame?gameData.games.find(g=>chosenGame.aliases.includes(String(g.title||"").trim().toLowerCase())):null;
+  const gameWinner=chosenGame?{title:chosenGame.title,image:chosenGameData?.image}:game;
   const song=music?.songs?.[0],artist=music?.artists?.[0];
   const musicStatus=failed?"Could not load; refresh below.":"Loading year-end rankings…";
   const healthRecords=healthPeriod(state,{year:y}).metrics;
   const stepChampion=healthRecords.steps.best,sleepChampion=healthRecords.sleepHours.best;
   const financialYear=financePeriod(state,{year:y}),receiptChampion=financialYear.highestReceiptDay;
-  const gameHours=game?`${Math.floor(game.minutes/60).toLocaleString("en-US")}h ${Math.round(game.minutes%60)}m recorded`:"Waiting for dated gaming data";
+  const gameHours=chosenGame?"Your personal game of "+y:game?`${Math.floor(game.minutes/60).toLocaleString("en-US")}h ${Math.round(game.minutes%60)}m recorded`:"Waiting for dated gaming data";
   return `<div class="year-awards-grid">
     ${yearAwardCard("day","Best day of the year",bestDay?shortDate(bestDay):"Awaiting your pick",bestDay&&entryExists(bestDay)?daySummary(entryText(bestDay)):"Your personal highlight of the year","/awards/best-day.svg","✷","Chosen by you")}
     ${yearAwardCard("month","Best month of the year",bestMonth>=1&&bestMonth<=12?MONTHS[bestMonth-1]:"Awaiting your pick",bestMonth>=1&&bestMonth<=12?`${y} · Your favorite chapter`:"Choose your best month below","/awards/best-month.svg","✦","Chosen by you")}
     ${yearAwardCard("activity","Top activity",topActivity?.[0]||"No activity yet",topActivity?`${fmt(topActivity[1])} recognized events`:"Save diary entries to build rankings",topActivity?.[0]==="Gaming"?"/awards/gaming-controller.svg":"/awards/activity-trophy.svg","◇","From your diary")}
     ${yearAwardCard("song","Song of the year",song?.name||(failed?"Music unavailable":musicStatus),song?`${song.artist||"Artist unavailable"} · ${fmt(song.streams)} streams`:musicStatus,song?.image,"♫","stats.fm · actual streams")}
     ${yearAwardCard("artist","Artist of the year",artist?.name||(failed?"Music unavailable":musicStatus),artist?`${fmt(artist.streams)} streams`:musicStatus,artist?.image,"♬","stats.fm · actual streams")}
-    ${yearAwardCard("game","Video game of the year",game?.title||"No yearly leader yet",gameHours,game?.title?.trim().toLowerCase()==="the crew motorfest"?"/awards/crew-motorfest.jpg":game?.image,"🎮",gamePartial?"Known playtime · partial coverage":"Most played · yearly hours")}
+    ${yearAwardCard("game","Video game of the year",gameWinner?.title||"No yearly leader yet",gameHours,gameWinner?.title?.trim().toLowerCase()==="the crew motorfest"?"/awards/crew-motorfest.jpg":gameWinner?.image,"🎮",chosenGame?"Chosen by you":gamePartial?"Known playtime · partial coverage":"Most played · yearly hours")}
 
     ${yearAwardCard("steps","Best exercise day",stepChampion?shortDate(stepChampion.date):"No step day recorded",stepChampion?`${fmt(Math.round(stepChampion.value))} steps · highest in ${y}`:"Import dated Apple Health steps","/awards/steps-record.svg","👟",stepChampion?"Highest recorded daily steps · Apple Health":"Recorded health data required")}
     ${yearAwardCard("sleep","Longest sleep night",sleepChampion?shortDate(sleepChampion.date):"No recorded sleep",sleepChampion?`${Number(sleepChampion.value).toFixed(2)} hours slept`:"Import dated Apple Health sleep","/awards/sleep-record.svg","🌙",sleepChampion?"Actual asleep stages · waking date":"No measured nights for this year")}
