@@ -10,6 +10,19 @@ export const validDate=value=>{
   return day<=new Date(Date.UTC(year,month,0)).getUTCDate();
 };
 export const validMonth=value=>/^\d{4}-(?:0[1-9]|1[0-2])$/.test(String(value||''));
+export function readJumpDate(value,mode='date'){
+  const raw=String(value||'').trim();
+  if(mode==='month'){
+    if(validMonth(raw))return raw;
+    const match=raw.match(/^(\d{1,2})\/(\d{4})$/);
+    const normalized=match?isoMonth(Number(match[2]),Number(match[1])):'';
+    return validMonth(normalized)?normalized:null;
+  }
+  if(validDate(raw))return raw;
+  const match=raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  const normalized=match?isoDate(Number(match[3]),Number(match[1]),Number(match[2])):'';
+  return validDate(normalized)?normalized:null;
+}
 export const inDateRange=(value,{min='',max='',mode='date'}={})=>{
   if(!(mode==='month'?validMonth(value):validDate(value)))return false;
   return (!min||value>=min)&&(!max||value<=max);
@@ -73,7 +86,11 @@ export function installDatePicker(host=document){
     const mSel=dialog.querySelector('[data-date-month]');
     ySel.value=String(year);
     mSel.value=String(month);
-    const months=pickerYears(rangeOf(input),year);
+    dialog.querySelectorAll('[data-date-quick-year]').forEach(button=>{
+      const selected=Number(button.dataset.dateQuickYear)===year;
+      button.classList.toggle('is-selected',selected);
+      button.setAttribute('aria-pressed',String(selected));
+    });
     const before=month===1?isoMonth(year-1,12):isoMonth(year,month-1);
     const after=month===12?isoMonth(year+1,1):isoMonth(year,month+1);
     // Allow neighboring months when their respective month intersects the min/max.
@@ -114,6 +131,9 @@ export function installDatePicker(host=document){
     const moOptions=DATE_MONTHS.map((m,i)=>'<option value="'+(i+1)+'">'+m+'</option>').join('');
     const title=cleanLabel(input.getAttribute('aria-label')||input.closest('label')?.textContent||'')||'Jump to date';
     const canClear=!input.required&&!['otd-date-picker','today-date-jump','cal-jump','health-month'].includes(input.id);
+    const allYears=pickerYears(range,year);
+    const quick=[...new Set([2024,2025,2026,2027,year])].filter(y=>allYears.includes(y)).sort((a,b)=>a-b);
+    const quickYearButtons=quick.map(y=>'<button type="button" data-date-quick-year="'+y+'">'+y+'</button>').join('');
     dialog.innerHTML='<div class="tide-date-picker-frame">'+
       '<div class="tide-date-picker-head"><div><div class="tide-date-picker-eyebrow">✦ T.I.D.E. · DATE NAVIGATOR</div>'+
       '<h2 id="tide-date-picker-title">'+(mode==='month'?'Choose a month':'Choose a date')+'</h2>'+
@@ -123,7 +143,13 @@ export function installDatePicker(host=document){
       '<label class="tide-date-picker-select-label">Month<select data-date-month aria-label="Choose month">'+moOptions+'</select></label>'+
       '<label class="tide-date-picker-select-label">Year<select data-date-year aria-label="Choose year">'+yrOptions+'</select></label>'+
       '<button class="tide-date-picker-arrow" type="button" data-date-next aria-label="Next month">›</button></div>'+
+      '<div class="tide-date-quick-years"><span>QUICK YEARS</span>'+quickYearButtons+'</div>'+
       '<div class="tide-date-picker-grid" data-date-grid></div>'+
+      '<div class="tide-date-picker-manual"><label>'+(mode==='month'?'Type month (MM/YYYY)':'Type date (MM/DD/YYYY)')+
+      '<input type="text" data-date-manual inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="'+
+      (mode==='month'?'MM/YYYY or YYYY-MM':'MM/DD/YYYY or YYYY-MM-DD')+'" value="'+(input.value||'')+'"></label>'+
+      '<button type="button" data-date-manual-go>Go</button></div>'+
+      '<p class="tide-date-picker-error" data-date-error role="status" aria-live="polite"></p>'+
       '<div class="tide-date-picker-bottom"><span class="tide-date-picker-hint">'+
       (mode==='month'?'Select a month to jump there.':'Choose a day above. Change year directly using the dropdown.')+'</span>'+
       '<div class="tide-date-picker-bottom-actions">'+
@@ -166,7 +192,25 @@ export function installDatePicker(host=document){
       button.addEventListener('click',()=>open(input,button));
     }
   };
+  const applyManual=()=>{
+    if(!current)return;
+    const typed=dialog.querySelector('[data-date-manual]')?.value||'';
+    const value=readJumpDate(typed,current.mode);
+    const error=dialog.querySelector('[data-date-error]');
+    if(!value||!allowed(value)){
+      if(error)error.textContent='Enter a valid '+(current.mode==='month'?'month':'date')+' within the available range.';
+      dialog.querySelector('[data-date-manual]')?.focus();
+      return;
+    }
+    choose(value);
+  };
+  dialog.addEventListener('keydown',event=>{
+    if(event.key==='Enter'&&event.target.matches('[data-date-manual]')){event.preventDefault();applyManual();}
+  });
   dialog.addEventListener('click',e=>{
+    const quick=e.target.closest('[data-date-quick-year]');
+    if(quick&&current){current.year=Number(quick.dataset.dateQuickYear);redraw();return;}
+    if(e.target.closest('[data-date-manual-go]')){applyManual();return;}
     const chosen=e.target.closest('[data-choose]');
     if(chosen){choose(chosen.dataset.choose);return;}
     if(e.target.closest('[data-date-close]')){dialog.close();return;}
