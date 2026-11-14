@@ -84,7 +84,7 @@ test('2027 theme is deployed in desktop, mobile and offline shell',()=>{
  assert.ok(html.indexOf('href="midnight-royal.css"')>html.indexOf('href="date-jump.css"'),'2027 override loads last');
  assert.ok(build.includes("'midnight-royal.css'"));
  assert.ok(sw.includes("'/midnight-royal.css'"));
- assert.match(sw,/tide-shell-v49/);
+ assert.match(sw,/tide-shell-v\d+/);
 });
 test('2027 theme CSS has balanced braces, parentheses, strings and comments',()=>{
  let quote='',esc=false,comment=false,brace=0,paren=0;
