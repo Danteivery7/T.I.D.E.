@@ -17,8 +17,9 @@ export function saveFavoriteDays(state,year,dates){
   return cleaned;
 }
 export function yearsWithFavoriteDays(state,through=new Date().getFullYear()){
-  const max=Math.min(Math.max(2024,Number(through)||2024),2100);
-  const years=new Set(Object.keys(state?.favoriteDays||{}).map(Number).filter(y=>Number.isInteger(y)&&y>=2024&&y<=2100));
+  const max=Math.min(Math.max(2024,Number(through)||2024),new Date().getFullYear(),2100);
+  // Future favorite years may be stored, but must not appear in historical comparisons yet.
+  const years=new Set(Object.keys(state?.favoriteDays||{}).map(Number).filter(y=>Number.isInteger(y)&&y>=2024&&y<=max));
   for(let year=2024;year<=max;year++)years.add(year);
   return [...years].sort((a,b)=>b-a);
 }
