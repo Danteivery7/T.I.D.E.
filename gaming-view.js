@@ -3,6 +3,7 @@ import {refreshGaming} from './gaming-live.js';
 import {setThemeForDate} from './theme-engine.js';
 import {loadLocal} from './storage.js';
 import {derivedTrackerRows} from './life-trackers.js';
+import {comparisonYears} from './year-ranking-utils.js';
 
 const root=document.querySelector('#view-root');
 // Gaming follows the active T.I.D.E. month on entry; All Time remains an opt-in tab.
@@ -51,10 +52,10 @@ function knownActiveBlock(rows){
   return `<div class="section-title">KNOWN ACTIVE · HOURS NOT RECOVERABLE</div><section class="card"><div class="small muted" style="margin-bottom:8px">These games have a source date inside the selected period, but their pre-snapshot hours cannot be split safely from lifetime playtime.</div>${filtered.map(g=>`<div class="detected-item"><span>${esc(g.title)}</span><b>${esc(shortDate(g.lastPlayed))}</b></div>`).join('')}</section>`;
 }
 // Sessions are diary-derived; connected gaming snapshots keep the hour totals.
-function diarySessionComparison(){
+function diarySessionComparison(throughYear){
   const all=derivedTrackerRows(loadLocal(),'gaming-sessions');
-  const years=[...new Set([2024,2025,2026,2027,...all.map(row=>Number(row.date.slice(0,4)))] )]
-    .filter(y=>y>=2024&&y<=Math.max(2027,new Date().getFullYear())).sort((a,b)=>a-b);
+  const years=comparisonYears(throughYear);
+  if(!years.length)return '';
   const cards=years.map(y=>{
     const rows=all.filter(row=>row.date.startsWith(String(y)+'-'));
     const byGame=new Map();
@@ -64,9 +65,9 @@ function diarySessionComparison(){
       item.count++;byGame.set(key,item);
     }
     const favorite=[...byGame.values()].sort((a,b)=>b.count-a.count||a.title.localeCompare(b.title))[0];
-    const days=new Set(rows.map(row=>row.date)).size,projected=y>new Date().getFullYear();
+    const days=new Set(rows.map(row=>row.date)).size;
     return '<article class="card" style="min-width:0;padding:17px"><div class="stat-label">'+y+
-      (projected?' · Upcoming':' · Diary history')+'</div><div class="big-stat">'+fmt(rows.length)+
+      ' · Diary history</div><div class="big-stat">'+fmt(rows.length)+
       '</div><div class="small muted">'+fmt(days)+' gaming day'+(days===1?'':'s')+
       '</div><div class="small muted" style="margin-top:10px">Most sessions: '+
       esc(favorite?.title||'No recorded games yet')+(favorite?' · '+fmt(favorite.count):'')+'</div></article>';
@@ -87,9 +88,9 @@ export function renderGaming(){
   document.querySelector('#sidebar')?.classList.remove('open');document.querySelector('#sidebar-scrim')?.classList.remove('show');
   const hourLabel=mode==='all-time'?'Gaming Hours':d.full?`${d.label} Hours`:`${d.label} Known Hours`;
   root.innerHTML=`<div class="page-head"><div><div class="eyebrow">T.I.D.E.</div><h1>Gaming</h1><p>Combined playtime across live accounts plus your frozen legacy PS4 history.</p></div><div class="chip-row"><button class="button ${mode==='month'?'primary':'ghost'}" data-gmode="month">Monthly</button><button class="button ${mode==='year'?'primary':'ghost'}" data-gmode="year">Yearly</button><button class="button ${mode==='all-time'?'primary':'ghost'}" data-gmode="all-time">All Time</button></div></div>
-<section class="card" style="margin-bottom:18px"><div class="filter-row"><select id="g-platform" class="select"><option value="all">All Platforms</option><option value="pc">PC Only</option><option value="console">Console · PS5 + Xbox + Nintendo</option><option value="playstation">PlayStation</option><option value="ps5">PS5 Only</option><option value="ps4">PS4 Only</option><option value="xbox">Xbox Only</option><option value="nintendo">Nintendo Only</option><option value="unattributed">Unverified Only</option><option value="steam">Steam Only</option><option value="ubisoft">Ubisoft PC Only</option></select><select id="g-sort" class="select"><option value="playtime">Sort · Playtime</option><option value="recent">Sort · Last Played</option><option value="platforms">Sort · Platform Count</option><option value="az">Sort · A–Z</option></select>${mode==='month'?`<input id="g-month" type="month" class="input" value="${month}" style="max-width:180px">`:''}${mode==='year'?`<input id="g-year" type="number" min="2006" max="${Math.max(2027,new Date().getFullYear())}" class="input" value="${year}" style="max-width:120px">`:''}<input id="g-search" class="input" placeholder="Search games…" value="${esc(search)}" style="flex:1;min-width:170px"><button id="g-refresh" class="button primary">Refresh Accounts</button></div><div class="small muted" style="margin-top:10px">Exophase · danteivery &nbsp;|&nbsp; Steam · dante45673 &nbsp;|&nbsp; Motorfest Nintendo comes from Exophase when linked; Ubisoft-only hours that cannot yet be assigned are shown as Unverified, not PC.</div></section>
+<section class="card" style="margin-bottom:18px"><div class="filter-row"><select id="g-platform" class="select"><option value="all">All Platforms</option><option value="pc">PC Only</option><option value="console">Console · PS5 + Xbox + Nintendo</option><option value="playstation">PlayStation</option><option value="ps5">PS5 Only</option><option value="ps4">PS4 Only</option><option value="xbox">Xbox Only</option><option value="nintendo">Nintendo Only</option><option value="unattributed">Unverified Only</option><option value="steam">Steam Only</option><option value="ubisoft">Ubisoft PC Only</option></select><select id="g-sort" class="select"><option value="playtime">Sort · Playtime</option><option value="recent">Sort · Last Played</option><option value="platforms">Sort · Platform Count</option><option value="az">Sort · A–Z</option></select>${mode==='month'?`<input id="g-month" type="month" class="input" value="${month}" style="max-width:180px">`:''}${mode==='year'?`<input id="g-year" type="number" min="2006" max="${new Date().getFullYear()}" class="input" value="${year}" style="max-width:120px">`:''}<input id="g-search" class="input" placeholder="Search games…" value="${esc(search)}" style="flex:1;min-width:170px"><button id="g-refresh" class="button primary">Refresh Accounts</button></div><div class="small muted" style="margin-top:10px">Exophase · danteivery &nbsp;|&nbsp; Steam · dante45673 &nbsp;|&nbsp; Motorfest Nintendo comes from Exophase when linked; Ubisoft-only hours that cannot yet be assigned are shown as Unverified, not PC.</div></section>
 <div class="grid grid-4"><div class="card"><div class="stat-label">${esc(hourLabel)}</div><div class="big-stat">${esc(hours(d.total))}</div></div><div class="card"><div class="stat-label">Games Known Active</div><div class="big-stat">${fmt(gameCount)}</div></div><div class="card"><div class="stat-label">Most Played${d.full||mode==='all-time'?'':' · Known'}</div><div class="big-stat" style="font-size:21px">${esc(top?.title||'—')}</div><div class="small muted">${top?hours(top.minutes):''}</div></div><div class="card"><div class="stat-label">Platform Types</div><div class="big-stat">${platformTypes.size}</div></div></div>${notice(d)}
-${diarySessionComparison()}
+${diarySessionComparison(mode==='all-time'?new Date().getFullYear():activeYear)}
 <div class="section-title">${mode==='all-time'?'MOST PLAYED GAMES':`MOST PLAYED · ${esc(d.label)}${d.full?'':' · KNOWN HOURS'}`}</div>${games.length?games.map((g,i)=>card(g,i,d)).join(''):'<section class="card"><div class="muted">No defensible hour total is available for this period yet.</div></section>'}${knownActiveBlock(known)}`;
 
   root.querySelector('#g-platform').value=filter;root.querySelector('#g-sort').value=sort;
