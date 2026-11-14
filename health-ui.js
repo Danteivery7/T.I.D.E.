@@ -87,7 +87,8 @@ export function healthHubMarkup(state,{tab='overview',period='month',month='2026
  const scope=period==='year'?{year:selectedYear}:period==='all'?{}:{month:chosenMonth};
  const report=healthPeriod(state,scope),rows=healthRows(state,scope),m=report.metrics,mig=migraineSummary(state,scope);
  const tabs=[['overview','Overview'],['sleep','Sleep'],['steps','Steps & Distance'],['exercise','Exercise & Rings'],['workouts','Workouts'],['migraines','Migraines']];
- const recorded=healthRows(state).length;
+ const recorded=healthRows(state).length,auto=state.healthActivity?.autoSync;
+ const autoTime=auto?.lastReceivedAt?new Date(auto.lastReceivedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'America/New_York'}):null;
  let body='';
  if(!recorded&&tab!=='migraines')body='<section class="insight-empty-hub"><h3>Activate your Health and Finances history</h3><p>Your prepared private data is ready. Load the combined T.I.D.E. file here, without leaving the Health page. Missing nights remain missing, not zero.</p><button type="button" class="button primary" data-tide-private-activate>Activate Health + Finances</button></section>';
  else if(tab==='overview'){
@@ -151,10 +152,10 @@ export function healthHubMarkup(state,{tab='overview',period='month',month='2026
  }
  const tabMarkup=tabs.map(([id,label])=>`<button type="button" data-health-tab="${id}" aria-selected="${tab===id}" class="insight-tab ${tab===id?'active':''}">${label}</button>`).join('');
  return `<div class="insight-hub insight-hub--health"><div class="insight-hero"><div><span class="insight-kicker">✧ T.I.D.E. HEALTH · PRIVATE</span><h2>Know the rhythm <em>of your life.</em></h2><p>Explore every recorded night, daily steps, workouts, activity rings and diary-based migraine patterns, with missing data shown honestly.</p></div><div class="insight-hero-art">✧</div></div>
- <div class="insight-status"><i class="${recorded?'ready':''}"></i><strong>${recorded?'HEALTH HISTORY IMPORTED':'IMPORT NEEDED'}</strong><span>${recorded} dated Health days · ${healthEsc(state.healthActivity?.source||'No Apple Health file imported')}</span><b>MANUAL IMPORT · NOT LIVE SYNC</b></div>
+ <div class="insight-status"><i class="${recorded?'ready':''}"></i><strong>${autoTime?'AUTO-EXPORT RECEIVING':recorded?'HEALTH HISTORY IMPORTED':'IMPORT NEEDED'}</strong><span>${recorded} dated Health days · ${healthEsc(state.healthActivity?.source||'No Apple Health file imported')}</span><b>${autoTime?'LAST UPLOAD '+healthEsc(autoTime)+' · DATA THROUGH '+healthEsc(auto.lastSourceDate||'—'):'MANUAL IMPORT · NOT LIVE SYNC'}</b></div>
  <div class="insight-toolbar"><div class="insight-segment">${[['month','Month'],['year','Year'],['all','All Time']].map(([k,label])=>`<button type="button" data-health-period="${k}" class="${period===k?'active':''}">${label}</button>`).join('')}</div>
  ${period==='month'?`<label>Month <input class="input" type="month" id="health-month" value="${chosenMonth}"></label>`:period==='year'?`<label>Year <select class="select" id="health-year">${Array.from({length:Math.max(9,Number(today.slice(0,4))-2017)},(_,i)=>2018+i).map(y=>`<option value="${y}" ${selectedYear===y?'selected':''}>${y}</option>`).join('')}</select></label>`:'<span>All imported history since 2018</span>'}
  <button type="button" class="button" data-health-import>Import new Apple Health history ↗</button></div>
  <div class="insight-tabs" role="tablist" aria-label="Health exploration">${tabMarkup}</div><div class="insight-hub-body">${body}</div>
- <p class="insight-disclaimer">Apple Health data currently enters T.I.D.E. through private owner imports. This website does not directly read your Apple Watch or your ChatGPT Health connection. Missing recordings are not assumed to mean zero sleep, steps or exercise.</p></div>`;
+ <p class="insight-disclaimer">Apple Watch metrics come from your private JSON import and, when configured, the authenticated Health Auto Export upload. T.I.D.E. does not directly access ChatGPT Health. Check the last source upload date above; missing recordings are never treated as zero.</p></div>`;
 }
