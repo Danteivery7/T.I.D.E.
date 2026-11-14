@@ -81,8 +81,17 @@ function compactLegacyOutbox(){
     const old=JSON.parse(stored);
     if(old?.stateRef==='local')return;
     const pending=old?.state?old.state:old;
-    // Preserve edits that exist only in the legacy pending queue.
-    const merged=mergeStates(readLocalRaw(),pending);
+    const local=readLocalRaw(),saved=migrate(pending);
+    // Most legacy queues are byte-for-byte duplicates of the already saved
+    // local state. Replace that oversized queue immediately, without needing
+    // extra free space to rewrite localStorage first.
+    if(JSON.stringify(local)===JSON.stringify(saved)){
+      queueState();
+      return;
+    }
+    // If the pending queue contains unique edits, merge into the local copy
+    // FIRST; only replace the old queue once that durable write succeeds.
+    const merged=mergeStates(local,saved);
     rawWriteLocal(merged);
     queueState();
   }catch{
