@@ -1,5 +1,17 @@
 // Presentation-only helpers for user-curated year rankings.
 // They never infer scores or rewrite saved rankings.
+// Historical comparison panels display only elapsed years, never projected ones.
+// The chosen year caps historical views; the real current year caps future views.
+// Future-year ranking previews remain a separate, intentional feature.
+export function comparisonYears(throughYear,nowYear=new Date().getFullYear(),firstYear=2024){
+  const start=Number(firstYear);
+  const requested=Number(throughYear),current=Number(nowYear);
+  if(!Number.isInteger(start)||!Number.isInteger(requested)||!Number.isInteger(current))return [];
+  const last=Math.min(requested,current);
+  if(last<start)return [];
+  return Array.from({length:last-start+1},(_,i)=>start+i);
+}
+
 export function yearRankStatus(year,nowYear){
   const y=Number(year),current=Number(nowYear);
   if(!Number.isInteger(y)||!Number.isInteger(current))return 'unknown';
