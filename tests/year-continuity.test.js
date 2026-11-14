@@ -48,10 +48,12 @@ test('Music follows the browsed calendar year, not the current month',()=>{
   assert.ok(app.includes("No music listening history exists for"));
 });
 
-test('Gaming inherits the selected year and reapplies colors after year changes',()=>{
+test('Gaming inherits the selected month/year and reapplies colors after period changes',()=>{
   assert.ok(gaming.includes("setThemeForDate(root,String(activeYear)+'-08-15',[],{period:true})"));
   assert.ok(gaming.includes("document.addEventListener('tide:gaming-context'"));
-  assert.ok(gaming.includes("mode='year'"));
+  assert.ok(gaming.includes("mode='month'"));
+  assert.ok(gaming.includes('month=incomingMonth;'));
+  assert.ok(gaming.includes("mode=b.dataset.gmode"),'Yearly and All Time still selectable');
   assert.ok(gaming.includes("tide:gaming-period"));
   assert.ok(app.includes("tide:gaming-context"));
   assert.ok(app.includes("document.addEventListener('tide:gaming-period'"));
