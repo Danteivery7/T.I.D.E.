@@ -33,23 +33,35 @@ export function migraineEvidence(state,{year=null,month=null}={}){
 }
 const season=date=>{const mmdd=date.slice(5);return mmdd>='09-01'&&mmdd<='12-15'?'fall':'rest'};
 export function migraineSummary(state,scope={}){
- const rows=migraineEvidence(state,scope),byMonth=new Map();
- for(const r of rows){const m=r.date.slice(0,7);byMonth.set(m,(byMonth.get(m)||0)+1)}
+ const rows=migraineEvidence(state,scope),byMonth=new Map(),datedMonthDays=new Map(),datedMonthEvents=new Map();
+ // The same date can contain multiple tracked episodes; preserve both units.
+ for(const r of rows){
+   const m=r.date.slice(0,7),events=Math.max(1,Number(r.count)||1);
+   datedMonthDays.set(m,(datedMonthDays.get(m)||0)+1);
+   datedMonthEvents.set(m,(datedMonthEvents.get(m)||0)+events);
+   byMonth.set(m,(byMonth.get(m)||0)+events);
+ }
  // The historical tracker can have verified annual/monthly totals without a
  // date for every event. Preserve that authority; never fabricate missing dates.
  const months=new Set([...byMonth.keys(),
    ...Object.keys(state.monthlyReviews||{}).filter(x=>/^\d{4}-\d{2}$/.test(x)),
    ...Object.keys(state.entries||{}).map(x=>x.slice(0,7)),
-   ...(state.occurrences||[]).filter(x=>x.trackerId==='migraines').map(x=>String(x.date||'').slice(0,7))]);
+   ...(state.occurrences||[]).filter(x=>x.trackerId==='migraines').map(x=>String(x.date||'').slice(0,7)),
+   ...Object.keys(state.tideCounters?.authoritativeTrackerTotals?.migraines?.months||{})]);
  for(const month of months){
    if(!/^\d{4}-\d{2}$/.test(month)||scope.month&&month!==scope.month||scope.year&&!month.startsWith(String(scope.year)+'-'))continue;
    const tracked=Math.max(0,Number(trackerTotal(state,'migraines',{month}))||0);
    if(tracked>(byMonth.get(month)||0))byMonth.set(month,tracked);
  }
- const topMonths=[...byMonth].filter(([,count])=>count>0).map(([month,count])=>({month,count})).sort((a,b)=>b.count-a.count||b.month.localeCompare(a.month));
+ const monthly=[...byMonth].filter(([,count])=>count>0).map(([month,count])=>({
+   month,count,days:datedMonthDays.get(month)||0,datedEvents:datedMonthEvents.get(month)||0,
+   eventsWithoutVerifiedDates:Math.max(0,count-(datedMonthEvents.get(month)||0))
+ })).sort((a,b)=>a.month.localeCompare(b.month));
+ const topMonths=monthly.slice().sort((a,b)=>b.count-a.count||b.month.localeCompare(a.month));
  const trackedTotal=Math.max(0,Number(trackerTotal(state,'migraines',scope))||0);
- const total=Math.max(rows.length,trackedTotal);
- const missingDateCount=Math.max(0,total-rows.length);
+ const datedEventCount=rows.reduce((n,r)=>n+Math.max(1,Number(r.count)||1),0);
+ const total=Math.max(trackedTotal,datedEventCount,monthly.reduce((n,r)=>n+r.count,0));
+ const missingDateCount=Math.max(0,total-datedEventCount);
  const observedMonths=new Set(Object.keys(state.entries||{}).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)&&(!scope.year||d.startsWith(String(scope.year)+'-'))&&(!scope.month||d.startsWith(scope.month+'-'))).map(d=>d.slice(0,7)));
  const averageMonths=observedMonths.size||new Set([...byMonth.keys()].filter(m=>byMonth.get(m)>0)).size;
  const averagePerLoggedMonth=averageMonths?Math.round(total/averageMonths*100)/100:null;
@@ -84,8 +96,8 @@ export function migraineSummary(state,scope={}){
   pairedOtherNights:0,averageOtherNight:null};
  const nonMigraine=healthRows(state,scope).filter(x=>Number.isFinite(x.sleepHours)&&!symptomsByDate.has(x.date));
  sleep.pairedOtherNights=nonMigraine.length;sleep.averageOtherNight=nonMigraine.length?Math.round(nonMigraine.reduce((n,r)=>n+r.sleepHours,0)/nonMigraine.length*100)/100:null;
- return{rows,days:total,datedDays:rows.length,missingDateCount,averagePerLoggedMonth,loggedMonths:averageMonths,lastMigraineDate,daysSinceLastRecordedMigraine,
-  types,topMonths,monthly:[...byMonth].filter(([,count])=>count>0).map(([month,count])=>({month,count})).sort((a,b)=>a.month.localeCompare(b.month)),
+ return{rows,days:total,events:total,datedDays:rows.length,datedEvents:datedEventCount,missingDateCount,averagePerLoggedMonth,loggedMonths:averageMonths,lastMigraineDate,daysSinceLastRecordedMigraine,
+  types,topMonths,monthly,
   firstDate:rows[0]?.date||null,lastDate:rows.at(-1)?.date||null,seasonal:{fallDays:symptoms.fall,fallLoggedDays:denominators.fall,restDays:symptoms.rest,restLoggedDays:denominators.rest,fallRate,restRate,ratio:restRate>0?Math.round(fallRate/restRate*100)/100:null},
   school,homeAlone:lone,sleep};
 }
