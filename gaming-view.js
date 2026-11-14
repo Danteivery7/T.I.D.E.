@@ -5,7 +5,9 @@ import {loadLocal} from './storage.js';
 import {derivedTrackerRows} from './life-trackers.js';
 
 const root=document.querySelector('#view-root');
-let mode='all-time',filter='all',sort='playtime',month=new Date().toISOString().slice(0,7),year=new Date().getFullYear(),search='';
+// Gaming follows the active T.I.D.E. month on entry; All Time remains an opt-in tab.
+const localMonth=()=>{const now=new Date();return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;};
+let mode='month',filter='all',sort='playtime',month=localMonth(),year=Number(localMonth().slice(0,4)),search='';
 
 function bounds(){
   if(mode==='month'){const [y,m]=month.split('-').map(Number),d=new Date(y,m,0).getDate();return{start:`${month}-01`,end:`${month}-${String(d).padStart(2,'0')}`,label:new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(new Date(y,m-1,1))};}
@@ -129,9 +131,11 @@ export function wireGamingView(){
     const incomingYear=Number(event.detail?.year),incomingMonth=String(event.detail?.month||'');
     if(Number.isInteger(incomingYear)&&incomingYear>=2020){
       year=incomingYear;
-      if(/^\\d{4}-\\d{2}$/.test(incomingMonth))month=incomingMonth;
-      else month=String(incomingYear)+'-01';
-      mode='year';
+      // Keep the exact month from Today, Calendar, Monthly Review or Year in Review.
+      if(/^\d{4}-(0[1-9]|1[0-2])$/.test(incomingMonth)&&Number(incomingMonth.slice(0,4))===incomingYear)
+        month=incomingMonth;
+      else month=String(incomingYear)+'-'+(month.slice(5,7)||'01');
+      mode='month';
     }
   });
   document.addEventListener('tide:view-rendered',decorateGamingReviews);
