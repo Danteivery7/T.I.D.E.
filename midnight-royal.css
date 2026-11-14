@@ -1,0 +1,401 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   T.I.D.E. 2027 — MIDNIGHT ROYAL WEALTH
+   Black + champagne gold as the identity, royal blue as the co-star.
+   Icy blue adds definition, money green denotes wins, platinum is neutral.
+   All rules are 2027-scoped. They must not recolor 2024, 2025, or GTA VI 2026.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+body[data-tide-era="2027"]:not([data-tide-occasion]){
+  color-scheme:dark;
+  background:
+    radial-gradient(ellipse at 78% -7%,rgba(78,123,255,.14),transparent 37%),
+    radial-gradient(ellipse at 4% 67%,rgba(231,197,122,.06),transparent 42%),
+    #070a12;
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.sidebar,.topbar){
+  background:linear-gradient(165deg,#070a12,#101827 79%,#0d1525);
+  border-color:#2a3550;
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .sidebar{
+  box-shadow:inset -1px 0 0 rgba(231,197,122,.11);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .brand{color:var(--royal-gold)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .brand-sub{color:var(--royal-platinum)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .brand-mark{
+  background:linear-gradient(145deg,#fff3ce 0%,var(--royal-gold) 45%,var(--royal-rich-gold) 100%);
+  color:var(--royal-ink);
+  border-color:rgba(248,229,183,.6);
+  box-shadow:0 10px 35px rgba(231,197,122,.18);
+}
+/* Primary actions remain champagne gold. Secondary navigation is unmistakably blue. */
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.button.primary,.tide-topbar .tide-topbar-today,.yrk-add-button){
+  background:linear-gradient(115deg,#f4dea5 0%,#e7c57a 52%,#cfa24a 100%);
+  color:#070a12;
+  border-color:rgba(247,225,174,.62);
+  box-shadow:0 9px 25px rgba(231,197,122,.15);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.button.primary,.tide-topbar .tide-topbar-today,.yrk-add-button):hover{
+  filter:brightness(1.07);
+  box-shadow:0 10px 28px rgba(231,197,122,.24);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.tide-topbar .tide-topbar-ask,.tide-topbar .tide-topbar-context-mark){
+  background:linear-gradient(125deg,#2649a4,#416cde 65%,#3154a8);
+  color:#f8faff;
+  border-color:rgba(143,214,255,.43);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .nav-item.active{
+  background:linear-gradient(90deg,rgba(78,123,255,.26),rgba(78,123,255,.10) 62%,rgba(231,197,122,.055));
+  border-color:rgba(143,214,255,.34);
+  box-shadow:inset 3px 0 0 #e7c57a;
+  color:#f8f5ee;
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .nav-item.active span,
+body[data-tide-era="2027"]:not([data-tide-occasion]) .sync-dot{color:var(--royal-ice)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .nav-item:hover:not(.active){
+  background:rgba(78,123,255,.095);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .ask-nav{
+  background:linear-gradient(98deg,rgba(78,123,255,.13),rgba(143,214,255,.05));
+  border-color:rgba(78,123,255,.38);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.chip.accent,.badge,.status-dot){
+  border-color:rgba(231,197,122,.37);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.eyebrow,.section-title,.tide-cal-kicker,.record-hall-subheading,.trk-eyebrow,.health-eyebrow){
+  color:var(--royal-gold);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.page-head h1,.yrk-podium-number,.month-hero-kicker){
+  color:var(--royal-gold);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.big-stat,.record-hall-card-value){
+  color:var(--royal-ice);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.editor,.input,.select,.tide-date-trigger,.tide-date-picker-dialog){
+  background:#0d1523;
+  border-color:rgba(143,165,202,.24);
+  color:var(--text);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.editor,.input,.select,.tide-date-trigger):focus-visible{
+  outline-color:var(--royal-blue);
+  border-color:var(--royal-ice);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) ::selection{
+  color:#fff;
+  background:#375baf;
+}
+
+/* Cool black/navy panels; never the old amber/brown gradient. */
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(
+  .card,.record-card,.tracker-row,.month-pulse-card,.year-side-stat,
+  .month-tracker-card,.music-item,.trk-ledger-section,.trk-dashboard-stat,
+  .yrk-podium-card,.record-hall-card,.insight-surface,.insight-stat
+){
+  background:
+    radial-gradient(circle at 99% 0%,rgba(78,123,255,.075),transparent 54%),
+    linear-gradient(135deg,#172239,#101725 72%,#111d30);
+  border-color:rgba(143,174,226,.22);
+  box-shadow:0 13px 38px rgba(0,0,0,.21);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.today-dashboard>.card,.month-review-hero,.year-review-hero,.trk-hero,.yrk-hero,.record-hall-hero){
+  background:
+    radial-gradient(ellipse at 96% 9%,rgba(231,197,122,.12),transparent 47%),
+    linear-gradient(121deg,#192842,#0a101d 63%,#1b2b43);
+  border-color:rgba(231,197,122,.32);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.year-review-hero,.yrk-hero,.trk-hero,.record-hall-hero)::before{
+  background:linear-gradient(90deg,#cfa24a,#f3da9a 39%,#4e7bff 75%,#8fd6ff);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.month-review-hero,.year-review-hero,.yrk-hero,.trk-hero,.record-hall-hero) :is(h1,h2,em){
+  text-shadow:0 1px 23px rgba(143,214,255,.14);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.month-pulse-card,.tracker-row,.record-hall-card,.yrk-podium-card):nth-child(3n+2){
+  border-color:rgba(78,123,255,.35);
+  background:linear-gradient(132deg,#172a4c,#111b30 70%,#131e32);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.month-pulse-card,.tracker-row,.record-hall-card,.yrk-podium-card):nth-child(3n+3){
+  border-color:rgba(143,214,255,.24);
+  background:linear-gradient(135deg,#15243a,#0c1827 66%,#172e3e);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .record-hall-card:nth-child(4n+1) .record-hall-card-value{
+  color:var(--royal-gold);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .record-hall-card:nth-child(4n+3) .record-hall-card-value{
+  color:var(--royal-green);
+}
+
+/* Awards use distinct category colors, not nine instances of champagne. */
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-awards-intro{
+  background:
+    radial-gradient(circle at 100% -10%,rgba(231,197,122,.22),transparent 38%),
+    linear-gradient(113deg,#0d1527 0%,#18345a 51%,#121726 100%);
+  border-color:rgba(231,197,122,.41);
+  box-shadow:0 21px 49px rgba(0,0,0,.32);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-awards-intro::before{
+  background:linear-gradient(90deg,#cfa24a,#e7c57a 32%,#4e7bff 64%,#8fd6ff 85%,#49c97b);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-awards-eyebrow{color:#f6dfa6}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-awards-intro h2{color:#fff8e9}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-awards-intro p{color:#c8d8ed}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-awards-trophy{
+  color:var(--royal-gold);text-shadow:0 0 30px rgba(231,197,122,.34),0 0 68px rgba(78,123,255,.18)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award{
+  color:var(--royal-platinum);
+  border-color:color-mix(in srgb,var(--year-bright) 38%,#152033);
+  box-shadow:0 16px 38px rgba(0,0,0,.24);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award--day{
+  --year-bright:#e7c57a;--year-glow:rgba(231,197,122,.29);
+  background:linear-gradient(137deg,#24304a,#111a2a 56%,#302b25);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award--month{
+  --year-bright:#6e98ff;--year-glow:rgba(78,123,255,.31);
+  background:linear-gradient(137deg,#203a68,#11213c 59%,#142747);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award--activity{
+  --year-bright:#69dc9a;--year-glow:rgba(73,201,123,.26);
+  background:linear-gradient(137deg,#153b40,#0e2634 61%,#183448);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award--song{
+  --year-bright:#8fd6ff;--year-glow:rgba(143,214,255,.3);
+  background:linear-gradient(137deg,#1b3d61,#101f35 60%,#1b3048);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award--artist{
+  --year-bright:#bccdff;--year-glow:rgba(151,169,255,.31);
+  background:linear-gradient(137deg,#23345f,#182341 63%,#13283c);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award--game{
+  --year-bright:#5eafff;--year-glow:rgba(76,145,255,.3);
+  background:linear-gradient(137deg,#143c5a,#132b4a 65%,#1a2349);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award--steps{
+  --year-bright:#5edba1;--year-glow:rgba(73,201,123,.26);
+  background:linear-gradient(137deg,#124137,#102b35 60%,#17354c);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award--sleep{
+  --year-bright:#b2ddff;--year-glow:rgba(143,214,255,.25);
+  background:linear-gradient(137deg,#243a63,#152844 60%,#122238);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award--income{
+  --year-bright:#f1d188;--year-glow:rgba(231,197,122,.32);
+  background:linear-gradient(137deg,#293d49,#132932 58%,#2b2d31);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award-glyph{
+  border-color:color-mix(in srgb,var(--year-bright) 37%,transparent);
+  background:radial-gradient(circle at 24% 20%,color-mix(in srgb,var(--year-bright) 22%,transparent),transparent 67%),#101b2e;
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award-vector{
+  background:#111d2e;
+  border-color:color-mix(in srgb,var(--year-bright) 43%,transparent);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award-vector svg{
+  /* Subdue the original purple/pink illustration tints while keeping details. */
+  filter:saturate(.65) hue-rotate(9deg);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award-winner{color:#f8f5ee}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award-detail{color:#c5d2e6}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-award-foot{
+  color:#c1d0e3;border-color:rgba(143,174,226,.2)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-personal-pick{
+  background:linear-gradient(139deg,#17243b,#111c31);
+  border-color:rgba(78,123,255,.35);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-personal-pick--best{
+  background:linear-gradient(139deg,#2a2e35,#152034);
+  border-color:rgba(231,197,122,.43);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-personal-pick--best .year-personal-label{color:var(--royal-gold)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .year-personal-pick--worst .year-personal-label{color:var(--royal-ice)}
+
+/* The month and year review heads keep the gold/blue top-line. */
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-review-hero{
+  background:radial-gradient(circle at 92% 3%,rgba(231,197,122,.17),transparent 43%),linear-gradient(119deg,#152744,#0e1526 63%,#142037);
+  border-color:rgba(78,123,255,.3);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-review-hero::before{
+  background:linear-gradient(90deg,var(--royal-gold),var(--royal-blue),var(--royal-ice));
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-review-hero :is(h2,p){color:var(--text)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-hero-art span:first-child{
+  color:#f3dca4;text-shadow:0 0 34px rgba(231,197,122,.24);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-hero-art span:last-child{color:var(--royal-ice)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-pick-card{
+  background:linear-gradient(135deg,#1b2942,#101a2c);
+  border-color:rgba(143,174,226,.32)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-pick--best{
+  background:linear-gradient(136deg,#29313b,#101b2d 75%);
+  border-color:rgba(231,197,122,.44)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-pick--best::before{background:var(--royal-gold)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-pick--worst::before{background:var(--royal-blue)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-pick--best :is(.month-pick-kicker,.month-pick-label){color:var(--royal-gold)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-pick--worst :is(.month-pick-kicker,.month-pick-label){color:var(--royal-ice)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-pick-content :is(h3,p){color:var(--text)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-pick--best .month-pick-calendar span{
+  background:linear-gradient(110deg,#e7c57a,#f8eac5);color:#101725
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .month-pick--worst .month-pick-calendar span{
+  background:linear-gradient(110deg,#4e7bff,#8fd6ff);color:#0a152b
+}
+
+/* Calendar & trackers: gold identifies significant dates; blue organizes UI. */
+body[data-tide-era="2027"]:not([data-tide-occasion]) .tide-calendar-stage .tide-cal-hero{
+  background:radial-gradient(circle at 91% 0%,rgba(231,197,122,.16),transparent 46%),linear-gradient(122deg,#1a2d4c,#09101e 66%,#172641);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) #view-root .tide-cal-day.has-holiday,
+body[data-tide-era="2027"]:not([data-tide-occasion]) #view-root .tide-cal-day.has-personal{
+  border-color:rgba(78,123,255,.52);
+  background:linear-gradient(139deg,#1b2d4c,#102037)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) #view-root .tide-cal-day.is-today{
+  border-color:var(--royal-gold);
+  box-shadow:inset 0 0 0 1px rgba(231,197,122,.29),0 0 18px rgba(78,123,255,.11)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .tide-cal-rank-star{color:var(--royal-gold)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .trk-filter-tab.is-selected{
+  background:rgba(78,123,255,.21);border-color:rgba(143,214,255,.44)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.trk-dashboard-stat,.trk-ledger-section){
+  background:linear-gradient(132deg,#1b2942,#0f192a 74%,#162940)
+}
+
+/* Analytics: distinct colors give information meaning rather than decoration. */
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-hero{
+  background:
+    radial-gradient(circle at 91% 3%,rgba(231,197,122,.21),transparent 48%),
+    linear-gradient(124deg,#12233f,#0d1425 65%,#1c2c45);
+  border-color:rgba(231,197,122,.36);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-hub--health .insight-hero{
+  background:
+    radial-gradient(circle at 87% 5%,rgba(143,214,255,.24),transparent 51%),
+    linear-gradient(125deg,#13304b,#101c34 67%,#122f3f);
+  border-color:rgba(143,214,255,.35);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-hero::before{
+  background:linear-gradient(90deg,var(--royal-gold),var(--royal-blue),var(--royal-ice),var(--royal-green))
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.insight-tab.active,.insight-segment button.active){
+  background:rgba(78,123,255,.22);
+  border-color:rgba(143,214,255,.45);
+  color:var(--text);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-hub--health .insight-line{color:var(--royal-ice)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-hub--finances .insight-line{color:var(--royal-gold)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-bar-row i{
+  background:linear-gradient(90deg,#3d64d1,#8fd6ff);box-shadow:0 0 14px rgba(78,123,255,.23)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-bar-row:nth-child(3n+2) i{
+  background:linear-gradient(90deg,#cfa24a,#e7c57a);box-shadow:0 0 14px rgba(231,197,122,.18)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-bar-row:nth-child(3n+3) i{
+  background:linear-gradient(90deg,#269b65,#49c97b);box-shadow:0 0 14px rgba(73,201,123,.17)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-stat--good{
+  background:linear-gradient(129deg,rgba(73,201,123,.14),#111d2c);
+  border-color:rgba(73,201,123,.35);
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-stat--good>strong{color:var(--royal-green)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-stat--primary{
+  background:linear-gradient(130deg,rgba(78,123,255,.16),#111b30);
+  border-color:rgba(78,123,255,.44)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-hub--finances .insight-stat--primary{
+  background:linear-gradient(130deg,rgba(231,197,122,.12),#111b30);
+  border-color:rgba(231,197,122,.42)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-stat--down{
+  background:linear-gradient(130deg,rgba(173,62,85,.16),#121a2a);
+  border-color:rgba(245,114,126,.37)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-hub--health .insight-hero h2 em{
+  background:linear-gradient(90deg,var(--royal-ice),var(--royal-blue));background-clip:text;color:transparent
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .insight-hub--finances .insight-hero h2 em{
+  background:linear-gradient(90deg,#f4d99a,var(--royal-green));background-clip:text;color:transparent
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.today-dashboard>.today-health-panel--steps,.today-dashboard>.today-health-panel--sleep){
+  background:linear-gradient(138deg,#12283a,#0f1829);
+  border-color:rgba(143,214,255,.3)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .today-dashboard>.today-finance-panel{
+  background:linear-gradient(138deg,#202b32,#101b2a);
+  border-color:rgba(231,197,122,.37)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .today-dashboard>.today-finance-panel :is(.big-stat,.record-value){
+  color:var(--royal-gold)
+}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .today-step-measure--avg>strong{color:var(--royal-ice)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) .today-step-measure:first-child>strong{color:var(--royal-gold)}
+body[data-tide-era="2027"]:not([data-tide-occasion]) :is(.sleep-coach-tile:last-child strong,.sleep-coach-advice b){
+  color:var(--royal-ice)
+}
+
+/* 2027 New Year's Eve/Day: four-color champagne, sapphire and ice fireworks.
+   Earlier years' New Year occasions retain their existing design. */
+body[data-tide-era="2027"][data-tide-occasion="new-year"]{
+  --occasion-bg:#070a12;--occasion-panel:#101827;
+  --occasion-panel-2:#192940;--occasion-line:#405476;
+  --occasion-accent:#e7c57a;--occasion-secondary:#4e7bff;
+  --occasion-gradient:
+    radial-gradient(ellipse at 92% 9%,rgba(143,214,255,.16),transparent 48%),
+    linear-gradient(130deg,#15243c,#0a111e 66%,#1a2a42);
+  background:radial-gradient(ellipse at 75% -9%,rgba(78,123,255,.16),transparent 38%),#070a12;
+}
+body[data-tide-era="2027"][data-tide-occasion="new-year"] :is(.sidebar,.topbar){
+  background:linear-gradient(140deg,#070a12,#14213a);
+  border-color:rgba(231,197,122,.27)
+}
+body[data-tide-era="2027"][data-tide-occasion="new-year"] :is(.page-head h1,.tide-cal-kicker,.section-title){
+  color:#f0d393
+}
+body[data-tide-era="2027"][data-tide-occasion="new-year"] .topbar::before{
+  width:235px;height:180px;right:6%;top:-55px;
+  background:repeating-conic-gradient(from 6deg,transparent 0 13deg,rgba(231,197,122,.8) 15deg 17deg,transparent 20deg 31deg,rgba(143,214,255,.62) 34deg 36deg,transparent 39deg 47deg);
+  clip-path:circle(46%);opacity:.42;
+}
+body[data-tide-era="2027"][data-tide-occasion="new-year"] .topbar::after{
+  width:205px;height:166px;right:38%;top:-48px;
+  background:repeating-conic-gradient(from 0deg,transparent 0 11deg,rgba(78,123,255,.75) 14deg 17deg,transparent 20deg 31deg,rgba(246,228,181,.7) 33deg 36deg,transparent 39deg 46deg);
+  clip-path:circle(46%);opacity:.38;
+}
+body[data-tide-era="2027"][data-tide-occasion="new-year"] .tide-theme-banner{
+  isolation:isolate;overflow:hidden;
+  border-color:rgba(231,197,122,.47);
+  background:linear-gradient(110deg,rgba(231,197,122,.11),rgba(78,123,255,.17),rgba(143,214,255,.07));
+}
+body[data-tide-era="2027"][data-tide-occasion="new-year"] .tide-theme-banner::before{
+  content:"";position:absolute;z-index:-1;inset:0;pointer-events:none;
+  background-image:
+    radial-gradient(circle,#e7c57a 1.5px,transparent 2.5px),
+    radial-gradient(circle,#8fd6ff 1.5px,transparent 2.5px),
+    radial-gradient(circle,#4e7bff 1.4px,transparent 2.5px);
+  background-size:80px 55px,91px 65px,114px 69px;
+  background-position:3px 4px,36px 15px,54px 27px;
+  opacity:.36;animation:royal-newyear-sparkles 14s linear infinite;
+}
+body[data-tide-era="2027"][data-tide-occasion="new-year"] :is(.button.primary,.tide-topbar .tide-topbar-today,.brand-mark){
+  color:#070a12;
+  background:linear-gradient(115deg,#f7e7bd,#e7c57a 64%,#cfa24a)
+}
+body[data-tide-era="2027"][data-tide-occasion="new-year"] .nav-item.active{
+  border-color:rgba(143,214,255,.42);
+  background:linear-gradient(90deg,rgba(78,123,255,.22),rgba(231,197,122,.07))
+}
+body[data-tide-era="2027"][data-tide-occasion="new-year"] #view-root .year-awards-intro{
+  background:linear-gradient(115deg,#142642,#151b2d 70%,#29293b);
+  border-color:rgba(231,197,122,.43)
+}
+@keyframes royal-newyear-sparkles{
+  from{background-position:3px 4px,36px 15px,54px 27px}
+  to{background-position:3px 430px,36px 540px,54px 720px}
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-tide-era="2027"][data-tide-occasion="new-year"] .tide-theme-banner::before{animation:none;opacity:.22}
+  body[data-tide-era="2027"][data-tide-occasion="new-year"] .topbar::before,
+  body[data-tide-era="2027"][data-tide-occasion="new-year"] .topbar::after{animation:none;opacity:.2}
+}
