@@ -5,7 +5,7 @@ export const ERA_THEMES={
   2024:{name:'Forest Night',main:'#3b976f',secondary:'#b4d6b9',dark:'#091811'},
   2025:{name:'Amber Era',main:'#ed8e47',secondary:'#f6d3a4',dark:'#18100c'},
   2026:{name:'Vice City',main:'#ff74c6',secondary:'#6ad7ff',dark:'#110e29'},
-  2027:{name:'Golden Hour',main:'#e8bb57',secondary:'#ffdc86',dark:'#0c0c0c'}
+  2027:{name:'Midnight Royal Wealth',main:'#e7c57a',secondary:'#4e7bff',dark:'#070a12'}
 };
 export const THEME_PRIORITY=['personal-override','holiday','birthday','vice-city','year'];
 const YEAR_RE=/^\d{4}-\d{2}-\d{2}$/;
