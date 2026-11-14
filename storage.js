@@ -55,14 +55,40 @@ function readOutbox(){
   try{
     const raw=localStorage.getItem(OUTBOX_KEY);if(!raw)return null;
     const parsed=JSON.parse(raw);
+    if(parsed?.stateRef==='local'){
+      // The latest local state is already the durable payload. Do not keep a
+      // second multi-megabyte copy in the 5 MB browser localStorage quota.
+      const latest=localStorage.getItem(LOCAL_KEY);
+      return latest?{...parsed,state:migrate(JSON.parse(latest))}:null;
+    }
+    // Read older full-state outboxes until they can be migrated safely.
     if(parsed?.state)return {...parsed,state:migrate(parsed.state)};
     return {id:`legacy-${String(parsed?.updatedAt||Date.now())}`,queuedAt:new Date().toISOString(),state:migrate(parsed)};
   }catch{return null;}
 }
-function queueState(state){
-  const envelope={id:envelopeId(),queuedAt:new Date().toISOString(),state:migrate(state)};
+function queueState(){
+  // Atomic order: saveLocal writes the complete state FIRST, then marks it
+  // pending via this compact pointer. The envelope ID prevents losing edits
+  // queued during an in-flight cloud request.
+  const envelope={id:envelopeId(),queuedAt:new Date().toISOString(),stateRef:'local'};
   rawSet(OUTBOX_KEY,JSON.stringify(envelope));
   return envelope;
+}
+function compactLegacyOutbox(){
+  try{
+    const stored=localStorage.getItem(OUTBOX_KEY);
+    if(!stored)return;
+    const old=JSON.parse(stored);
+    if(old?.stateRef==='local')return;
+    const pending=old?.state?old.state:old;
+    // Preserve edits that exist only in the legacy pending queue.
+    const merged=mergeStates(readLocalRaw(),pending);
+    rawWriteLocal(merged);
+    queueState();
+  }catch{
+    // Never discard a legacy queue if copying it into local state fails.
+    // The old payload remains available for cloud retry/recovery.
+  }
 }
 function clearEnvelope(id){
   const current=readOutbox();
@@ -199,6 +225,7 @@ if(typeof window!=='undefined'&&nativeSetItem&&!window.__tideSharedStoragePatche
       try{queueState(JSON.parse(value));scheduleSharedSync();}catch{}
     }
   };
+  compactLegacyOutbox();
   if(readOutbox())scheduleSharedSync({immediate:true});
 }
 
