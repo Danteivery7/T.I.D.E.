@@ -16,6 +16,7 @@ import { holidaysForMonth, holidaysOnDate, monthIdentity } from './calendar-data
 import { setThemeForDate } from './theme-engine.js';
 import { personalCalendarEvents, calendarEventsOnDate, calendarEventsForMonth, writeCalendarEvent, removeCalendarEvent, proposedDiaryHeading, birthdaySuggestions } from './personal-calendar.js';
 import { favoriteDays, saveFavoriteDays, yearsWithFavoriteDays, favoriteDaysSuggestion } from './favorite-days.js';
+import { comparisonYears } from './year-ranking-utils.js';
 import { HEALTH_FIELDS, healthRows, healthPeriod, yearlyHealthOverview, mergeHealthImport, readHealthImportFile, formatHealth, metricLabel } from './health-activity.js';
 import { answerAsk, askScope, askMusicIntent } from './ask-intelligence.js';
 import { importFinances, ensureFinances, upsertFinanceSchedule, deleteFinanceSchedule, askFinance, financePeriod, moneyText } from './finance-engine.js';
@@ -475,7 +476,7 @@ function healthReportMarkup(scope={},title='Health & Activity'){
 
 function healthYearComparisonMarkup(selectedYear=Number(isoToday().slice(0,4))){
   // Year reviews must never include years later than the chosen year.
-  const from=2024,to=Math.max(from,Number(selectedYear)||from),years=Array.from({length:to-from+1},(_,i)=>from+i);
+  const years=comparisonYears(selectedYear);
   const reports=yearlyHealthOverview(state,years);
   return `<section class="health-year-comparison"><div class="health-eyebrow">SLEEP BY YEAR · HOURS PER RECORDED NIGHT</div><div class="health-year-comparison-grid">${reports.map(x=>`<div class="health-year-avg"><span>${x.year}</span><strong>${x.metrics.sleepHours.days?formatHealth('sleepHours',x.metrics.sleepHours.average):'—'}</strong><small>${x.metrics.sleepHours.days} recorded nights</small></div>`).join('')}</div></section>`;
 }
@@ -711,7 +712,7 @@ function yearlyView(){
   const monthChoice=(m)=>m>=1&&m<=12?`${MONTHS[m-1]} ${y}`:"Not selected";
   const dayNote=(d)=>d&&entryExists(d)?daySummary(entryText(d)):"You choose this. Your pick remains yours, not an algorithm.";
   const monthNote=(m)=>m>=1&&m<=12?`A chapter of ${y}, selected by you.`:"Choose a month to complete your year.";
-  root.innerHTML=`${pageHead(`${y} · Year in Review`,"The year's standout moments, music, gaming, and memories, presented like a personal awards night.",`<select id="year-select" class="select" aria-label="Select year">${[...Array.from({length:Math.max(4,Number(isoToday().slice(0,4))-2023)},(_,i)=>2024+i),...Object.keys(state.entries||{}).map(d=>yearOf(d))].filter((x,i,a)=>a.indexOf(x)===i).sort().map(x=>`<option ${x===y?"selected":""}>${x}</option>`).join("")}</select>`)}
+  root.innerHTML=`${pageHead(`${y} · Year in Review`,"The year's standout moments, music, gaming, and memories, presented like a personal awards night.",`<select id="year-select" class="select" aria-label="Select year">${[...Array.from({length:Math.max(4,Number(isoToday().slice(0,4))-2023)},(_,i)=>2024+i),...Object.keys(state.entries||{}).map(d=>yearOf(d))].filter((x,i,a)=>a.indexOf(x)===i&&x<=Number(isoToday().slice(0,4))).sort().map(x=>`<option ${x===y?"selected":""}>${x}</option>`).join("")}</select>`)}
     <div class="year-awards-intro"><div><div class="year-awards-eyebrow">✦ THE ${y} HONORS ✦</div><h2>The highlights that defined your year</h2><p>Nine headline awards: your original six, plus steps, sleep and money received.</p></div><span class="year-awards-trophy" aria-hidden="true">✧</span></div>
     <div id="year-awards">${yearAwardMarkup(y,cached)}</div>
     <div class="section-title">THE YEAR'S PERSONAL PICKS</div>
