@@ -9,13 +9,15 @@ import {mergeStates as mergeLocal} from '../storage.js';
 import {mergeStates as mergeServer} from '../functions/_lib/state.js';
 
 const state=()=>({version:1,entries:{},calendarEvents:{},favoriteDays:{},healthActivity:{days:{}},monthlyReviews:{},yearlyReviews:{},occurrences:[],trackerOverrides:{},settings:{}});
-test('each calendar year has its own dark era, with gold and black dominant in 2027',()=>{
+test('each calendar year has its own dark era, with champagne gold and royal blue in 2027',()=>{
   assert.equal(themeForDate('2024-08-11').era,2024);
   assert.equal(themeForDate('2025-08-11').era,2025);
   assert.equal(themeForDate('2026-08-11').era,2026);
   assert.equal(themeForDate('2027-02-11').era,2027);
-  assert.match(ERA_THEMES[2027].name,/gold/i);
-  assert.equal(ERA_THEMES[2027].dark,'#0c0c0c');
+  assert.equal(ERA_THEMES[2027].name,'Midnight Royal Wealth');
+  assert.equal(ERA_THEMES[2027].dark,'#070a12');
+  assert.equal(ERA_THEMES[2027].main,'#e7c57a');
+  assert.equal(ERA_THEMES[2027].secondary,'#4e7bff');
   assert.equal(themeForDate('2026-11-19').viceCity,true);
   assert.equal(themeForDate('2026-12-30').viceCity,true);
   assert.equal(themeForDate('2027-01-02').viceCity,false);
