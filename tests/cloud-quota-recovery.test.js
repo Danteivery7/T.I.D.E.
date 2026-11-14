@@ -25,7 +25,7 @@ test('multi-megabyte diary, 3,200 Health days and financial records fit in compr
  }
  for(let day=1;day<=1550;day++){
   const date=new Date(Date.UTC(2021,0,day)).toISOString().slice(0,10);
-  state.entries[date]={text:'Recorded an ordinary day and edited some footage, exercised, walked the same route. '.repeat(9),
+  state.entries[date]={text:'Recorded an ordinary day and edited some footage, exercised, walked the same route. '.repeat(19),
    updatedAt:'2026-11-14T12:10:00Z'};
  }
  for(let i=0;i<790;i++){
@@ -62,6 +62,7 @@ test('D1 merge transparently migrates a legacy snapshot on a large write and pre
  const env={TIDE_DB:db};
  const incoming=minimal();
  incoming.entries['2026-11-14'].text='Updated diary entry';
+ incoming.entries['2026-11-14'].updatedAt='2026-11-14T13:00:00Z';
  // Force compressed storage without touching real user data.
  for(let i=0;i<700;i++){
   incoming.healthActivity.days['2024-'+String((i%12)+1).padStart(2,'0')+'-'+String((i%28)+1).padStart(2,'0')]={
