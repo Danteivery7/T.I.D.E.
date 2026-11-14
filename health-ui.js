@@ -63,7 +63,7 @@ export function healthReviewMarkup(state,scope={}){
  ${healthKpi('Best sleep month',s.bestMonth?formatHealth('sleepHours',s.bestMonth.average):'—',healthMonthText(s.bestMonth?.month))}
  ${healthKpi('Total steps',steps.total!=null?Math.round(steps.total).toLocaleString('en-US'):'—',steps.days+' recorded days','good')}
  ${healthKpi('Best step day',steps.best?Math.round(steps.best.value).toLocaleString('en-US'):'—',healthDateText(steps.best?.date))}
- ${healthKpi('Migraine / headache tracker',String(mig.days),mig.missingDateCount?mig.datedDays+' dated · '+mig.missingDateCount+' dates unverified':'Dated diary and tracker history')}
+ ${healthKpi('Migraine / headache tracker',String(mig.days),mig.missingDateCount?mig.datedEvents+' dated events on '+mig.datedDays+' days · '+mig.missingDateCount+' undated events':mig.datedEvents+' dated events across '+mig.datedDays+' symptom days')}
  </div><p class="insight-disclaimer">Sleep averages are per recorded night, and a qualifying best/worst sleep month needs at least seven nights. Neither chart imputes missing days.</p></section>`;
 }
 
@@ -78,8 +78,8 @@ export function healthLifetimeMarkup(state){
  ${healthRecord('Lowest average-sleep month',m.sleepHours.worstMonth?formatHealth('sleepHours',m.sleepHours.worstMonth.average):'—',healthMonthText(m.sleepHours.worstMonth?.month))}
  ${healthRecord('Most exercise minutes in one day',m.exerciseMinutes.best?Math.round(m.exerciseMinutes.best.value)+' min':'—',healthDateText(m.exerciseMinutes.best?.date),m.exerciseMinutes.best?.date)}
  ${healthRecord('Largest walking-distance day',m.distanceMiles.best?formatHealth('distanceMiles',m.distanceMiles.best.value):'—',healthDateText(m.distanceMiles.best?.date),m.distanceMiles.best?.date)}
- ${healthRecord('Most migraine/headache days in a month',mig.topMonths[0]?mig.topMonths[0].count+' days':'—',healthMonthText(mig.topMonths[0]?.month))}
- </div><p class="insight-disclaimer">Older years may lack sleep or Apple Watch exercise coverage. Migraine results count dated evidence only, not previous estimated annual totals.</p></section>`;
+ ${healthRecord('Most migraine/headache events in one month',mig.topMonths[0]?mig.topMonths[0].count+' occurrences':'—',healthMonthText(mig.topMonths[0]?.month)+(mig.topMonths[0]?' · '+mig.topMonths[0].days+' dated symptom days':''))}
+ </div><p class="insight-disclaimer">Older years may lack sleep or Apple Watch exercise coverage. The monthly migraine event record uses the same tracker count as Personal Records; the number of dated symptom days is shown separately.</p></section>`;
 }
 
 export function healthHubMarkup(state,{tab='overview',period='month',month='2026-11',year=2026}={}){
@@ -95,7 +95,7 @@ export function healthHubMarkup(state,{tab='overview',period='month',month='2026
   body=`<div class="insight-stat-grid">${healthKpi('Average nightly sleep',m.sleepHours.average!=null?formatHealth('sleepHours',m.sleepHours.average):'—',m.sleepHours.days+' recorded nights','primary')}
   ${healthKpi('Total recorded steps',m.steps.total!=null?Math.round(m.steps.total).toLocaleString('en-US'):'—',(m.steps.average!=null?'Average '+Math.round(m.steps.average).toLocaleString('en-US')+'/day · ':'')+m.steps.days+' recorded days','good')}
   ${healthKpi('Exercise time',m.exerciseMinutes.total!=null?Math.round(m.exerciseMinutes.total)+' min':'—',m.exerciseMinutes.days+' recorded days')}
-  ${healthKpi('Migraine / headache days',String(mig.days),'Dated diary evidence')}</div>
+  ${healthKpi('Migraine / headache events',String(mig.events),mig.datedDays+' distinct dated symptom days')}</div>
   ${sleepCoachingMarkup(state,scope)}
   <div class="insight-two-col"><section class="insight-surface"><h3>How you've been sleeping</h3>${healthGraph(rows,'sleepHours','Recorded nightly sleep (hours)',{bars:true})}</section><section class="insight-surface"><h3>Steps through your calendar</h3>${healthGraph(rows,'steps','Daily recorded steps',{bars:false})}</section></div>
   <div class="insight-two-col"><section class="insight-surface"><h3>Strongest days</h3><div class="insight-record-stack">${healthRecord('Longest sleep',m.sleepHours.best?formatHealth('sleepHours',m.sleepHours.best.value):'—',healthDateText(m.sleepHours.best?.date),m.sleepHours.best?.date)}${healthRecord('Most steps',m.steps.best?Math.round(m.steps.best.value).toLocaleString('en-US'):'—',healthDateText(m.steps.best?.date),m.steps.best?.date)}${healthRecord('Most exercise',m.exerciseMinutes.best?Math.round(m.exerciseMinutes.best.value)+' min':'—',healthDateText(m.exerciseMinutes.best?.date),m.exerciseMinutes.best?.date)}</div></section><section class="insight-surface"><h3>Weekly patterns · Sunday to Saturday</h3>${healthGraph(weeklyHealth(state,chosenMonth,'steps').map(x=>({...x,date:x.week})), 'total','Steps per recorded week',{bars:true})}<p class="insight-disclaimer">Week totals include available days only.</p></section></div>`;
@@ -136,14 +136,14 @@ export function healthHubMarkup(state,{tab='overview',period='month',month='2026
  }else{
   const all=migraineSummary(state),migraines=mig.rows;
   const p=mig.seasonal,percentage=v=>v==null?'—':(v*100).toFixed(1)+'%';
-  body=`<div class="insight-stat-grid">${healthKpi('Migraine / headache tracker',String(mig.days),mig.datedDays+' dated symptom days','primary')}
+  body=`<div class="insight-stat-grid">${healthKpi('Migraine / headache events',String(mig.events),mig.datedEvents+' occurrences on '+mig.datedDays+' recorded dates','primary')}
   ${healthKpi('Migraine mentions',String(mig.types.migraine),'Distinct days, not mentions')}
   ${healthKpi('Headache-only days',String(mig.types.headache),'Distinct dated diary reports')}
   ${healthKpi('Average per diary-active month',mig.averagePerLoggedMonth!=null?mig.averagePerLoggedMonth.toFixed(2):'—',mig.loggedMonths+' months with diary entries')}
    ${healthKpi('Days since last recorded migraine',all.daysSinceLastRecordedMigraine!=null?String(all.daysSinceLastRecordedMigraine):'—',all.lastMigraineDate?healthDateText(all.lastMigraineDate):'No dated migraine found')}
    ${healthKpi('Last reported symptom day',mig.lastDate?healthDateText(mig.lastDate):'—','Not proof of symptom-free days')}</div>
-  ${mig.missingDateCount?`<p class="insight-disclaimer">The tracker records ${mig.days} migraine/headache events for this period; ${mig.datedDays} have verified dates. ${mig.missingDateCount} additional tracker records cannot be assigned to specific days. Date-based seasonal and sleep comparisons use only dated evidence.</p>`:''}
-  <div class="insight-two-col">${healthMonthBars(mig.topMonths.slice(0,8).sort((a,b)=>a.month.localeCompare(b.month)),'Most tracked migraine / headache months','count')}
+  ${mig.missingDateCount?`<p class="insight-disclaimer">The tracker records ${mig.events} migraine/headache events for this period; ${mig.datedEvents} are recorded on ${mig.datedDays} symptom days. ${mig.missingDateCount} additional event records cannot be assigned to specific days. Date-based seasonal and sleep comparisons use only dated evidence.</p>`:''}
+  <div class="insight-two-col">${healthMonthBars(mig.topMonths.slice(0,8).sort((a,b)=>a.month.localeCompare(b.month)),'Migraine/headache occurrences by month','count')}
   <section class="insight-surface"><h3>Seasonal symptom comparison</h3><div class="insight-season-pairs"><div><span>September – December 15</span><strong>${percentage(p.fallRate)}</strong><small>${p.fallDays} days / ${p.fallLoggedDays} diary days</small></div><div><span>Rest of year</span><strong>${percentage(p.restRate)}</strong><small>${p.restDays} days / ${p.restLoggedDays} diary days</small></div></div><p class="insight-disclaimer">${p.ratio!=null?`${p.ratio}× rate in the autumn window. `:''}Rates compare days with diary entries. Patterns are associations, not proven causes.</p></section></div>
   <div class="insight-two-col"><section class="insight-surface"><h3>School days vs No-school days</h3><div class="insight-season-pairs">${[['Explicit class days',mig.school.classDays,mig.school.classSymptomDays],['Explicit no-school days',mig.school.noSchoolDays,mig.school.noSchoolSymptomDays]].map(([label,total,symptom])=>`<div><span>${healthEsc(label)}</span><strong>${total?((symptom/total)*100).toFixed(1)+'%':'—'}</strong><small>${symptom} symptoms / ${total} clearly labeled days</small></div>`).join('')}</div><p class="insight-disclaimer">Only days explicitly labeled in your diary are classified.</p></section>
   <section class="insight-surface"><h3>Home alone vs with others</h3><div class="insight-season-pairs">${[['Explicit home-alone days',mig.homeAlone.aloneDays,mig.homeAlone.aloneSymptomDays],['Explicit not-alone days',mig.homeAlone.notAloneDays,mig.homeAlone.notAloneSymptomDays]].map(([label,total,symptom])=>`<div><span>${healthEsc(label)}</span><strong>${total?((symptom/total)*100).toFixed(1)+'%':'—'}</strong><small>${symptom} symptoms / ${total} labeled days</small></div>`).join('')}</div><p class="insight-disclaimer">Insufficient observations cannot establish a relationship.</p></section></div>
