@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {DATE_MONTHS,isoDate,isoMonth,validDate,validMonth,inDateRange,monthGrid,pickerYears} from '../date-jump.js';
+import {DATE_MONTHS,isoDate,isoMonth,validDate,validMonth,inDateRange,monthGrid,pickerYears,readJumpDate} from '../date-jump.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 
@@ -28,6 +28,16 @@ test('date grid aligns weekdays and respects leap years',()=>{
  assert.ok(validMonth('2026-11'));
  assert.ok(!validMonth('2026-00'));
 });
+test('typed date and month shortcuts accept familiar formats and reject impossible dates',()=>{
+ assert.equal(readJumpDate('9/19/2024'),'2024-09-19');
+ assert.equal(readJumpDate('2025-04-06'),'2025-04-06');
+ assert.equal(readJumpDate('2/29/2024'),'2024-02-29');
+ assert.equal(readJumpDate('2/29/2025'),null);
+ assert.equal(readJumpDate('11/2026','month'),'2026-11');
+ assert.equal(readJumpDate('2025-01','month'),'2025-01');
+ assert.equal(readJumpDate('13/2026','month'),null);
+ assert.equal(readJumpDate('not a date'),null);
+});
 test('date range constraints keep review pickers inside the original selected month',()=>{
  const grid=monthGrid(2026,11,{min:'2026-11-09',max:'2026-11-19'});
  assert.equal(grid.find(x=>x?.day===8).enabled,false);
@@ -44,6 +54,8 @@ test('one shared T.I.D.E. picker replaces native browser UI without changing the
  assert.ok(picker.includes("input[type=\"date\"],input[type=\"month\"]"),'enhance both native formats');
  assert.ok(picker.includes("input.type='hidden'"),'Edge native popup disabled');
  assert.ok(picker.includes("input.dispatchEvent(new Event('change'"),'existing callback remains supported');
+ assert.ok(picker.includes('data-date-quick-year'),'one-tap access to common years');
+ assert.ok(picker.includes('data-date-manual'),'dates can be entered directly');
  assert.ok(picker.includes('data-date-year'),'year is directly selectable');
  assert.ok(picker.includes('data-date-month'),'month is directly selectable');
  assert.ok(picker.includes("observer.observe(root"),'re-rendered forms automatically enhanced');
