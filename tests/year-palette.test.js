@@ -8,8 +8,8 @@ const base=read('styles.css');
 const marker='/* T.I.D.E. COMPLETE YEAR PALETTE: year-scoped chromatic surface overrides.';
 const layer=css.slice(css.indexOf(marker));
 
-test('2024 green, 2025 orange and 2027 gold remain defined with distinct dark surfaces',()=>{
- for(const [year,accent,bg] of [['2024','#75c394','#08120e'],['2025','#f2a05b','#160e0b'],['2027','#efc66b','#090a0c']]){
+test('2024 forest, 2025 amber and 2027 midnight royal remain separate palettes',()=>{
+ for(const [year,accent,bg] of [['2024','#75c394','#08120e'],['2025','#f2a05b','#160e0b'],['2027','#e7c57a','#070a12']]){
   const start=eras.indexOf('body[data-tide-era="'+year+'"]{');
   assert.ok(start>=0,'missing '+year+' root');
   const block=eras.slice(start,eras.indexOf('}',start));
@@ -17,6 +17,9 @@ test('2024 green, 2025 orange and 2027 gold remain defined with distinct dark su
   assert.ok(block.includes('--bg:'+bg),'incorrect '+year+' background');
  }
  assert.ok(css.includes(marker),'missing full-component chromatic override layer');
+ const theme2027=eras.split('body[data-tide-era="2027"]{')[1].split('}')[0];
+ assert.ok(theme2027.includes('--accent-2:#4e7bff'),'2027 secondary accent is royal blue');
+ assert.ok(theme2027.includes('--good:#49c97b'),'2027 positive state is money green');
 });
 test('color overrides stay limited to non-2026 base years while honoring holiday themes and dates',()=>{
  assert.match(layer,/body:is\(\[data-tide-era="2024"\],\[data-tide-era="2025"\],\[data-tide-era="2027"\]/);
