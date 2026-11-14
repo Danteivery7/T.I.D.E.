@@ -85,7 +85,8 @@ test('browser sync queue stores only a pointer instead of another full local hea
  assert.ok(src.includes("stateRef:'local'"));
  assert.ok(src.includes("latest=localStorage.getItem(LOCAL_KEY)"));
  assert.ok(src.includes('function compactLegacyOutbox()'),'preserve and migrate pending old-format saves');
- assert.ok(src.includes('const merged=mergeStates(readLocalRaw(),pending)'),'merge before compacting');
+ assert.ok(src.includes('const merged=mergeStates(local,saved)'),'merge unique old pending edits before compacting');
+ assert.ok(src.includes('JSON.stringify(local)===JSON.stringify(saved)'),'reclaim duplicate queue without needing additional localStorage space');
  assert.ok(src.includes("if(current?.id===id)rawRemove(OUTBOX_KEY)"),'old writes cannot clear later pending edits');
  assert.ok(src.includes("pending?.stateRef==='local'?local"),'no redundant self-merge');
  assert.ok(!src.includes('queuedAt:new Date().toISOString(),state:migrate(state)'),'new pending queue must not duplicate the entire state');
