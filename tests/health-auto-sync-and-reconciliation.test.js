@@ -78,25 +78,25 @@ test('private Cloudflare Health endpoint requires a separate bearer token and do
 });
 test('Migraine total uses tracker year authority while detailed records remain dated-only',()=>{
  const state=blank();
- for(let i=1;i<=19;i++){
+ for(let i=1;i<=7;i++){
   const date='2026-01-'+String(i).padStart(2,'0');
   state.entries[date]={text:'Had a migraine today'};
  }
- state.yearlyReviews['2026']={trackerTotals:{migraines:25}};
+ state.yearlyReviews['2026']={trackerTotals:{migraines:11}};
  const report=migraineSummary(state,{year:2026});
- assert.equal(report.days,25);
- assert.equal(report.datedDays,19);
- assert.equal(report.missingDateCount,6);
- assert.equal(report.rows.length,19,'no six invented dates');
- assert.equal(report.types.migraine,19);
+ assert.equal(report.days,11);
+ assert.equal(report.datedDays,7);
+ assert.equal(report.missingDateCount,4);
+ assert.equal(report.rows.length,7,'no missing dates invented');
+ assert.equal(report.types.migraine,7);
  assert.equal(report.loggedMonths,1);
  const markup=healthHubMarkup(state,{tab:'migraines',period:'year',year:2026});
- assert.ok(markup.includes('25'));
- assert.ok(markup.includes('19 dated symptom days'));
- assert.ok(markup.includes('6 additional tracker records cannot be assigned'));
+ assert.ok(markup.includes('11'));
+ assert.ok(markup.includes('7 dated symptom days'));
+ assert.ok(markup.includes('4 additional tracker records cannot be assigned'));
  const review=healthReviewMarkup(state,{year:2026});
- assert.ok(review.includes('25'));
- assert.ok(review.includes('6 dates unverified'));
+ assert.ok(review.includes('11'));
+ assert.ok(review.includes('4 dates unverified'));
  assert.equal((review.match(/class="insight-stat /g)||[]).length,6,'six existing review slots must remain');
 });
 test('Today Steps display total plus daily average and Health shows monthly/year comparisons',()=>{
