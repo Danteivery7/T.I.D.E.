@@ -1,4 +1,4 @@
-import {healthRows,healthPeriod,formatHealth} from './health-activity.js';
+import {healthRows,healthPeriod,formatHealth,yearlyHealthOverview} from './health-activity.js';
 import {sleepCoachingMarkup} from './sleep-coach.js';
 import {migraineSummary,weeklyHealth,dailyHealthComparison} from './health-insights.js';
 function healthEsc(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
@@ -27,10 +27,32 @@ function healthMonthBars(rows,title,key='count'){
  return `<section class="insight-surface"><h3>${healthEsc(title)}</h3><div class="insight-bars">${source.length?source.map(r=>`<div class="insight-bar-row"><span>${healthEsc(healthMonthText(r.month))}</span><div><i style="width:${Math.max(3,Math.round((Number(r[key])||0)/largest*100))}%"></i></div><strong>${healthEsc((Number(r[key])||0).toFixed(key==='count'?0:1))}</strong></div>`).join(''):'<p class="muted">No months recorded.</p>'}</div></section>`;
 }
 
+function stepsYearComparison(state,throughYear){
+ const years=[...new Set(healthRows(state).map(r=>Number(r.date.slice(0,4))))].filter(y=>y>=2024&&y<=throughYear).sort((a,b)=>a-b);
+ if(!years.length)return '';
+ const results=yearlyHealthOverview(state,years),max=Math.max(1,...results.map(r=>r.metrics.steps.average||0));
+ return '<section class="insight-surface"><h3>Average daily steps · year by year</h3><p class="insight-subcopy">Daily averages let you compare full and partial years fairly.</p><div class="insight-bars">'+results.map(r=>{
+   const m=r.metrics.steps,v=m.average;
+   return '<div class="insight-bar-row"><span>'+r.year+'</span><div><i style="width:'+Math.max(3,Math.round((v||0)/max*100))+'%"></i></div><strong>'+
+     (v==null?'—':Math.round(v).toLocaleString('en-US'))+'</strong></div><small class="muted">'+m.days+' recorded days in '+r.year+'</small>';
+ }).join('')+'</div></section>';
+}
 export function healthDailyCard(state,date,key){
  const month=String(date).slice(0,7),p=healthPeriod(state,{month}),m=p.metrics[key],sleep=key==='sleepHours';
- return `<section class="card today-health-panel today-health-panel--${sleep?'sleep':'steps'}"><div class="card-header today-panel-header"><div><div class="today-panel-eyebrow">${sleep?'☾ NIGHTLY REST':'↗ YOUR STEPS'}</div><h3>${sleep?'Sleep Snapshot':'Steps Snapshot'}</h3><p class="today-panel-description">${sleep?'Average sleeping hours per recorded night':'Monthly walking and movement highlights'}</p></div><button type="button" class="button ghost" data-insight-hub="health">Health ↗</button></div>
- <div class="insight-today-headline">${sleep?formatHealth(key,m.average):(m.total!=null?Math.round(m.total).toLocaleString('en-US'):'—')}</div><div class="insight-today-extremes"><div><span>${sleep?'Longest night':'Best day'}</span><b>${m.best?formatHealth(key,m.best.value):'—'}</b><small>${healthDateText(m.best?.date)}</small></div><div><span>${sleep?'Shortest night':'Lowest recorded day'}</span><b>${m.worst?formatHealth(key,m.worst.value):'—'}</b><small>${healthDateText(m.worst?.date)}</small></div></div><p class="insight-disclaimer">Missing and incomplete dates aren't assumed to be zero.</p></section>`;
+ const total=m.total!=null?Math.round(m.total).toLocaleString('en-US'):'—';
+ const avg=m.average!=null?Math.round(m.average).toLocaleString('en-US'):'—';
+ const heading=sleep?'<div class="insight-today-headline">'+formatHealth(key,m.average)+'</div>':
+  '<div class="today-step-dual"><div class="today-step-measure"><span>THIS MONTH</span><strong>'+total+'</strong><small>Total steps</small></div>'+
+  '<div class="today-step-measure today-step-measure--avg"><span>AVERAGE PER DAY</span><strong>'+avg+'</strong><small>'+m.days+' recorded day'+(m.days===1?'':'s')+'</small></div></div>';
+ return '<section class="card today-health-panel today-health-panel--'+(sleep?'sleep':'steps')+'"><div class="card-header today-panel-header"><div>'+
+   '<div class="today-panel-eyebrow">'+(sleep?'☾ NIGHTLY REST':'↗ YOUR STEPS')+'</div><h3>'+(sleep?'Sleep Snapshot':'Steps Snapshot')+
+   '</h3><p class="today-panel-description">'+(sleep?'Average sleeping hours per recorded night':'Your monthly total and steps per recorded day')+
+   '</p></div><button type="button" class="button ghost" data-insight-hub="health">Health ↗</button></div>'+
+   heading+'<div class="insight-today-extremes"><div><span>'+(sleep?'Longest night':'Best day')+'</span><b>'+
+   (m.best?formatHealth(key,m.best.value):'—')+'</b><small>'+healthDateText(m.best?.date)+'</small></div><div><span>'+
+   (sleep?'Shortest night':'Lowest recorded day')+'</span><b>'+(m.worst?formatHealth(key,m.worst.value):'—')+
+   '</b><small>'+healthDateText(m.worst?.date)+'</small></div></div>'+
+   '<p class="insight-disclaimer">Missing and incomplete dates are not assumed to be zero.</p></section>';
 }
 
 export function healthReviewMarkup(state,scope={}){
@@ -41,7 +63,7 @@ export function healthReviewMarkup(state,scope={}){
  ${healthKpi('Best sleep month',s.bestMonth?formatHealth('sleepHours',s.bestMonth.average):'—',healthMonthText(s.bestMonth?.month))}
  ${healthKpi('Total steps',steps.total!=null?Math.round(steps.total).toLocaleString('en-US'):'—',steps.days+' recorded days','good')}
  ${healthKpi('Best step day',steps.best?Math.round(steps.best.value).toLocaleString('en-US'):'—',healthDateText(steps.best?.date))}
- ${healthKpi('Migraine / headache days',String(mig.days),'Distinct diary or manually corrected days')}
+ ${healthKpi('Migraine / headache tracker',String(mig.days),mig.missingDateCount?mig.datedDays+' dated · '+mig.missingDateCount+' dates unverified':'Dated diary and tracker history')}
  </div><p class="insight-disclaimer">Sleep averages are per recorded night, and a qualifying best/worst sleep month needs at least seven nights. Neither chart imputes missing days.</p></section>`;
 }
 
@@ -70,7 +92,7 @@ export function healthHubMarkup(state,{tab='overview',period='month',month='2026
  if(!recorded&&tab!=='migraines')body='<section class="insight-empty-hub"><h3>Activate your Health and Finances history</h3><p>Your prepared private data is ready. Load the combined T.I.D.E. file here, without leaving the Health page. Missing nights remain missing, not zero.</p><button type="button" class="button primary" data-tide-private-activate>Activate Health + Finances</button></section>';
  else if(tab==='overview'){
   body=`<div class="insight-stat-grid">${healthKpi('Average nightly sleep',m.sleepHours.average!=null?formatHealth('sleepHours',m.sleepHours.average):'—',m.sleepHours.days+' recorded nights','primary')}
-  ${healthKpi('Total recorded steps',m.steps.total!=null?Math.round(m.steps.total).toLocaleString('en-US'):'—',m.steps.days+' days','good')}
+  ${healthKpi('Total recorded steps',m.steps.total!=null?Math.round(m.steps.total).toLocaleString('en-US'):'—',(m.steps.average!=null?'Average '+Math.round(m.steps.average).toLocaleString('en-US')+'/day · ':'')+m.steps.days+' recorded days','good')}
   ${healthKpi('Exercise time',m.exerciseMinutes.total!=null?Math.round(m.exerciseMinutes.total)+' min':'—',m.exerciseMinutes.days+' recorded days')}
   ${healthKpi('Migraine / headache days',String(mig.days),'Dated diary evidence')}</div>
   ${sleepCoachingMarkup(state,scope)}
@@ -89,8 +111,10 @@ export function healthHubMarkup(state,{tab='overview',period='month',month='2026
  }else if(tab==='steps'){
   body=`<div class="insight-stat-grid">${healthKpi('Recorded steps',m.steps.total!=null?Math.round(m.steps.total).toLocaleString('en-US'):'—',m.steps.days+' days','good')}
   ${healthKpi('Most steps in a day',m.steps.best?Math.round(m.steps.best.value).toLocaleString('en-US'):'—',healthDateText(m.steps.best?.date),'primary')}
-  ${healthKpi('Lowest recorded day',m.steps.worst?Math.round(m.steps.worst.value).toLocaleString('en-US'):'—',healthDateText(m.steps.worst?.date))}
+  ${healthKpi('Average steps per recorded day',m.steps.average!=null?Math.round(m.steps.average).toLocaleString('en-US'):'—',m.steps.days+' recorded days')}
   ${healthKpi('Walking distance',m.distanceMiles.total!=null?formatHealth('distanceMiles',m.distanceMiles.total):'—','Imported walking and running distance')}</div>
+  ${healthMonthBars(m.steps.months,'Average steps per recorded day · month by month','average')}
+  ${stepsYearComparison(state,period==='year'?selectedYear:period==='month'?Number(chosenMonth.slice(0,4)):Number(today.slice(0,4)))}
   <section class="insight-surface"><h3>Steps every recorded day</h3>${healthGraph(rows,'steps','Daily step counts',{bars:true})}</section>
   <div class="insight-two-col"><section class="insight-surface"><h3>Distance and movement</h3>${healthGraph(rows,'distanceMiles','Walking and running · miles',{bars:false})}</section><section class="insight-surface"><h3>Weekly walking totals</h3>${healthGraph(weeklyHealth(state,chosenMonth,'steps').map(x=>({date:x.week,total:x.total})), 'total','Sunday–Saturday step weeks',{bars:true})}</section></div>
   ${healthRecord('Most walking in a day',m.distanceMiles.best?formatHealth('distanceMiles',m.distanceMiles.best.value):'—',healthDateText(m.distanceMiles.best?.date),m.distanceMiles.best?.date)}`;
