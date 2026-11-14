@@ -1,3 +1,4 @@
+import {encodeCloudState,decodeCloudState} from './state-codec.js';
 const ROW_ID=1;
 
 export function validState(state){return state&&typeof state==='object'&&Number(state.version)>=1&&state.entries&&typeof state.entries==='object'&&Array.isArray(state.occurrences)}
@@ -15,7 +16,7 @@ export async function readCloud(env){
   await ensureTable(env);
   const row=await env.TIDE_DB.prepare('SELECT version, json FROM tide_state WHERE id=?1').bind(ROW_ID).first();
   if(!row)return {state:null,etag:null,version:0};
-  return {state:JSON.parse(row.json),etag:String(row.version),version:Number(row.version)};
+  return {state:await decodeCloudState(row.json),etag:String(row.version),version:Number(row.version)};
 }
 
 function newer(a,b){if(!a)return b;if(!b)return a;const at=String(a.updatedAt||a.createdAt||''),bt=String(b.updatedAt||b.createdAt||'');return bt>at?b:a}
@@ -77,7 +78,7 @@ export function mergeStates(remote,incoming){
 export async function mergeAndWrite(env,incoming){
   await ensureTable(env);
   for(let attempt=0;attempt<5;attempt++){
-    const current=await readCloud(env),merged=mergeStates(current.state,incoming),text=JSON.stringify(merged),ts=new Date().toISOString();
+    const current=await readCloud(env),merged=mergeStates(current.state,incoming),text=await encodeCloudState(merged),ts=new Date().toISOString();
     if(current.version===0){
       const inserted=await env.TIDE_DB.prepare('INSERT OR IGNORE INTO tide_state (id,version,json,updated_at) VALUES (?1,1,?2,?3)').bind(ROW_ID,text,ts).run();
       if(Number(inserted?.meta?.changes||0)===1)return {state:merged,etag:'1'};
