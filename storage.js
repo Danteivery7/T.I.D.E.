@@ -163,7 +163,9 @@ export function mergeStates(local,remote){
 
 export function loadLocal(){
   const local=readLocalRaw(),pending=readOutbox();
-  return pending?.state?mergeStates(local,pending.state):local;
+  // The pointer references precisely this local copy. Re-merging it with
+  // itself needlessly rebuilds large historical Health/Finance records.
+  return pending?.stateRef==='local'?local:pending?.state?mergeStates(local,pending.state):local;
 }
 export function saveLocal(state){
   state=migrate(state);state.updatedAt=new Date().toISOString();
