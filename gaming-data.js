@@ -8,7 +8,7 @@ export const LEGACY_GAMES=[
 ].map(([title,h,m,lastPlayed],i)=>({sourceKey:`legacy-ps4:${i}`,sourceFamily:'legacy-ps4',title,minutes:h*60+m,lastPlayed,firstPlayed:'',platform:'ps4',image:'',countMinutes:true,frozen:true}));
 const KEY='tide_gaming_v1';
 import {isGtaViGame,permitsDatedGamePlay,GTA_VI_FIRST_PLAY_DATE} from './game-release-rules.js';
-const aliases={'grand theft auto 5':'Grand Theft Auto V','gta 5':'Grand Theft Auto V','gta v':'Grand Theft Auto V','grand theft auto v':'Grand Theft Auto V','fall guys ultimate knockout':'Fall Guys','fall guys':'Fall Guys','the crew 2':'The Crew 2','the crew motorfest':'The Crew Motorfest'};
+const aliases={'grand theft auto 5':'Grand Theft Auto V','gta 5':'Grand Theft Auto V','gta v':'Grand Theft Auto V','grand theft auto v':'Grand Theft Auto V','fall guys ultimate knockout':'Fall Guys','fall guys':'Fall Guys','the crew 2':'The Crew 2','the crew motorfest':'The Crew Motorfest','rdr2':'Red Dead Redemption 2','rdr 2':'Red Dead Redemption 2','red dead 2':'Red Dead Redemption 2','red dead redemption ii':'Red Dead Redemption 2','red dead redemption 2':'Red Dead Redemption 2'};
 
 export const now=()=>new Date().toISOString();
 export const today=()=>new Date().toISOString().slice(0,10);
