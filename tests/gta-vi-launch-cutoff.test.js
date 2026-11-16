@@ -125,5 +125,5 @@ test('new release policy file is available to production and offline and cache i
  assert.ok(read('sw.js').includes("'game-release-rules.js'"));
  assert.ok(read('package.json').includes('node --check game-release-rules.js'));
  assert.ok(read('sw.js').includes('tide-shell-v51'));
- assert.ok(read('gaming-ask.js').includes('if(mentionsGtaVi(q))return null'),'legacy gaming questions cannot override new counts');
+ assert.ok(read('gaming-ask.js').includes('if(mentionsGtaVi(q)||'),'legacy gaming questions cannot override new counts');
 });
