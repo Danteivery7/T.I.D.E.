@@ -5,7 +5,7 @@ import { diaryGamingSessions } from './gaming-diary-sessions.js';
 import { GTA_VI_FIRST_PLAY_DATE, isGtaViGame, mentionsGtaVi, permitsDatedGamePlay } from './game-release-rules.js';
 
 const ASK_STOP = new Set('a an the i me my mine myself we our is are was were did do does have has had can could would should tell show find give get what when where why who which how much many often did do something anything about with from for since into across at on to in of by and or it this that those these there then be been being most least last first time times day days month months year years all ever please info information records record list any every life daily yesterday today recently recent things thing name number count am'.split(' '));
-const ASK_GAME_ALIASES = {'Grand Theft Auto VI':['gta 6','gta vi','gta6','gtavi','grand theft auto 6','grand theft auto vi'],'Grand Theft Auto V':['gta 5','gta v','gtav','gta online','grand theft auto 5'],'The Crew Motorfest':['crew motorfest','motorfest'],'The Crew 2':['crew 2','the crew ii'],'Super Mario Odyssey':['mario odyssey'],'Rocket League':['rocket league'],'Minecraft':['minecraft'],'College Football 25':['cfb25','cfb 25','college football 25'],'NBA 2K25':['2k25','nba2k25']};
+const ASK_GAME_ALIASES = {'Grand Theft Auto VI':['gta 6','gta vi','gta6','gtavi','grand theft auto 6','grand theft auto vi'],'Grand Theft Auto V':['gta 5','gta v','gtav','gta online','grand theft auto 5'],'The Crew Motorfest':['crew motorfest','motorfest'],'The Crew 2':['crew 2','the crew ii'],'Super Mario Odyssey':['mario odyssey'],'Rocket League':['rocket league'],'Minecraft':['minecraft'],'College Football 25':['cfb25','cfb 25','college football 25'],'NBA 2K25':['2k25','nba2k25'],'Red Dead Redemption 2':['rdr2','rdr 2','red dead 2','red dead redemption ii']};
 const ASK_TOPIC_ALIASES={creative:/\b(edit(?:ed|ing|s)?|videos?|thumbnails?|youtube channel|content creation|content|filmed|filming)\b/i,learning:/\b(school|class|classes|college|graduation|graduate|learning|studying|lecture|homework|assignment|coursework|education)\b/i,business:/\b(work|working|job|business|company|client|sponsor|sponsorship|llc)\b/i,social:/\b(friends?|family|social|calls?|discord|facetime|hang(?:out|ing out)|dylan|carter|jaxson|talked to|spoke to)\b/i,sports:/\b(sports?|yankees|knicks|giants|nascar|football|baseball|basketball|hockey|soccer|olympics?|rangers|world series|playoffs?)\b/i,outings:/\b(travel|traveled|trip|outings?|visited|went out|beach|shopping|restaurant|vacation|where.*went)\b/i,money:/\b(money|spent|spending|bought|purchase|paid|refund|earned|income|balance|budget|financial|finance|paycheck|cash|transactions?|subscriptions?|credit card|bills?)\b|\$/i,wellness:/\b(health|wellness|sleep|slept|headache|migraine|sick|gym|exercise|workout|doctor|pain)\b/i,pets:/\b(pets?|samba|dogs?|cats?|stan|puppy)\b/i};
 function askDateValid(x){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(x))return false;
@@ -86,6 +86,11 @@ function askAvailableGames(){
     key:keyTitle('Grand Theft Auto VI'),title:'Grand Theft Auto VI',
     minutes:0,lastPlayed:'',sources:[],platformMinutes:{}
   });
+  // Abbreviations must work even before a linked gaming provider exposes RDR2.
+  if(!games.some(game=>keyTitle(game.title)===keyTitle('RDR2')))games.push({
+    key:keyTitle('Red Dead Redemption 2'),title:'Red Dead Redemption 2',
+    minutes:0,lastPlayed:'',sources:[],platformMinutes:{}
+  });
   return games;
 }
 function askGameMatch(question,games){
@@ -148,6 +153,28 @@ function askGameAnswer(state,question,scope,{selectedDate}={}){
       detail:`GTA VI play sessions begin no earlier than ${GTA_VI_FIRST_PLAY_DATE}. Only distinct play starts in dated diary entries count; pre-launch mentions, plans and trailers never count.`,
       items:showDates?dateRows.slice(-70).map(row=>askRow(row.date,row.snippet,'Diary play start')):[],
       source:'Dated diary sessions · GTA VI launch cutoff'};
+  }
+  // RDR2 is a first-class alias for Red Dead Redemption 2. A request for
+  // sessions or times played uses explicit diary play starts, not plain
+  // mentions, total hours, or incidental gaming-account refreshes.
+  const isRdr2=game?.key===keyTitle('Red Dead Redemption 2');
+  const asksRdr2Sessions=isRdr2&&(
+    /\b(sessions?|how many times|how often|times? (?:i |have i |did i )?play(?:ed|ing)?|times? i (?:have )?played)\b/.test(q)||
+    /\b(?:when did i|which days|what days|first time|last time|first played|last played)\b.*\bplay(?:ed|ing)?\b/.test(q)
+  );
+  if(asksRdr2Sessions){
+    const rows=diaryGamingSessions(state,{start:scope.start,end:scope.end})
+      .filter(row=>row.gameKey===keyTitle('Red Dead Redemption 2'))
+      .sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+    const showDates=/\b(?:when|first|last|which|what days|dates?|show|list)\b/.test(q);
+    const selected=/\b(?:last|latest|most recent)\b/.test(q)?rows.slice(-1):
+      /\b(?:first|earliest)\b/.test(q)?rows.slice(0,1):rows;
+    const asksSpecificDate=/\b(?:when|first|last|which|what days)\b/.test(q);
+    return {kind:'game',heading:`Red Dead Redemption 2 · ${scope.label} play sessions`,
+      primary:asksSpecificDate?(selected[0]?.date||'No recorded RDR2 session'):`${rows.length} session${rows.length===1?'':'s'}`,
+      detail:'RDR2, RDR 2, Red Dead 2 and Red Dead Redemption 2 all refer to the same game. Sessions are distinct dated diary play starts; continuing a session does not add another.',
+      items:showDates?selected.slice(-70).map(row=>askRow(row.date,row.snippet,'Diary play start')):[],
+      source:'Dated Red Dead Redemption 2 diary play sessions'};
   }
   const wantsWhen=/(last|most recent|first|when.*play|how long ago)/.test(q);
   const wantsDates=/\b(what|which|show|list|when|did i)\b.*\b(days?|dates?|play(?:ed)?)\b/.test(q)||!!scope.date;
