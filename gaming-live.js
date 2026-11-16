@@ -1,4 +1,5 @@
 import {displayTitle,gaming,keyTitle,maxDate,now,saveGaming,toast} from './gaming-data.js';
+import {permitsDatedGamePlay} from './game-release-rules.js';
 
 const PC_SOURCE_VERSION='pc-monthly-v14';
 const RECOVERY_VERSION='baseline-month-recovery-v2';
@@ -152,7 +153,7 @@ export function reportedSessionEvents(deltaGames,next,capturedAt,date){
   const fingerprint=text=>{let hash=2166136261;for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619)}return(hash>>>0).toString(16).padStart(8,'0')};
   return Object.entries(deltaGames||{}).flatMap(([gameKey,item])=>{
     const minutes=Object.values(item.platformMinutes||{}).reduce((a,b)=>a+Math.max(0,Number(b)||0),0);
-    if(minutes<=0)return [];
+    if(minutes<=0||!permitsDatedGamePlay(date,item.title||gameKey))return [];
     const sources=(next||[]).filter(x=>keyTitle(x.title)===gameKey&&x.countMinutes!==false&&Number.isFinite(Number(x.minutes)))
       .map(x=>[String(x.sourceKey||x.platform||''),Math.max(0,Number(x.minutes)||0)]).sort((a,b)=>a[0].localeCompare(b[0]));
     const snapshot=JSON.stringify({gameKey,sources});
