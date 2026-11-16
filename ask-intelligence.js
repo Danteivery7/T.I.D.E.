@@ -104,13 +104,16 @@ function askGameMatch(question,games){
 function askGameDiaryMatches(state,scope,games){
   const rows=[];
   for(const [date,entry] of askDateRows(state,scope)){
-    const parts=splitEvents(entry.text),matches=[];
+    const parts=splitEvents(entry.text),matches=[],evidence=[];
     for(const part of parts){
       if(!/\b(play(?:ed|ing)?|launch(?:ed)?|logged onto|booted up|grinded)\b/i.test(part)||/\bwatched\b/i.test(part))continue;
       const matched=askGameMatch(part,games);
-      if(matched&&permitsDatedGamePlay(date,matched.title))matches.push(matched.title);
+      if(matched&&permitsDatedGamePlay(date,matched.title)){
+        matches.push(matched.title);
+        evidence.push(part);
+      }
     }
-    if(matches.length)rows.push({date,titles:[...new Set(matches)],snippet:parts.find(part=>matches.some(name=>part.toLowerCase().includes(name.toLowerCase())))||''});
+    if(matches.length)rows.push({date,titles:[...new Set(matches)],snippet:evidence[0]||''});
   }
   return rows;
 }
