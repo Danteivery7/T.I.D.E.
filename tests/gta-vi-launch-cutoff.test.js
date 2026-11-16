@@ -64,7 +64,8 @@ test('per-year, month, date and all-time GTA VI sessions exclude every day befor
 });
 
 test('Ask T.I.D.E. answers GTA VI session counts from diary only, for any scope',()=>{
- const ctxt={today:'2026-11-15',selectedDate:'2026-11-15'};
+ // Simulate querying after launch, so future-dated fixture sessions are historical.
+ const ctxt={today:'2027-01-10',selectedDate:'2027-01-10'};
  const pairs=[
   ['How many GTA VI sessions in 2024?','0 sessions'],
   ['How many GTA VI sessions in 2025?','0 sessions'],
