@@ -314,7 +314,7 @@ function answerAsk(state,question,{today,selectedDate,musicData=null}={}){
   if(money&&!moneyTimeQuestion)return askMoneyNotice(state,scope,q);
   if(/\b(?:this|that) game\b/i.test(q)&&!game)return{kind:'help',heading:'Which game do you mean?',primary:'Name the game to search its history',detail:'For example, ask “When did I last play The Crew Motorfest?” You can also ask this as a follow-up after a game-specific answer.',source:'T.I.D.E. gaming data'};
   const summary=/\b(about my life|summari[sz]e|overview|recap|highlights?|what.*(?:did i do|happened|been doing)|how was my|tell me about my|my life|my year|my month)\b/i.test(q);
-  if(gameIntent && (!scope.date||/\b(gam(?:e|ing)|play(?:ed|ing)?|console)\b/i.test(q))){
+  if(gameIntent && (!scope.date||/\b(gam(?:e|ing)|play(?:ed|ing)?|sessions?|console)\b/i.test(q))){
     const result=askGameAnswer(state,q,scope,{selectedDate});
     if(game)result.entity=game.title;
     return result;
