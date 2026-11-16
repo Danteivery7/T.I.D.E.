@@ -158,7 +158,7 @@ function askGameAnswer(state,question,scope,{selectedDate}={}){
   // sessions or times played uses explicit diary play starts, not plain
   // mentions, total hours, or incidental gaming-account refreshes.
   const isRdr2=game?.key===keyTitle('Red Dead Redemption 2');
-  const asksRdr2Sessions=isRdr2&&(
+  const asksRdr2Sessions=isRdr2&&!/\b(?:diary|mention(?:ed|s)?|wrote|written)\b/.test(q)&&(
     /\b(sessions?|how many times|how often|times? (?:i |have i |did i )?play(?:ed|ing)?|times? i (?:have )?played)\b/.test(q)||
     /\b(?:when did i|which days|what days|first time|last time|first played|last played)\b.*\bplay(?:ed|ing)?\b/.test(q)
   );
