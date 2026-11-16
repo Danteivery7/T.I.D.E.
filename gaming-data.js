@@ -7,6 +7,7 @@ export const LEGACY_GAMES=[
 ['Job Simulator',33,34,'2021-01'],['Madden NFL 17',32,34,'2018-10-13'],['Fall Guys: Ultimate Knockout',32,1,'2022-10'],['FIFA 19',27,8,'2020-10-24'],['FIFA 22',26,35,'2022-05-24']
 ].map(([title,h,m,lastPlayed],i)=>({sourceKey:`legacy-ps4:${i}`,sourceFamily:'legacy-ps4',title,minutes:h*60+m,lastPlayed,firstPlayed:'',platform:'ps4',image:'',countMinutes:true,frozen:true}));
 const KEY='tide_gaming_v1';
+import {isGtaViGame,permitsDatedGamePlay,GTA_VI_FIRST_PLAY_DATE} from './game-release-rules.js';
 const aliases={'grand theft auto 5':'Grand Theft Auto V','gta 5':'Grand Theft Auto V','gta v':'Grand Theft Auto V','grand theft auto v':'Grand Theft Auto V','fall guys ultimate knockout':'Fall Guys','fall guys':'Fall Guys','the crew 2':'The Crew 2','the crew motorfest':'The Crew Motorfest'};
 
 export const now=()=>new Date().toISOString();
@@ -18,6 +19,7 @@ export function shortDate(d){if(!d)return'—';if(/^\d{4}-\d{2}$/.test(d)){const
 export const clean=s=>String(s||'').replace(/[™®©]/g,'').replace(/\bNA\b$/i,'').replace(/[^a-z0-9]+/gi,' ').trim().toLowerCase();
 function canonicalTitle(title){
   const n=clean(title);
+  if(isGtaViGame(n))return 'Grand Theft Auto VI';
   if(aliases[n])return aliases[n];
   if(/^(?:grand theft auto|gta) (?:v|5)(?: |$)/.test(n))return'Grand Theft Auto V';
   return String(title||'Unknown Game').replace(/[™®©]/g,'').trim();
@@ -93,7 +95,9 @@ export function activityRange(start,end,filter='all'){
   for(const [month,rec] of Object.entries(gaming().recoveredMonths||{})){
     if(!monthKeyInRange(month,start,end))continue;
     for(const item of Object.values(rec.games||{})){
-      const title=item.title||item.key;let mins=0;
+      const title=item.title||item.key;
+      if(isGtaViGame(title)&&month<GTA_VI_FIRST_PLAY_DATE.slice(0,7))continue;
+      let mins=0;
       for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(shownPlatform(title,p),filter))mins+=Number(v)||0;
       if(!mins)continue;
       for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(shownPlatform(title,p),filter))addAggregate(map,title,shownPlatform(title,p),v,item.lastPlayed,item.image);
@@ -103,7 +107,9 @@ export function activityRange(start,end,filter='all'){
   for(const [date,rec] of Object.entries(gaming().activity||{})){
     if(date<start||date>end)continue;
     for(const item of Object.values(rec.games||{})){
-      const title=item.title||item.key;let mins=0;
+      const title=item.title||item.key;
+      if(!permitsDatedGamePlay(date,title))continue;
+      let mins=0;
       for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(shownPlatform(title,p),filter))mins+=Number(v)||0;
       if(!mins)continue;
       for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(shownPlatform(title,p),filter))addAggregate(map,title,shownPlatform(title,p),v,item.lastPlayed,item.image);
@@ -121,6 +127,7 @@ export function gamingRecordHighlights(){
     let minutes=0;const perGame=new Map();
     for(const item of Object.values(record?.games||{})){
       const title=item.title||item.key||'Unknown Game',key=keyTitle(title);
+      if(!permitsDatedGamePlay(date,title))continue;
       let sum=0;
       for(const [platform,value] of Object.entries(item.platformMinutes||{})){
         if(ignoreGamePlatform(title,platform)||!filterAllows(shownPlatform(title,platform),'all'))continue;
@@ -175,12 +182,13 @@ export function gamingRecordHighlights(){
 
 export function knownLastPlayed(start,end,filter='all'){
   const floor=d=>/^\d{4}-\d{2}$/.test(d)?`${d}-01`:d,ceil=d=>/^\d{4}-\d{2}$/.test(d)?`${d}-31`:d;
-  return aggregateAllTime(filter).filter(g=>g.lastPlayed&&floor(g.lastPlayed)>=start&&ceil(g.lastPlayed)<=end).sort((a,b)=>String(b.lastPlayed).localeCompare(String(a.lastPlayed)));
+  return aggregateAllTime(filter).filter(g=>g.lastPlayed&&permitsDatedGamePlay(ceil(g.lastPlayed),g.title)&&floor(g.lastPlayed)>=start&&ceil(g.lastPlayed)<=end).sort((a,b)=>String(b.lastPlayed).localeCompare(String(a.lastPlayed)));
 }
 export function boundedHistoricalRange(start,end,filter='all'){
   const map=new Map();
   for(const s of currentSources()){
     if(!s.countMinutes||!filterAllows(s.platform,filter)||!s.firstPlayed||!s.lastPlayed)continue;
+    if(!permitsDatedGamePlay(s.firstPlayed,s.title))continue;
     if(String(s.firstPlayed)<start||String(s.lastPlayed)>end||String(s.lastPlayed)<String(s.firstPlayed))continue;
     addAggregate(map,s.title,s.platform,s.minutes,s.lastPlayed,s.image,s);
   }
