@@ -1,9 +1,11 @@
 import { MONTHS, askTide, trackerFromQuestion, activityStats, dateLabel, monthLabel, splitEvents, daySummary, loggingStreak, trackerTotal, occurrencesFor, montyRecord, dailyChallengeStreaks } from './engine.js';
 import { DIARY_SIGNALS, DIARY_SPORTS, diarySignals } from './diary-insights.js';
 import { aggregateAllTime, activityRange, allTimeTotal, gaming, gamingRecordHighlights, hours, platformLabel, keyTitle } from './gaming-data.js';
+import { diaryGamingSessions } from './gaming-diary-sessions.js';
+import { GTA_VI_FIRST_PLAY_DATE, isGtaViGame, mentionsGtaVi, permitsDatedGamePlay } from './game-release-rules.js';
 
 const ASK_STOP = new Set('a an the i me my mine myself we our is are was were did do does have has had can could would should tell show find give get what when where why who which how much many often did do something anything about with from for since into across at on to in of by and or it this that those these there then be been being most least last first time times day days month months year years all ever please info information records record list any every life daily yesterday today recently recent things thing name number count am'.split(' '));
-const ASK_GAME_ALIASES = {'Grand Theft Auto V':['gta 5','gta v','gtav','gta online','grand theft auto 5'],'The Crew Motorfest':['crew motorfest','motorfest'],'The Crew 2':['crew 2','the crew ii'],'Super Mario Odyssey':['mario odyssey'],'Rocket League':['rocket league'],'Minecraft':['minecraft'],'College Football 25':['cfb25','cfb 25','college football 25'],'NBA 2K25':['2k25','nba2k25']};
+const ASK_GAME_ALIASES = {'Grand Theft Auto VI':['gta 6','gta vi','gta6','gtavi','grand theft auto 6','grand theft auto vi'],'Grand Theft Auto V':['gta 5','gta v','gtav','gta online','grand theft auto 5'],'The Crew Motorfest':['crew motorfest','motorfest'],'The Crew 2':['crew 2','the crew ii'],'Super Mario Odyssey':['mario odyssey'],'Rocket League':['rocket league'],'Minecraft':['minecraft'],'College Football 25':['cfb25','cfb 25','college football 25'],'NBA 2K25':['2k25','nba2k25']};
 const ASK_TOPIC_ALIASES={creative:/\b(edit(?:ed|ing|s)?|videos?|thumbnails?|youtube channel|content creation|content|filmed|filming)\b/i,learning:/\b(school|class|classes|college|graduation|graduate|learning|studying|lecture|homework|assignment|coursework|education)\b/i,business:/\b(work|working|job|business|company|client|sponsor|sponsorship|llc)\b/i,social:/\b(friends?|family|social|calls?|discord|facetime|hang(?:out|ing out)|dylan|carter|jaxson|talked to|spoke to)\b/i,sports:/\b(sports?|yankees|knicks|giants|nascar|football|baseball|basketball|hockey|soccer|olympics?|rangers|world series|playoffs?)\b/i,outings:/\b(travel|traveled|trip|outings?|visited|went out|beach|shopping|restaurant|vacation|where.*went)\b/i,money:/\b(money|spent|spending|bought|purchase|paid|refund|earned|income|balance|budget|financial|finance|paycheck|cash|transactions?|subscriptions?|credit card|bills?)\b|\$/i,wellness:/\b(health|wellness|sleep|slept|headache|migraine|sick|gym|exercise|workout|doctor|pain)\b/i,pets:/\b(pets?|samba|dogs?|cats?|stan|puppy)\b/i};
 function askDateValid(x){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(x))return false;
@@ -77,6 +79,15 @@ function askDateRows(state,scope){
   return Object.entries(state?.entries||{}).filter(([d,e])=>askDateValid(d)&&e?.text?.trim()&&d>=scope.start&&d<=scope.end).sort(([a],[b])=>b.localeCompare(a));
 }
 
+function askAvailableGames(){
+  const games=aggregateAllTime('all');
+  // GTA VI must be answerable by name before account providers report any hours.
+  if(!games.some(game=>isGtaViGame(game.title)))games.push({
+    key:keyTitle('Grand Theft Auto VI'),title:'Grand Theft Auto VI',
+    minutes:0,lastPlayed:'',sources:[],platformMinutes:{}
+  });
+  return games;
+}
 function askGameMatch(question,games){
   const s=String(question||'').toLowerCase();
   const sorted=[...(games||[])].sort((a,b)=>b.title.length-a.title.length);
@@ -97,7 +108,7 @@ function askGameDiaryMatches(state,scope,games){
     for(const part of parts){
       if(!/\b(play(?:ed|ing)?|launch(?:ed)?|logged onto|booted up|grinded)\b/i.test(part)||/\bwatched\b/i.test(part))continue;
       const matched=askGameMatch(part,games);
-      if(matched)matches.push(matched.title);
+      if(matched&&permitsDatedGamePlay(date,matched.title))matches.push(matched.title);
     }
     if(matches.length)rows.push({date,titles:[...new Set(matches)],snippet:parts.find(part=>matches.some(name=>part.toLowerCase().includes(name.toLowerCase())))||''});
   }
@@ -115,7 +126,26 @@ function askMoneyNotice(state,scope,query){
 
 function askGameAnswer(state,question,scope,{selectedDate}={}){
   const q=String(question).toLowerCase();
-  const games=aggregateAllTime('all'),game=askGameMatch(question,games);
+  const games=askAvailableGames(),game=askGameMatch(question,games);
+  const gtaViPlayQuestion=mentionsGtaVi(question)&&(
+    /\b(sessions?|how many times|how often|times? (?:i |have i |did i )?play(?:ed|ing)?|times? i (?:have )?played)\b/.test(q)||
+    /\b(?:when did i|which days|what days|first time|last time)\b.*\bplay\b/.test(q)
+  );
+  if(gtaViPlayQuestion){
+    const rows=diaryGamingSessions(state,{start:scope.start,end:scope.end})
+      .filter(row=>isGtaViGame(row.title))
+      .sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id));
+    const showDates=/\b(?:when|first|last|which|what days|dates?|show|list)\b/.test(q);
+    const dateRows=/\b(?:last|latest|most recent)\b/.test(q)?rows.slice(-1):
+      /\b(?:first|earliest)\b/.test(q)?rows.slice(0,1):rows;
+    const asksSpecificDate=/\b(?:when|first|last|which|what days)\b/.test(q);
+    const firstOrLast=dateRows[0]?.date||'No recorded GTA VI session';
+    return {kind:'game',heading:`GTA VI · ${scope.label} play sessions`,
+      primary:asksSpecificDate?firstOrLast:`${rows.length} session${rows.length===1?'':'s'}`,
+      detail:`GTA VI play sessions begin no earlier than ${GTA_VI_FIRST_PLAY_DATE}. Only distinct play starts in dated diary entries count; pre-launch mentions, plans and trailers never count.`,
+      items:showDates?dateRows.slice(-70).map(row=>askRow(row.date,row.snippet,'Diary play start')):[],
+      source:'Dated diary sessions · GTA VI launch cutoff'};
+  }
   const wantsWhen=/(last|most recent|first|when.*play|how long ago)/.test(q);
   const wantsDates=/\b(what|which|show|list|when|did i)\b.*\b(days?|dates?|play(?:ed)?)\b/.test(q)||!!scope.date;
   const asksHours=/(hours?|minutes?|playtime|how long|time spent)/.test(q);
@@ -274,7 +304,7 @@ function answerAsk(state,question,{today,selectedDate,musicData=null}={}){
   const q=String(question||'').trim(),now=today||new Date().toLocaleDateString('en-CA'),scope=askScope(q,{today:now,selectedDate:selectedDate||now}),lower=q.toLowerCase();
   if(!q)return{kind:'help',heading:'Ask about your history',primary:'What would you like to explore?',detail:'Try a game, date, activity, song, person, life event, or money-related diary note. T.I.D.E. searches saved data; it does not make up missing information.',items:[],source:'Local T.I.D.E. search'};
   if(askMusicIntent(q))return musicData?askMusicAnswer(q,scope,musicData):{kind:'music-needed',scope,source:'stats.fm'};
-  const gameList=aggregateAllTime('all'),game=askGameMatch(q,gameList);
+  const gameList=askAvailableGames(),game=askGameMatch(q,gameList);
   const gameIntent=!!game||/\b(games?|gaming|playtime|ps4|ps5|nintendo|switch|steam|xbox|console|play|playing|played)\b/i.test(q)&&!/played.*(?:sports|basketball|volleyball|football|baseball)/i.test(q);
   const money=ASK_TOPIC_ALIASES.money.test(q);
   const moneyTimeQuestion=/\b(spend|spent)\s+(?:time|hours?|minutes?)\s+(?:play|gaming)|\btime\s+spent\s+(?:gaming|play)/i.test(q);
