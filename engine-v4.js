@@ -1,5 +1,6 @@
 import * as v3 from './engine-v3.js';
 import { LIFE_TRACKER_IDS, ARCHIVED_GTA_IDS, GTA_RETIREMENT_DATE, AUTO_TRACKER_IDS, derivedTrackerRows, derivedTrackerTotal } from './life-trackers.js';
+import {isGtaViGame,mentionsGtaVi,GTA_VI_FIRST_PLAY_DATE} from './game-release-rules.js';
 export * from './engine-v3.js';
 
 const CANONICAL_COLLISIONS='apartment-collisions';
@@ -134,6 +135,17 @@ export function askTide(state,question){
   const q=String(question||'').trim(),lower=q.toLowerCase();
   const isHong=/hong kong/.test(lower);
   const isCollision=/\bcollisions?\b|walked into (?:an object|something)|bumped into/.test(lower);
+  if(mentionsGtaVi(q)&&/\b(?:sessions?|how many times|times? (?:i |have i |did i )?play(?:ed|ing)?|how often)\b/.test(lower)){
+    const scope=scopedQuestion(q);
+    const events=derivedTrackerRows(state,'gaming-sessions',scope).filter(row=>isGtaViGame(row.title));
+    const location=scope.month?v3.monthLabel(scope.month):scope.year?String(scope.year):'all time';
+    if(/what days|which days|when did|which dates|show|list/.test(lower))
+      return{type:'dates',primary:`${events.length} GTA VI sessions · ${location}`,
+        items:events.map(row=>({date:row.date,label:v3.dateLabel(row.date,{weekday:false}),meta:row.snippet})),
+        detail:`GTA VI play begins on ${GTA_VI_FIRST_PLAY_DATE}; pre-launch mentions are excluded.`};
+    return{type:'count',primary:String(events.length),
+      detail:`GTA VI play sessions · ${location}. Dates before ${GTA_VI_FIRST_PLAY_DATE} never count.`};
+  }
   const match=trackerFromQuestion(state,q);
   if(match&&AUTO_TRACKER_IDS.has(match.id)){
     const scope=scopedQuestion(q),total=trackerTotal(state,match.id,scope);
