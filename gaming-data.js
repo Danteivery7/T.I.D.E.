@@ -50,6 +50,7 @@ export function mergeReportedSessions(a=[],b=[]){
   const events=new Map();
   for(const event of [...a,...b]){
     if(!event||typeof event.id!=='string'||!event.id||!/^\d{4}-\d{2}-\d{2}$/.test(String(event.date||''))||!(Number(event.minutes)>0))continue;
+    if(!permitsDatedGamePlay(event.date,event.title||event.gameKey))continue;
     if(!events.has(event.id))events.set(event.id,event);
     else if(String(event.capturedAt||'')<String(events.get(event.id).capturedAt||''))events.set(event.id,event);
   }
@@ -83,7 +84,9 @@ function addAggregate(map,title,platform,minutes,lastPlayed='',image='',source=n
 }
 export function aggregateAllTime(filter='all'){
   const map=new Map();
-  for(const s of currentSources()){if(!s.countMinutes||!filterAllows(s.platform,filter))continue;addAggregate(map,s.title,s.platform,s.minutes,s.lastPlayed,s.image,s);}
+  for(const s of currentSources()){if(!s.countMinutes||!filterAllows(s.platform,filter))continue;
+    if(isGtaViGame(s.title)&&(!s.lastPlayed||s.lastPlayed<GTA_VI_FIRST_PLAY_DATE))continue;
+    addAggregate(map,s.title,s.platform,s.minutes,s.lastPlayed,s.image,s);}
   return[...map.values()];
 }
 export const remainderFor=filter=>['all','ps4','playstation'].includes(filter)?LEGACY_REMAINDER_MINUTES:0;
@@ -96,7 +99,7 @@ export function activityRange(start,end,filter='all'){
     if(!monthKeyInRange(month,start,end))continue;
     for(const item of Object.values(rec.games||{})){
       const title=item.title||item.key;
-      if(isGtaViGame(title)&&month<GTA_VI_FIRST_PLAY_DATE.slice(0,7))continue;
+      if(isGtaViGame(title)&&(month<GTA_VI_FIRST_PLAY_DATE.slice(0,7)||end<GTA_VI_FIRST_PLAY_DATE))continue;
       let mins=0;
       for(const [p,v] of Object.entries(item.platformMinutes||{}))if(!ignoreGamePlatform(title,p)&&filterAllows(shownPlatform(title,p),filter))mins+=Number(v)||0;
       if(!mins)continue;
