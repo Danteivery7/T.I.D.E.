@@ -1,6 +1,7 @@
 /* Diary-first gaming sessions: diary starts define sessions, account refreshes
    define hours, and historical diary entries are included automatically. */
 import {currentSources,displayTitle,keyTitle} from './gaming-data.js';
+import {permitsDatedGamePlay} from './game-release-rules.js';
 
 const START=/\b(?:replayed|played|playing|started\s+(?:to\s+)?play(?:ing)?|began\s+play(?:ing)?)\b/gi;
 const BREAK=/[,;.!?\n]|\b(?:and\s+then|afterwards|later\s+on)\b/i;
@@ -124,6 +125,12 @@ export function gamingSessionsFromEntry(date,text,vocab=gameNames()){
     if(!games.length)continue;
     const ongoingOnly=match[0].toLowerCase()==='playing';
     for(const game of games){
+      // A pre-launch GTA VI reference never becomes a play session, even if
+      // the diary text says “played”; other games in the same entry still count.
+      if(!permitsDatedGamePlay(date,game.title)){
+        lastGame=null;
+        continue;
+      }
       if(ongoingOnly&&seenOnDay.has(game.gameKey))continue;
       const id='diary-game:'+date+':'+String(match.index)+':'+game.gameKey;
       sessions.push({id,date,title:game.title,gameKey:game.gameKey,count:1,source:'diary-derived',
