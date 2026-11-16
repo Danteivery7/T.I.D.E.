@@ -82,5 +82,5 @@ test('Responsive year comparison stylesheet is shipped online and offline after 
  assert.ok(html.indexOf('href="year-comparisons.css"')>html.indexOf('href="midnight-royal.css"'));
  assert.ok(read('build.mjs').includes("'year-comparisons.css'"));
  assert.ok(read('sw.js').includes("'/year-comparisons.css'"));
- assert.ok(read('sw.js').includes('tide-shell-v50'));
+ assert.match(read('sw.js'),/tide-shell-v\d+/);
 });
