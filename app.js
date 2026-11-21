@@ -248,7 +248,9 @@ function todayView(){
   if(suggested)editor.addEventListener('change',()=>{if(!editor.value.startsWith(suggested))localStorage.setItem('tide:preamble-dismissed:'+date,'1')});
   root.querySelector('#save-day').onclick=()=>saveCurrentDay(date,editor.value);root.querySelector('#versions').onclick=()=>showVersions(date);root.querySelector('#open-otd').onclick=()=>{onThisDayDate=date;setView('on-this-day')};root.querySelector('#open-month').onclick=()=>{selectedMonth=date.slice(0,7);setView('monthly')};root.querySelector('#open-records').onclick=()=>setView('records');root.querySelectorAll('.otd-item').forEach(x=>x.onclick=()=>openDay(x.dataset.date));
 }
-async function saveCurrentDay(date,text){saveEntry(state,date,text);persist();clearDraft(date);toast('Day saved locally.');render();if(state.settings.autoCloudSync&&cloud.authenticated){try{const r=await cloudPush(state,cloud.etag);cloud.etag=r.etag||cloud.etag;toast('Cloud sync complete.')}catch(e){toast(`Saved locally; cloud sync failed: ${e.message}`,'bad')}}}
+// Save Day writes once to the durable outbox. shared-save.js confirms the same write
+// with Cloudflare; do not schedule a second full-database upload here.
+function saveCurrentDay(date,text){saveEntry(state,date,text);persist();clearDraft(date);toast('Day saved locally.');render();}
 function showVersions(date){const revisions=state.entries?.[date]?.revisions||[];openModal('Version History',revisions.length?revisions.map((r,i)=>`<div class="result-row"><b>${new Date(r.savedAt).toLocaleString()}</b><div class="small muted" style="margin-top:7px">${esc(r.text).slice(0,500)}</div><button class="button" data-restore="${i}" style="margin-top:10px">Restore</button></div>`).join(''):`<div class="muted">No earlier saved versions yet.</div>`,'SAFE HISTORY');modal.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>{const r=revisions[Number(b.dataset.restore)];if(r){saveEntry(state,date,r.text);persist();closeModal();render();toast('Earlier version restored.')}})}
 
 function tideCalendarCell(date,isCurrentMonth,holidays,review){
