@@ -22,7 +22,7 @@ function fakeD1(){
         if(sql.startsWith('CREATE TABLE'))return {meta:{changes:0}};
         if(sql.startsWith('INSERT OR IGNORE')){
           if(version)return {meta:{changes:0}};
-          stored=this.args[2];version=1;return {meta:{changes:1}};
+          stored=this.args[1];version=1;return {meta:{changes:1}};
         }
         if(sql.startsWith('UPDATE tide_state')){
           if(version!==this.args[3])return {meta:{changes:0}};
