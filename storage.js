@@ -195,10 +195,28 @@ async function jsonFetch(url,options={}){
 }
 
 async function pushEnvelope(envelope){
-  const response=await fetch('/api/tide/state',{
-    method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},
-    body:JSON.stringify({state:envelope.state}),
-  });
+  // Cloudflare can briefly respond with 502/503/504 while a deployment or
+  // gateway is recovering. Retry the exact queued snapshot without discarding
+  // the durable local outbox. Never retry auth or daily-quota rejections.
+  const payload=JSON.stringify({state:envelope.state});
+  let response;
+  for(let attempt=0;attempt<3;attempt++){
+    try{
+      response=await fetch('/api/tide/state',{
+        method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},
+        body:payload,
+      });
+    }catch(error){
+      if(attempt===2)throw error;
+      await new Promise(resolve=>setTimeout(resolve,600*2**attempt));
+      continue;
+    }
+    if([502,503,504].includes(response.status)&&attempt<2){
+      await new Promise(resolve=>setTimeout(resolve,600*2**attempt));
+      continue;
+    }
+    break;
+  }
   let body={};try{body=await response.json();}catch{}
   if(!response.ok)throw new Error(body.error||`Shared sync failed (${response.status})`);
   const latest=loadLocal();
