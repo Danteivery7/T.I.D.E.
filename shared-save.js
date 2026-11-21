@@ -1,4 +1,4 @@
-import { cloudPull, cloudPush, cloudStatus, loadLocal, mergeStates, saveDraft, saveLocal } from './storage.js';
+import { cloudPull, cloudStatus, flushSharedSync, loadLocal, mergeStates, saveDraft, saveLocal } from './storage.js';
 
 const root=document.querySelector('#view-root');
 const toastRegion=document.querySelector('#toast-region');
@@ -23,6 +23,9 @@ async function refreshStatus(force=false){
   return checking;
 }
 function selectedDate(){
+  // The date input is the source of truth, including dates that have not happened yet.
+  const inputDate=root?.querySelector('#today-date-jump')?.value;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(inputDate||''))return inputDate;
   const text=root?.querySelector('.day-nav-center h1')?.textContent?.trim();
   if(!text)return null;
   const d=new Date(`${text.replace(/^[A-Za-z]+,\s*/,'')} 12:00:00`);
@@ -50,11 +53,13 @@ async function commitPending({announce=true}={}){
     const fresh=await refreshStatus(true);
     if(!fresh.authenticated)throw new Error(fresh.configured?'Cloud Sync is not connected on this device.':'Shared Cloudflare storage is not configured.');
     if(announce){removeSaveToasts();toast('Saving across devices…');}
-    const local=loadLocal();
-    const pushed=await cloudPush(local,null);
-    if(!pushed?.ok&&!pushed?.state)throw new Error('Cloudflare did not confirm the save.');
-    if(pushed.state)saveLocal(pushed.state);
-    clearPending();
+    // The diary's Save Day handler has already persisted its update and queued
+    // the complete state. Flush that existing outbox instead of uploading it again.
+    // An empty outbox means a parallel automatic flush already completed.
+    const pushed=await flushSharedSync();
+    if(pushed?.ok===false)throw new Error('Cloudflare did not confirm the save.');
+    const latest=getPending();
+    if(latest?.queuedAt===pending.queuedAt&&latest?.date===pending.date&&latest?.text===pending.text)clearPending();
     status.authenticated=true;
     removeSaveToasts();
     if(announce)toast('Day saved across devices.');
@@ -66,7 +71,12 @@ async function commitPending({announce=true}={}){
     removeSaveToasts();
     if(announce)toast(`Cloud save failed: ${error.message}. Your draft is preserved and T.I.D.E. will retry automatically.`,'bad');
     return false;
-  }finally{committing=false;}
+  }finally{
+    committing=false;
+    // Another Save Day can happen while the first request is in flight.
+    // Its pending marker must be independently confirmed, not erased.
+    if(getPending()?.queuedAt!==pending?.queuedAt&&getPending())setTimeout(()=>void commitPending({announce:false}),0);
+  }
 }
 
 async function pullNewerDiary(){
